@@ -3,6 +3,13 @@
   "version": "0.0.1",
   "description": "A simple utility for reacting to events from a form's fields",
   "main": "build/index.js",
+  "scripts": {
+    "lint": "prettier --ignore-path .gitignore --check",
+    "format": "prettier --ignore-path .gitignore --write ."
+  },
+  "devDependencies": {
+    "prettier": "^2.8.3"
+  },
   "author": "Isaiah Thomason",
   "license": "MIT",
   "keywords": [
