@@ -1,3 +1,7 @@
+# -------------------- Our Own Ignore Config --------------------
+build
+
+# -------------------- NPM (via GitHub) --------------------
 # Logs
 logs
 *.log

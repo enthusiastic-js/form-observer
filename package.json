@@ -1,0 +1,21 @@
+{
+  "name": "@enthusiastic/form-observer",
+  "version": "0.0.1",
+  "description": "A simple utility for reacting to events from a form's fields",
+  "main": "build/index.js",
+  "author": "Isaiah Thomason",
+  "license": "MIT",
+  "keywords": [
+    "form",
+    "observer",
+    "web"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enthusiastic-js/form-observer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/enthusiastic-js/form-observer/issues"
+  },
+  "homepage": "https://github.com/enthusiastic-js/form-observer#readme"
+}
