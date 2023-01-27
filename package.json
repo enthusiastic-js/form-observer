@@ -8,7 +8,8 @@
     "format": "prettier --ignore-path .gitignore --write ."
   },
   "devDependencies": {
-    "prettier": "^2.8.3"
+    "prettier": "^2.8.3",
+    "typescript": "^4.9.4"
   },
   "author": "Isaiah Thomason",
   "license": "MIT",
