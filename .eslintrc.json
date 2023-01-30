@@ -1,0 +1,43 @@
+{
+  "env": { "browser": true, "node": true, "jest": true },
+  "extends": ["airbnb-base", "plugin:@typescript-eslint/recommended", "plugin:prettier/recommended"],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module",
+    "project": "tsconfig.json"
+  },
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".ts", ".d.ts"]
+      }
+    }
+  },
+  "rules": {
+    // Core Configurations
+    "lines-between-class-members": "off",
+    "consistent-return": "off", // This is usually annoying, and TS works fine as long as return types are specified
+
+    // TypeScript Configurations
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/consistent-type-imports": "error",
+    "@typescript-eslint/no-unnecessary-condition": "error",
+    "@typescript-eslint/strict-boolean-expressions": "off",
+
+    // Core Configurations That Conflict with TS
+    "no-undef": "off",
+    "no-use-before-define": "off",
+    "@typescript-eslint/no-use-before-define": ["error", "nofunc"],
+    "no-shadow": "off",
+    "@typescript-eslint/no-shadow": "error",
+    "default-param-last": "off",
+    "@typescript-eslint/default-param-last": "error",
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+
+    // Import
+    "import/extensions": ["error", "ignorePackages", { "js": "always", "ts": "never", "d.ts": "never" }],
+    "import/no-unresolved": "off" // Let TypeScript handle import resolution
+  }
+}
