@@ -23,13 +23,48 @@ type TypesToListeners<A extends readonly EventType[]> = {
 };
 
 interface FormObserverConstructor {
-  /** Provides a way to respond to events emitted from the fields belonging to an `HTMLFormElement`. */
+  /**
+   * Provides a way to respond to events emitted by the fields belonging to an `HTMLFormElement`.
+   *
+   * @param type The type of event to respond to
+   * @param listener The function to call when a form field emits an event matching the provided `type`
+   * @param options The `addEventListener` options for the provided `listener`.
+   *
+   * See {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
+   */
   new <T extends EventType>(type: T, listener: FormFieldListener<T>, options?: Options): FormObserver<T>;
+  /**
+   * Provides a way to respond to events emitted by the fields belonging to an `HTMLFormElement`.
+   *
+   * @param types An array containing the types of events to respond to
+   * @param listener The function to call when a form field emits an event specified in the list of `types`
+   * @param options The `addEventListener` options for the provided `listener`.
+   *
+   * See {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
+   */
   new <T extends readonly EventType[]>(
     types: T,
     listener: FormFieldListener<T[number]>,
     options?: Options
   ): FormObserver<T>;
+  /**
+   * Provides a way to respond to events emitted by the fields belonging to an `HTMLFormElement`.
+   *
+   * @param types An array containing the types of events to respond to
+   * @param listeners An array of event listeners corresponding to the provided list of `types`. When an event
+   * matching one of the `types` is emitted by a form field, its corresponding function will be called.
+   *
+   * For example, when a field emits an event matching the 2nd type in `types`, the 2nd listener will be called.
+   * @param options An array of `addEventListener` options corresponding to the provided list of `listeners`.
+   * When a listener is attached to a form's `Document`, its corresponding options value will be used to
+   * configure it.
+   *
+   * For example, when the 2nd listener in `listeners` is attached to the `Document`, it will use the 2nd options
+   * value for its configuration. (If `options` is a single value instead of an array, then that value will
+   * be used for all of the listeners.)
+   *
+   * See {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
+   */
   new <T extends readonly EventType[]>(
     types: T,
     listeners: TypesToListeners<T>,
