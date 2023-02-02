@@ -87,7 +87,8 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
   #options?: readonly Options[];
 
   // Other Fields
-  #watchedElements = new Set<HTMLFormElement>();
+  /** Contains references to all of the `HTMLFormElements` which are currently being observed. */
+  #observedForms = new Set<HTMLFormElement>();
 
   constructor(types: T, listeners: OneOrMany<FormFieldListener<EventType>>, options?: OneOrMany<Options>) {
     /* -------------------- Internal Helpers -------------------- */
@@ -96,7 +97,7 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
 
       return array.map((listener) => {
         return (event) => {
-          if (!this.#watchedElements.has(event.target.form as HTMLFormElement)) return;
+          if (!this.#observedForms.has(event.target.form as HTMLFormElement)) return;
           return listener(event);
         };
       });
@@ -128,10 +129,10 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
       throw new TypeError(`Expected argument to be an instance of \`HTMLFormElement\`. Instead, received ${form}.`);
     }
 
-    if (this.#watchedElements.has(form)) return; // Nothing to do
-    this.#watchedElements.add(form);
+    if (this.#observedForms.has(form)) return; // Nothing to do
+    this.#observedForms.add(form);
 
-    if (this.#watchedElements.size > 1) return; // Listeners have already been attached
+    if (this.#observedForms.size > 1) return; // Listeners have already been attached
 
     // First OR Second constructor overload was used
     if (this.#listeners.length === 1) {
@@ -153,10 +154,10 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
       throw new TypeError(`Expected argument to be an instance of \`HTMLFormElement\`. Instead, received ${form}.`);
     }
 
-    if (!this.#watchedElements.has(form)) return; // Nothing to do
-    this.#watchedElements.delete(form);
+    if (!this.#observedForms.has(form)) return; // Nothing to do
+    this.#observedForms.delete(form);
 
-    if (this.#watchedElements.size !== 0) return; // Some `form`s still need the attached listeners
+    if (this.#observedForms.size !== 0) return; // Some `form`s still need the attached listeners
 
     // First OR Second constructor overload was used
     if (this.#listeners.length === 1) {
@@ -174,7 +175,7 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
   }
 
   disconnect(): void {
-    this.#watchedElements.forEach((form) => this.unobserve(form));
+    this.#observedForms.forEach((form) => this.unobserve(form));
   }
 };
 
