@@ -87,60 +87,65 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
   #options?: readonly Options[];
 
   // Other Fields
-  // Maybe this should be a `Set` instead? If we can have global access to the listeners, we can define them once.
-  #watchedElements = new Map<HTMLFormElement, FormFieldListener<EventType>[]>();
+  #watchedElements = new Set<HTMLFormElement>();
 
   constructor(types: T, listeners: OneOrMany<FormFieldListener<EventType>>, options?: OneOrMany<Options>) {
+    /* -------------------- Internal Helpers -------------------- */
+    const enhanceListeners = (originalListeners: typeof listeners): readonly FormFieldListener<EventType>[] => {
+      const array = originalListeners instanceof Array ? originalListeners : [originalListeners];
+
+      return array.map((listener) => {
+        return (event) => {
+          if (!this.#watchedElements.has(event.target.form as HTMLFormElement)) return;
+          return listener(event);
+        };
+      });
+    };
+
+    /* -------------------- Constructor Logic -------------------- */
     if (!(types instanceof Array)) {
       this.#types = [types];
-      this.#listeners = [listeners as FormFieldListener<EventType>];
+      this.#listeners = enhanceListeners(listeners);
       if (options) this.#options = [options as Options];
       return;
     }
 
     if (!(listeners instanceof Array)) {
       this.#types = types;
-      this.#listeners = [listeners];
+      this.#listeners = enhanceListeners(listeners);
       if (options) this.#options = [options as Options];
       return;
     }
 
     this.#types = types;
-    this.#listeners = listeners;
+    this.#listeners = enhanceListeners(listeners);
     if (options instanceof Array) this.#options = options;
     else this.#options = Array.from({ length: types.length }, () => options);
   }
 
   observe(form: HTMLFormElement): void {
-    // Remove previous listeners (if any)
-    this.unobserve(form);
-
-    // Attach new listeners
-    // TODO: We do this on every call to `observe`. Is there a better thing to do for memory? Can we only do this
-    // once? Maybe we can create separate mapper helper utility.
-    const listeners = this.#listeners.map((l) => {
-      const listener = l.bind(form.ownerDocument);
-      return function enhancedListener(this: Document, event: Parameters<typeof listener>[0]) {
-        if (event.target.form !== form) return;
-        return listener(event);
-      };
-    });
-
-    // First OR Second constructor overload was used
-    if (listeners.length === 1) {
-      const [listener] = listeners;
-      const options = this.#options?.[0];
-
-      return this.#types.forEach((t) => form.ownerDocument.addEventListener(t, listener as EventListener, options));
+    if (!(form instanceof HTMLFormElement)) {
+      throw new TypeError(`Expected argument to be an instance of \`HTMLFormElement\`. Instead, received ${form}.`);
     }
 
-    // Third constructor overload was used
-    this.#types.forEach((t, i) => {
-      form.ownerDocument.addEventListener(t, listeners[i] as EventListener, this.#options?.[i]);
-    });
+    if (this.#watchedElements.has(form)) return; // Nothing to do
+    this.#watchedElements.add(form);
 
-    // Keep a reference to listeners
-    this.#watchedElements.set(form, listeners);
+    if (this.#watchedElements.size > 1) return; // Listeners have already been attached
+
+    // First OR Second constructor overload was used
+    if (this.#listeners.length === 1) {
+      const listener = this.#listeners[0] as EventListener;
+      const options = this.#options?.[0];
+
+      this.#types.forEach((t) => form.ownerDocument.addEventListener(t, listener, options));
+    }
+    // Third constructor overload was used
+    else {
+      this.#types.forEach((t, i) => {
+        form.ownerDocument.addEventListener(t, this.#listeners[i] as EventListener, this.#options?.[i]);
+      });
+    }
   }
 
   unobserve(form: HTMLFormElement): void {
@@ -148,28 +153,28 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
       throw new TypeError(`Expected argument to be an instance of \`HTMLFormElement\`. Instead, received ${form}.`);
     }
 
-    const listeners = this.#watchedElements.get(form);
-    if (!listeners) return;
+    if (!this.#watchedElements.has(form)) return; // Nothing to do
+    this.#watchedElements.delete(form);
+
+    if (this.#watchedElements.size !== 0) return; // Some `form`s still need the attached listeners
 
     // First OR Second constructor overload was used
-    if (listeners.length === 1) {
-      const [listener] = listeners;
+    if (this.#listeners.length === 1) {
+      const listener = this.#listeners[0] as EventListener;
       const options = this.#options?.[0];
 
-      return this.#types.forEach((t) => form.ownerDocument.removeEventListener(t, listener as EventListener, options));
+      this.#types.forEach((t) => form.ownerDocument.removeEventListener(t, listener, options));
     }
-
     // Third constructor overload was used
-    this.#types.forEach((t, i) => {
-      form.ownerDocument.removeEventListener(t, listeners[i] as EventListener, this.#options?.[i]);
-    });
-
-    // Remove obsolete reference to listeners
-    this.#watchedElements.delete(form);
+    else {
+      this.#types.forEach((t, i) => {
+        form.ownerDocument.removeEventListener(t, this.#listeners[i] as EventListener, this.#options?.[i]);
+      });
+    }
   }
 
   disconnect(): void {
-    this.#watchedElements.forEach((_, form) => this.unobserve(form));
+    this.#watchedElements.forEach((form) => this.unobserve(form));
   }
 };
 

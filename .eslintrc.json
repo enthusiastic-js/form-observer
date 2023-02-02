@@ -17,7 +17,8 @@
   "rules": {
     // Core Configurations
     "lines-between-class-members": "off",
-    "consistent-return": "off", // This is usually annoying, and TS works fine as long as return types are specified
+    "consistent-return": "off", // This is usually annoying, and TS works fine as long as return types are specified.
+    "arrow-body-style": "off", // Done because of formatting. Use discretion on which type of function to use.
 
     // TypeScript Configurations
     "@typescript-eslint/no-explicit-any": "error",
