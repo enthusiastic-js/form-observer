@@ -1,22 +1,4 @@
-type OneOrMany<T> = T | ReadonlyArray<T>;
-
-/**
- * The set of `HTMLElements` that can belong to an `HTMLFormElement`.
- * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/elements HTMLFormElement.elements}
- */
-type FormField =
-  | HTMLButtonElement
-  | HTMLFieldSetElement
-  | HTMLInputElement
-  | HTMLObjectElement
-  | HTMLOutputElement
-  | HTMLSelectElement
-  | HTMLTextAreaElement;
-
-type EventType = keyof DocumentEventMap;
-type FormFieldEvent<T extends EventType> = DocumentEventMap[T] & { target: FormField };
-type FormFieldListener<T extends EventType> = (event: FormFieldEvent<T>) => unknown;
-type ListenerOptions = Parameters<typeof document.addEventListener>[2];
+import type { EventType, FormFieldListener, ListenerOptions, OneOrMany } from "./types";
 
 type TypesToListeners<A extends ReadonlyArray<EventType>> = {
   [Index in keyof A]: FormFieldListener<A[Index]>;
@@ -33,6 +15,7 @@ interface FormObserverConstructor {
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
    */
   new <T extends EventType>(type: T, listener: FormFieldListener<T>, options?: ListenerOptions): FormObserver;
+
   /**
    * Provides a way to respond to events emitted by the fields belonging to an `HTMLFormElement`.
    *
@@ -47,6 +30,7 @@ interface FormObserverConstructor {
     listener: FormFieldListener<T[number]>,
     options?: ListenerOptions
   ): FormObserver;
+
   /**
    * Provides a way to respond to events emitted by the fields belonging to an `HTMLFormElement`.
    *
