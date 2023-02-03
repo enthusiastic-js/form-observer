@@ -32,7 +32,7 @@ interface FormObserverConstructor {
    *
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
    */
-  new <T extends EventType>(type: T, listener: FormFieldListener<T>, options?: Options): FormObserver<T>;
+  new <T extends EventType>(type: T, listener: FormFieldListener<T>, options?: Options): FormObserver;
   /**
    * Provides a way to respond to events emitted by the fields belonging to an `HTMLFormElement`.
    *
@@ -46,7 +46,7 @@ interface FormObserverConstructor {
     types: T,
     listener: FormFieldListener<T[number]>,
     options?: Options
-  ): FormObserver<T>;
+  ): FormObserver;
   /**
    * Provides a way to respond to events emitted by the fields belonging to an `HTMLFormElement`.
    *
@@ -69,11 +69,10 @@ interface FormObserverConstructor {
     types: T,
     listeners: TypesToListeners<T>,
     options?: OneOrMany<Options>
-  ): FormObserver<T>;
+  ): FormObserver;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- This actually does relate to its corresponding class
-interface FormObserver<T extends OneOrMany<EventType>> {
+interface FormObserver {
   observe(form: HTMLFormElement): void;
   unobserve(form: HTMLFormElement): void;
   disconnect(): void;
