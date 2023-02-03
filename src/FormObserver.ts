@@ -1,4 +1,4 @@
-type OneOrMany<T> = T | readonly T[];
+type OneOrMany<T> = T | ReadonlyArray<T>;
 
 /**
  * The set of `HTMLElements` that can belong to an `HTMLFormElement`.
@@ -18,7 +18,7 @@ type FormFieldEvent<T extends EventType> = DocumentEventMap[T] & { target: FormF
 type FormFieldListener<T extends EventType> = (event: FormFieldEvent<T>) => unknown;
 type Options = Parameters<typeof document.addEventListener>[2];
 
-type TypesToListeners<A extends readonly EventType[]> = {
+type TypesToListeners<A extends ReadonlyArray<EventType>> = {
   [Index in keyof A]: FormFieldListener<A[Index]>;
 };
 
@@ -42,7 +42,7 @@ interface FormObserverConstructor {
    *
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
    */
-  new <T extends readonly EventType[]>(
+  new <T extends ReadonlyArray<EventType>>(
     types: T,
     listener: FormFieldListener<T[number]>,
     options?: Options
@@ -65,7 +65,7 @@ interface FormObserverConstructor {
    *
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
    */
-  new <T extends readonly EventType[]>(
+  new <T extends ReadonlyArray<EventType>>(
     types: T,
     listeners: TypesToListeners<T>,
     options?: OneOrMany<Options>
@@ -78,12 +78,11 @@ interface FormObserver {
   disconnect(): void;
 }
 
-// TODO: Is `ReadonlyArray<T>` better than `readonly T[]` for readability? I feel like it's more clear...
 const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventType>> implements FormObserver {
   // Constructor-related Fields. Must be compatible with `document.addEventListener`
-  #types: readonly EventType[];
-  #listeners: readonly FormFieldListener<EventType>[];
-  #options?: readonly Options[];
+  #types: ReadonlyArray<EventType>;
+  #listeners: ReadonlyArray<FormFieldListener<EventType>>;
+  #options?: ReadonlyArray<Options>;
 
   // Other Fields
   /** Contains references to all of the `HTMLFormElements` which are currently being observed. */
@@ -91,7 +90,7 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
 
   constructor(types: T, listeners: OneOrMany<FormFieldListener<EventType>>, options?: OneOrMany<Options>) {
     /* -------------------- Internal Helpers -------------------- */
-    const enhanceListeners = (originalListeners: typeof listeners): readonly FormFieldListener<EventType>[] => {
+    const enhanceListeners = (originalListeners: typeof listeners): ReadonlyArray<FormFieldListener<EventType>> => {
       const array = originalListeners instanceof Array ? originalListeners : [originalListeners];
 
       return array.map((listener) => {
