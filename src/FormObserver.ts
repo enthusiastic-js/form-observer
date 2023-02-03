@@ -79,7 +79,7 @@ interface FormObserver {
 }
 
 // TODO: Is `ReadonlyArray<T>` better than `readonly T[]` for readability? I feel like it's more clear...
-const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventType>> {
+const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventType>> implements FormObserver {
   // Constructor-related Fields. Must be compatible with `document.addEventListener`
   #types: readonly EventType[];
   #listeners: readonly FormFieldListener<EventType>[];
