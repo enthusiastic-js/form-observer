@@ -16,7 +16,7 @@ type FormField =
 type EventType = keyof DocumentEventMap;
 type FormFieldEvent<T extends EventType> = DocumentEventMap[T] & { target: FormField };
 type FormFieldListener<T extends EventType> = (event: FormFieldEvent<T>) => unknown;
-type Options = Parameters<typeof document.addEventListener>[2];
+type ListenerOptions = Parameters<typeof document.addEventListener>[2];
 
 type TypesToListeners<A extends ReadonlyArray<EventType>> = {
   [Index in keyof A]: FormFieldListener<A[Index]>;
@@ -32,7 +32,7 @@ interface FormObserverConstructor {
    *
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
    */
-  new <T extends EventType>(type: T, listener: FormFieldListener<T>, options?: Options): FormObserver;
+  new <T extends EventType>(type: T, listener: FormFieldListener<T>, options?: ListenerOptions): FormObserver;
   /**
    * Provides a way to respond to events emitted by the fields belonging to an `HTMLFormElement`.
    *
@@ -45,7 +45,7 @@ interface FormObserverConstructor {
   new <T extends ReadonlyArray<EventType>>(
     types: T,
     listener: FormFieldListener<T[number]>,
-    options?: Options
+    options?: ListenerOptions
   ): FormObserver;
   /**
    * Provides a way to respond to events emitted by the fields belonging to an `HTMLFormElement`.
@@ -68,7 +68,7 @@ interface FormObserverConstructor {
   new <T extends ReadonlyArray<EventType>>(
     types: T,
     listeners: TypesToListeners<T>,
-    options?: OneOrMany<Options>
+    options?: OneOrMany<ListenerOptions>
   ): FormObserver;
 }
 
@@ -82,13 +82,13 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
   // Constructor-related Fields. Must be compatible with `document.addEventListener`
   #types: ReadonlyArray<EventType>;
   #listeners: ReadonlyArray<FormFieldListener<EventType>>;
-  #options?: ReadonlyArray<Options>;
+  #options?: ReadonlyArray<ListenerOptions>;
 
   // Other Fields
   /** Contains references to all of the `HTMLFormElements` which are currently being observed. */
   #observedForms = new Set<HTMLFormElement>();
 
-  constructor(types: T, listeners: OneOrMany<FormFieldListener<EventType>>, options?: OneOrMany<Options>) {
+  constructor(types: T, listeners: OneOrMany<FormFieldListener<EventType>>, options?: OneOrMany<ListenerOptions>) {
     /* -------------------- Internal Helpers -------------------- */
     const enhanceListeners = (originalListeners: typeof listeners): ReadonlyArray<FormFieldListener<EventType>> => {
       const array = originalListeners instanceof Array ? originalListeners : [originalListeners];
@@ -105,14 +105,14 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
     if (!(types instanceof Array)) {
       this.#types = [types];
       this.#listeners = enhanceListeners(listeners);
-      if (options) this.#options = [options as Options];
+      if (options) this.#options = [options as ListenerOptions];
       return;
     }
 
     if (!(listeners instanceof Array)) {
       this.#types = types;
       this.#listeners = enhanceListeners(listeners);
-      if (options) this.#options = [options as Options];
+      if (options) this.#options = [options as ListenerOptions];
       return;
     }
 
