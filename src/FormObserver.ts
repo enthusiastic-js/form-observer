@@ -1,8 +1,8 @@
 import type { EventType, FormFieldListener, ListenerOptions, OneOrMany } from "./types";
 
-type TypesToListeners<A extends ReadonlyArray<EventType>> = {
-  [Index in keyof A]: FormFieldListener<A[Index]>;
-};
+type TypesToListeners<A extends ReadonlyArray<EventType>> = A extends infer U extends ReadonlyArray<EventType>
+  ? { [I in keyof U]: FormFieldListener<U[I]> }
+  : never;
 
 interface FormObserverConstructor {
   /**
