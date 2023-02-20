@@ -4,8 +4,8 @@ interface FormObserverConstructor {
   /**
    * Provides a way to respond to events emitted by the fields belonging to an `HTMLFormElement`.
    *
-   * @param type The type of event to respond to
-   * @param listener The function to call when a form field emits an event matching the provided `type`
+   * @param type The type of event to respond to.
+   * @param listener The function to call when a form field emits an event matching the provided `type`.
    * @param options The `addEventListener` options for the provided `listener`.
    *
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
@@ -15,8 +15,8 @@ interface FormObserverConstructor {
   /**
    * Provides a way to respond to events emitted by the fields belonging to an `HTMLFormElement`.
    *
-   * @param types An array containing the types of events to respond to
-   * @param listener The function to call when a form field emits an event specified in the list of `types`
+   * @param types An array containing the types of events to respond to.
+   * @param listener The function to call when a form field emits an event specified in the list of `types`.
    * @param options The `addEventListener` options for the provided `listener`.
    *
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
@@ -30,18 +30,20 @@ interface FormObserverConstructor {
   /**
    * Provides a way to respond to events emitted by the fields belonging to an `HTMLFormElement`.
    *
-   * @param types An array containing the types of events to respond to
+   * @param types An array containing the types of events to respond to.
    * @param listeners An array of event listeners corresponding to the provided list of `types`. When an event
-   * matching one of the `types` is emitted by a form field, its corresponding function will be called.
+   * matching one of the `types` is emitted by a form field, its corresponding listener function will be called.
    *
    * For example, when a field emits an event matching the 2nd type in `types`, the 2nd listener will be called.
    * @param options An array of `addEventListener` options corresponding to the provided list of `listeners`.
-   * When a listener is attached to a form's `Document`, its corresponding options value will be used to
-   * configure it.
+   * When a listener is attached to a form's `Document`, the listener's corresponding set of options will be
+   * used to configure it.
    *
-   * For example, when the 2nd listener in `listeners` is attached to the `Document`, it will use the 2nd options
-   * value for its configuration. (If `options` is a single value instead of an array, then that value will
-   * be used for all of the listeners.)
+   * For example, when the 2nd listener in `listeners` is attached to the `Document`, it will use the 2nd value
+   * in the `options` array for its configuration.
+   *
+   * If `options` is a single value instead of an array, then that value will be used to configure all of
+   * the listeners.)
    *
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
    */
@@ -58,6 +60,21 @@ interface FormObserver {
   disconnect(): void;
 }
 
+/*
+ * TODO: Generally survey the code to make sure it looks clean/clear/"finalized" before addressing these
+ * next 2 TODOs.
+ *
+ * UPDATE: From what we can tell from this file so far, this code seems reasonable and manageable.
+ * Hopefully readers of the code will be able to understand it pretty easily as well.
+ */
+
+// (1) TODO: Add `TypeError`s for invalid arguments to the various constructor overloads (ADD TESTS)
+
+/*
+ * (2) TODO: Update `observe`/`unobserve` to return a `boolean` indicating whether or not the `form` truly
+ * needed to be observed/unobserved. ALSO ADD A WRITEUP ON WHY WE DID THIS. Do NOT return a `boolean`
+ * for the `disconnect` method; that would be unnecessary. (ADD TESTS)
+ */
 const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventType>> implements FormObserver {
   // Constructor-related Fields. Must be compatible with `document.addEventListener`
   #types: ReadonlyArray<EventType>;
@@ -65,7 +82,7 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
   #options?: ReadonlyArray<ListenerOptions>;
 
   // Other Fields
-  /** Contains references to all of the `HTMLFormElements` which are currently being observed. */
+  /** Contains references to all of the `HTMLFormElement`s which are currently being observed. */
   #observedForms = new Set<HTMLFormElement>();
 
   constructor(types: T, listeners: OneOrMany<FormFieldListener<EventType>>, options?: OneOrMany<ListenerOptions>) {
