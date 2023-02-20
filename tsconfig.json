@@ -8,7 +8,9 @@
     "declaration": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": false
+    "skipLibCheck": false,
+    "jsx": "react-jsx" // For Testing Only (currently)
   },
-  "include": ["src/**/*"]
+  // TODO: Split Jest Config out from final production bundle
+  "include": ["src/**/*", "jest.config.ts"]
 }

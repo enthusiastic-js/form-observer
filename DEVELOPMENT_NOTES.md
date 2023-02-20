@@ -151,3 +151,92 @@ Very losely speaking, you can look at TypeScript's logic like this:
 Because `listeners` is based on `U` and _not_ `T` (at least not directly), TypeScript can safely determine the _exact_ type for each `FormFieldListener` instead of trying to use `listeners` as a way to derive `T` (which previously resulted in TS getting confused and in TS generalizing `T` to `ReadonlyArray<EventType>` for the `listeners`).
 
 Hopefully between my original explanation and the list of bullet points that I gave, things make a little more sense. But if they don't, you can always play around with this code (or with similar code) [on your own](https://www.typescriptlang.org/play). I guarantee you'll understand this more if you get some hands-on experience.
+
+### What's Going on with [`FormObserver.test.tsx`](./src/__tests__/FormObserver.test.tsx)?
+
+There are a few testing patterns that I've employed in this file which are probably a little unusual. So I wanted to open you (and my future self) up to what I'm doing in this file, and _WHY_ I'm doing what I'm doing. I'll split these thoughts up into different sub sections.
+
+#### Excessive Setup and Excessive Setup-related Assertions before Running any Tests
+
+You'll notice that over 100 lines of code are given simply to _setting up_ the tests: creating constants, running assertions on those constants, creating assertion-guarded helper functions, etc. And someone may wonder, "Why all the hassle?" Well, the reasoning for the hassle is two fold:
+
+**First, I want a good and consistent developer experience _even for my tests_**.
+
+**Someone** has to maintain these tests. And _you_ as the reader, are obviously seeking to learn something from these tests if you're bothering to take the time to read them. Therefore, _everyone_ loses if the tests look awful, and everyone wins if the tests look great.
+
+A lot of the tests here end up doing the same thing: They render a form, they instantiate a `FormObserver`, they perform user interactions, and they run assertions. Sure, I could have each test use a uniquely rendered DOM, a `FormObserver` instantiated with unique arguments, and a multitude of unique user interactions. But this adds cognitive overhead for any developers trying to add/update tests. For _every_ test, they'd have to answer questions such as, "How many `form`s will I create?", "How many fields will I render for each `form`?", "What arguments should I pass to the `FormObserver` constructor?", "Should I try a different user interaction for this other test?", etc. All of these questions cause unnecessary mental strain and impede the development process.
+
+Additionally, that overhead which I just described also gets translated to all _readers_ of the test code. For _every_ test, readers will have to carefully look through the code to understand _what_ is being rendered to the DOM, what _kind_ of user interactions are being used, and more. And all of the unique values used will drastically increase the lines of code that readers will need to comprehend. Again, this is unnecessary mental strain.
+
+_Life is made much easier by creating global constants and helper functions_. By creating global constants and helpers, I'm saying, "Here is the general environment that you should expect to be working in for _all_ tests". Every developer will know what values to use for each test, every developer will know how to _setup_ each new test, and every _reader_ will understand how every test operates. Global constants and helpers should be leveraged in tests whenever they yield greater clarity.
+
+**Second, I want to _guard_ the experience of all developers (_even in my tests_) AND I want to guard the experience of my _users_**.
+
+Usually, it's redundant to "guard" the constants that you've created by running assertions on them. For instance, the following setup is redundant:
+
+```ts
+it("Does something", () => {
+  const testItems = ["one", 2, true];
+  expect(testItems).toHaveLength(3);
+});
+```
+
+The declaration of `testItems` itself already proves that it has a length of 3. Although I _could_ add the assertion, that would be redundant. This redundancy would increase the lines of code for the test and therefore increase the risk of adding cognitive overhead for readers. And this loss would be experienced without any real benefit. Generally speaking, we should avoid redundant assertions in our tests.
+
+However, there may be cases where these so called "redundant assertions" are helpful. Perhaps it isn't readily apparent from the name of your test and/or the name of your variables that you're trying to create a certain environment that _must_ be obeyed for this test to be reliable. In cases like these, assertions related to your test setup can be helpful. (Note that sometimes this problem can simply be solved with better test/variable names or with a test that's designed better. Nonetheless, sometimes setup-related assertions are helpful and even necessary for achieving this goal of "environment enforcement".)
+
+In the case of `FormObserver.test.tsx`, since I'm using global constants and helper functions that I expect to be used across **ALL** of the tests, I want to _enforce_ a reliable testing environment across **ALL** of the tests. Attempting to enforce the same proper environment in each individual test would result in duplicated lines of code. Therefore, all of these "environment-enforcing" assertions are moved to the `beforeAll` block and to the helper function blocks (whichever makes the most sense for a given assertion). Having this enforcement makes it apparent to all developers _what the expectations are_ for the test (both for those improving the tests and for those simply reading the code). The constants simply communicate, "Here's what to use for each test". The assertions go a step further by communicating, "Here is the environment within which you _must_ operate and within which you are _guaranteed_ to operate for each test."
+
+Enforcing a proper testing environment isn't only helpful for the developers on this project, but it's also helpful for the end users. The `FormObserver` class serves as the foundation for the _entire_ project. Every other kind of form-related observer which this project provides extends the `FormObserver`. And consequently, all of the integrations with frontend frameworks that this project provides _also_ depend on the `FormObserver`. The base `FormObserver` class is the most important class in this project. Therefore, guarding it heavily (with a _healthy_ amount of paranoia) even when it comes to test setup is in _everyone_'s best interest. Such heavy guarding also helps prevent the tests from being broken during updates (which, again, is in everyone's best interest).
+
+#### Conditional Assertions Based on the Current `testCase`
+
+You'll notice that the large majority of my tests are run in a [`describe.each`](https://jestjs.io/docs/api#describeeachtablename-fn-timeout) block. I've set things up this way to prove that each "variation" (or "overload") of the `FormObserver` satisfies the expected test criteria in its own way.
+
+The point of the `describe.each` block is to reduce code duplication. _All_ variations of the `FormObserver` will need to satisfy the same test criteria. Thus, we prefer
+
+```ts
+describe.each(["test-variation-1", "test-variation-2", "test-variation-3"])("Test variation: %s", (testVariation) => {
+  it("Does something", () => {
+    /* ... */
+  });
+});
+```
+
+over
+
+```ts
+describe("test-variation-1", () => {
+  it("Does something", () => {
+    /* ... */
+  });
+});
+
+describe("test-variation-2", () => {
+  it("Does something", () => {
+    /* ... */
+  });
+});
+
+describe("test-variation-3", () => {
+  it("Does something", () => {
+    /* ... */
+  });
+});
+```
+
+The former (i.e., the `describe.each` implementation) is especially advantageous as the number of tests increase _or_ the number of describe blocks increase. As you can probably tell, it has several benefits:
+
+1. **It enforces that all necessary tests are present**. With a `describe.each` block, we can enforce that the `"Does something"` test runs _and passes_ for every `describe` block generated by the testing loop. _Without_ a `describe.each` block, we would need to _remember_ to write each test _manually_ for each individual `describe` block.
+2. **It enforces consistent spelling and casing for all tests**. With a `describe.each` block, I can guarantee that a test named `"Does something"` is properly spelled and cased for every `describe` block generated by the testing loop. _Without_ `describe.each`, I would need to enforce spelling and casing _manually_ for this test in _every single `describe` block_. As the number of tests and `describe` blocks increase, this becomes a difficult, error-prone (and likely neglected) task.
+3. **It reduces code duplication**. Without using `describe.each`, you will duplicate code for every `describe` block you create, for every `it` (test) block you create, and very likely for every [setup-related] line of code that you write in each `it` block. The `describe.each` example that I showed above is 5 lines of code; the 2nd example is 17 lines of code -- more than **triple** the size of the `describe.each` implementation. The significance of this only increases as you add more lines of code, more `it` blocks, and _especially_ more `describe` blocks.
+4. **It keeps each test in one place**. Leveraging `describe.each` reduces the amount of scrolling that developers need to do to find the right test. To find the correct `"Does something"` test, developers only need to look in _one place_. This is obviously not the case with the 2nd example, where the developer would have to search in 3 places to find the correct test. The example that I showed earlier was pretty small and simple; but for a file with many `describe` blocks and many tests, it could be hard for a developer to find the `"Does something"` test in the `"test-variation-2"` description block.
+
+Unfortunately, because the implementation details of the `FormObserver` vary slightly depending on the constructor overload used, there are slight variations in how the tests need to be implemented in some cases. Because of this, I sometimes need to use conditional statements based on the current `testCase` (i.e., the current iteration of the `describe.each` loop) to know what kind of test implementation is needed for that specific `testCase`. I also need a `getFormObserverByTestCase` helper to make sure that the _right kind_ of `FormObserver` is instantiated for each `testCase`. As you can see, this isn't the most attractive approach to writing tests. Nonetheless, I've stuck with this approach because I believe it makes the most sense for my use case.
+
+Here are some alternatives I considered, and why I didn't go with them:
+
+1. **Ditch the `describe.each` block to avoid the awkward conditional statements**. We've already looked at a list of reasons for _why_ the `describe.each` block is far more advantageous than manually writing individual `describe` blocks with duplicated test names (or even completely duplicated tests). It's far less error prone to just use `describe.each`. And for some (if not all) of the tests, `describe.each` makes the code smaller and more readable. Given all of the shared test cases needed for the different variations of `FormObserver`, I simply _cannot_ take a non-looping approach.
+2. **Conjure up a way to write consistent tests _without_ the need for awkward conditional statements**. Doing this would require some kind of `for` or `forEach` loop, variables that allow us to use consistent names for all of our tests, and perhaps a function to simplify the test-structuring process. However, by the time you come up with such an implementation, you more or less end up with `describe.each`. The implementation _might_ be better. But even if it is, a newcoming developer (or my future self) will still need to _learn_ how that implementation works. `Jest` is already a familiar testing tool with clear documentation. It will be much easier for a new developer to adjust to `describe.each` than it will be for them to adjust to an edge-case spin-off of `describe.each`.
+
+If you think you know a better implementation for testing `FormObserver` whose mixture of pros and cons is more palitable than what's already present, then feel free to share it! :smile:

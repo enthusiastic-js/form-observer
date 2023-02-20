@@ -1,6 +1,12 @@
 {
   "env": { "browser": true, "node": true, "jest": true },
-  "extends": ["airbnb-base", "plugin:@typescript-eslint/recommended", "prettier"],
+  "extends": [
+    "airbnb-base",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:jest/recommended",
+    "plugin:testing-library/react",
+    "prettier"
+  ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": "latest",
@@ -19,6 +25,7 @@
     "lines-between-class-members": "off",
     "consistent-return": "off", // This is usually annoying, and TS works fine as long as return types are specified.
     "arrow-body-style": "off", // Done because of formatting. Use discretion on which type of function to use.
+    "no-unreachable": "error",
 
     // TypeScript Configurations
     "@typescript-eslint/no-explicit-any": "error",
@@ -40,5 +47,8 @@
     // Import
     "import/extensions": ["error", "ignorePackages", { "js": "always", "ts": "never", "d.ts": "never" }],
     "import/no-unresolved": "off" // Let TypeScript handle import resolution
-  }
+  },
+  "overrides": [
+    { "files": "**/__tests__/**/*.test.ts?(x)", "rules": { "no-await-in-loop": "off", "no-restricted-syntax": "off" } }
+  ]
 }

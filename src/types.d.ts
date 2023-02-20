@@ -20,3 +20,6 @@ export type EventType = keyof DocumentEventMap;
 export type FormFieldEvent<T extends EventType> = DocumentEventMap[T] & { target: FormField };
 export type FormFieldListener<T extends EventType> = (event: FormFieldEvent<T>) => unknown;
 export type ListenerOptions = Parameters<typeof document.addEventListener>[2];
+export type TypesToListeners<A extends ReadonlyArray<EventType>> = A extends infer U extends ReadonlyArray<EventType>
+  ? { [I in keyof U]: FormFieldListener<U[I]> }
+  : never;

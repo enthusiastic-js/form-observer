@@ -1,8 +1,4 @@
-import type { EventType, FormFieldListener, ListenerOptions, OneOrMany } from "./types";
-
-type TypesToListeners<A extends ReadonlyArray<EventType>> = A extends infer U extends ReadonlyArray<EventType>
-  ? { [I in keyof U]: FormFieldListener<U[I]> }
-  : never;
+import type { EventType, FormFieldListener, ListenerOptions, TypesToListeners, OneOrMany } from "./types";
 
 interface FormObserverConstructor {
   /**
@@ -162,15 +158,3 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
 };
 
 export default FormObserver;
-
-// TODO: Delete this code. These are just checks to make sure the types work as expected.
-const typeArg = ["input", "cancel"] as const;
-const satisfied = ["change", "submit"] satisfies (keyof DocumentEventMap)[];
-const singleVal = ["input"];
-const nani = new FormObserver("beforeinput", (event) => {}, {});
-const halb2 = new FormObserver(["input", "cancel"] as const, (event) => {}, {});
-const halb3 = new FormObserver(["input", "cancel"] as const, [() => {}, () => {}], []); // Options as array
-const halb4 = new FormObserver(["input", "cancel"] as const, [() => {}, () => {}], {}); // Options as object
-const jeep = new FormObserver(["input", "cancel"], () => {}, {});
-const jeep2 = new FormObserver(["input", "cancel"], [() => {}, () => {}], []); // Options as array
-const jeep3 = new FormObserver(["input", "cancel"], [() => {}, () => {}], {}); // Options as object
