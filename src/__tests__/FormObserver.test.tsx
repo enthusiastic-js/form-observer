@@ -133,6 +133,71 @@ describe("Form Observer (Class)", () => {
   /* ---------------------------------------- Run Tests ---------------------------------------- */
   /* -------------------- Shared Test Cases -------------------- */
   describe.each(testCases)("%s", (testCase) => {
+    describe("constructor", () => {
+      it("Requires a valid configuration during instantiation", () => {
+        // Define Errors
+        const badEventTypes = new TypeError(
+          "You must provide a `string` or an `array` of strings for the event `types`."
+        );
+
+        const badListenerForSingleEventType = new TypeError(
+          "The `listener` must be a `function` when `types` is a `string`."
+        );
+
+        const badListenersForEventTypesArray = new TypeError(
+          "The `listeners` must be a `function` or an `array` of functions when `types` is an `array`."
+        );
+
+        const typesListenersMismatch = new TypeError(
+          "The `listeners` array must have the same length as the `types` array."
+        );
+
+        // Run Error Checks
+        // @ts-expect-error -- Testing an invalid constructor
+        expect(() => new FormObserver()).toThrow(badEventTypes);
+
+        // Single Type, Single Listener, Single Options
+        if (testCase === testCases[0]) {
+          /* eslint-disable jest/no-conditional-expect */
+          // @ts-expect-error -- Testing an invalid constructor
+          expect(() => new FormObserver(1)).toThrow(badEventTypes);
+
+          // @ts-expect-error -- Testing an invalid constructor
+          expect(() => new FormObserver(types[0], [])).toThrow(badListenerForSingleEventType);
+          expect(() => getFormObserverByTestCase(testCase)).not.toThrow();
+          /* eslint-enable jest/no-conditional-expect */
+        }
+        // Multiple Types, Single Listener, Single Options
+        else if (testCase === testCases[1]) {
+          /* eslint-disable jest/no-conditional-expect */
+          // @ts-expect-error -- Testing an invalid constructor
+          expect(() => new FormObserver([1])).toThrow(badEventTypes);
+
+          // @ts-expect-error -- Testing an invalid constructor
+          expect(() => new FormObserver(types, {})).toThrow(badListenersForEventTypesArray);
+          expect(() => getFormObserverByTestCase(testCase)).not.toThrow();
+          /* eslint-enable jest/no-conditional-expect */
+        }
+        // Multiple Types, Multiple Listeners, Multiple Options
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        else if (testCase === testCases[2]) {
+          /* eslint-disable jest/no-conditional-expect */
+          // @ts-expect-error -- Testing an invalid constructor
+          expect(() => new FormObserver([1])).toThrow(badEventTypes);
+
+          // @ts-expect-error -- Testing an invalid constructor
+          expect(() => new FormObserver(types, [{}, {}])).toThrow(badListenersForEventTypesArray);
+
+          // @ts-expect-error -- Testing an invalid constructor
+          expect(() => new FormObserver(types, [() => undefined])).toThrow(typesListenersMismatch);
+          expect(() => getFormObserverByTestCase(testCase)).not.toThrow();
+          /* eslint-enable jest/no-conditional-expect */
+        }
+        // Guard against invalid test cases
+        else throwUnsupportedTestCaseError(testCase);
+      });
+    });
+
     describe("observe (Method)", () => {
       it("Throws a `TypeError` when anything other than a `form` is observed", async () => {
         const formObserver = getFormObserverByTestCase(testCase);

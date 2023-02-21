@@ -74,7 +74,6 @@ interface FormObserver {
   disconnect(): void;
 }
 
-// TODO: Add `TypeError`s for invalid arguments to the various constructor overloads (ADD TESTS)
 const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventType>> implements FormObserver {
   // Constructor-related Fields. Must be compatible with `document.addEventListener`
   #types: ReadonlyArray<EventType>;
@@ -99,13 +98,17 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
     };
 
     /* -------------------- Constructor Logic -------------------- */
+    assertEventTypesAreValid(types);
     if (!(types instanceof Array)) {
+      assertValidListenerForSingleEventType(listeners);
+
       this.#types = [types];
       this.#listeners = enhanceListeners(listeners);
       if (options) this.#options = [options as ListenerOptions];
       return;
     }
 
+    assertValidListenersForMultipleEventTypes(types, listeners);
     if (!(listeners instanceof Array)) {
       this.#types = types;
       this.#listeners = enhanceListeners(listeners);
@@ -177,5 +180,34 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
     this.#observedForms.forEach((form) => this.unobserve(form));
   }
 };
+
+function assertEventTypesAreValid(types: unknown): asserts types is OneOrMany<EventType> {
+  if (typeof types === "string") return;
+  if (types instanceof Array && types.every((t) => typeof t === "string")) return;
+
+  throw new TypeError("You must provide a `string` or an `array` of strings for the event `types`.");
+}
+
+function assertValidListenerForSingleEventType(listener: unknown): asserts listener is FormFieldListener<EventType> {
+  if (typeof listener === "function") return;
+  throw new TypeError("The `listener` must be a `function` when `types` is a `string`.");
+}
+
+function assertValidListenersForMultipleEventTypes(
+  types: ReadonlyArray<EventType>,
+  listeners: unknown
+): asserts listeners is OneOrMany<FormFieldListener<EventType>> {
+  if (!(listeners instanceof Array)) {
+    if (typeof listeners === "function") return;
+    throw new TypeError("The `listeners` must be a `function` or an `array` of functions when `types` is an `array`.");
+  }
+
+  if (listeners.some((l) => typeof l !== "function")) {
+    throw new TypeError("The `listeners` must be a `function` or an `array` of functions when `types` is an `array`.");
+  }
+
+  if (listeners.length === types.length) return;
+  throw new TypeError("The `listeners` array must have the same length as the `types` array.");
+}
 
 export default FormObserver;
