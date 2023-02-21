@@ -55,26 +55,26 @@ interface FormObserverConstructor {
 }
 
 interface FormObserver {
-  observe(form: HTMLFormElement): void;
-  unobserve(form: HTMLFormElement): void;
+  /**
+   * Instructs the observer to listen for events emitted from the provided `form`'s fields.
+   * The observer will only listen for events which match the types that were specified
+   * during its instantiation.
+   *
+   * @returns `true` if the `form` was not already being observed, and `false` otherwise.
+   */
+  observe(form: HTMLFormElement): boolean;
+
+  /**
+   * Stops the observer from listening for any events emitted from the provided `form`'s fields.
+   * @returns `true` if the `form` was originally being observed, and `false` otherwise.
+   */
+  unobserve(form: HTMLFormElement): boolean;
+
+  /** Stops the observer from listening for any events emitted from all form fields. */
   disconnect(): void;
 }
 
-/*
- * TODO: Generally survey the code to make sure it looks clean/clear/"finalized" before addressing these
- * next 2 TODOs.
- *
- * UPDATE: From what we can tell from this file so far, this code seems reasonable and manageable.
- * Hopefully readers of the code will be able to understand it pretty easily as well.
- */
-
-// (1) TODO: Add `TypeError`s for invalid arguments to the various constructor overloads (ADD TESTS)
-
-/*
- * (2) TODO: Update `observe`/`unobserve` to return a `boolean` indicating whether or not the `form` truly
- * needed to be observed/unobserved. ALSO ADD A WRITEUP ON WHY WE DID THIS. Do NOT return a `boolean`
- * for the `disconnect` method; that would be unnecessary. (ADD TESTS)
- */
+// TODO: Add `TypeError`s for invalid arguments to the various constructor overloads (ADD TESTS)
 const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventType>> implements FormObserver {
   // Constructor-related Fields. Must be compatible with `document.addEventListener`
   #types: ReadonlyArray<EventType>;
@@ -119,15 +119,15 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
     else this.#options = Array.from({ length: types.length }, () => options);
   }
 
-  observe(form: HTMLFormElement): void {
+  observe(form: HTMLFormElement): boolean {
     if (!(form instanceof HTMLFormElement)) {
       throw new TypeError(`Expected argument to be an instance of \`HTMLFormElement\`. Instead, received ${form}.`);
     }
 
-    if (this.#observedForms.has(form)) return; // Nothing to do
+    if (this.#observedForms.has(form)) return false; // Nothing to do
     this.#observedForms.add(form);
 
-    if (this.#observedForms.size > 1) return; // Listeners have already been attached
+    if (this.#observedForms.size > 1) return true; // Listeners have already been attached
 
     // First OR Second constructor overload was used
     if (this.#listeners.length === 1) {
@@ -142,17 +142,19 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
         form.ownerDocument.addEventListener(t, this.#listeners[i] as EventListener, this.#options?.[i]);
       });
     }
+
+    return true;
   }
 
-  unobserve(form: HTMLFormElement): void {
+  unobserve(form: HTMLFormElement): boolean {
     if (!(form instanceof HTMLFormElement)) {
       throw new TypeError(`Expected argument to be an instance of \`HTMLFormElement\`. Instead, received ${form}.`);
     }
 
-    if (!this.#observedForms.has(form)) return; // Nothing to do
+    if (!this.#observedForms.has(form)) return false; // Nothing to do
     this.#observedForms.delete(form);
 
-    if (this.#observedForms.size !== 0) return; // Some `form`s still need the attached listeners
+    if (this.#observedForms.size !== 0) return true; // Some `form`s still need the attached listeners
 
     // First OR Second constructor overload was used
     if (this.#listeners.length === 1) {
@@ -167,6 +169,8 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
         form.ownerDocument.removeEventListener(t, this.#listeners[i] as EventListener, this.#options?.[i]);
       });
     }
+
+    return true;
   }
 
   disconnect(): void {

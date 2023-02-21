@@ -250,6 +250,23 @@ describe("Form Observer (Class)", () => {
         }
       });
 
+      it("Returns `true` if the received `form` was NOT already being observed (and `false` otherwise)", () => {
+        const formObserver = getFormObserverByTestCase(testCase);
+        const { primaryForm, secondaryForm } = renderForms();
+
+        // Returns `true` because the `form`s were not originally being observed
+        expect(formObserver.observe(primaryForm)).toBe(true);
+        expect(formObserver.observe(secondaryForm)).toBe(true);
+
+        // Returns `false` because the `form`s were already being observed
+        expect(formObserver.observe(primaryForm)).toBe(false);
+        expect(formObserver.observe(secondaryForm)).toBe(false);
+
+        // Resets are also handled correctly.
+        formObserver.unobserve(primaryForm);
+        expect(formObserver.observe(primaryForm)).toBe(true);
+      });
+
       // Proof: `document.addEventListener` is not re-called when a `form` is already being observed
       it("Uses the same event listener(s) for all observed `form`s via `event delegation`", () => {
         const formObserver = getFormObserverByTestCase(testCase);
@@ -327,6 +344,22 @@ describe("Form Observer (Class)", () => {
           await userEvent.click(field);
           listeners.forEach((l) => expect(l).not.toHaveBeenCalled());
         }
+      });
+
+      it("Returns `true` if the received `form` WAS already being observed (and `false` otherwise)", () => {
+        const formObserver = getFormObserverByTestCase(testCase);
+        const { primaryForm, secondaryForm } = renderForms();
+
+        // Returns `false` because the `form`s were not originally being observed
+        expect(formObserver.unobserve(primaryForm)).toBe(false);
+        expect(formObserver.unobserve(secondaryForm)).toBe(false);
+
+        // Returns `true` because the `form`s were already being observed
+        formObserver.observe(primaryForm);
+        expect(formObserver.unobserve(primaryForm)).toBe(true);
+
+        formObserver.observe(secondaryForm);
+        expect(formObserver.unobserve(secondaryForm)).toBe(true);
       });
 
       it("Does not remove the `delegated` event listener(s) until ALL `form`s are unobserved", () => {
