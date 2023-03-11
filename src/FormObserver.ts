@@ -70,7 +70,7 @@ interface FormObserver {
    */
   unobserve(form: HTMLFormElement): boolean;
 
-  /** Stops the observer from listening for any events emitted from all form fields. */
+  /** Stops the observer from listening for any events emitted from all `form` fields. */
   disconnect(): void;
 }
 
