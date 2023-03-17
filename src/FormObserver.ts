@@ -1,3 +1,4 @@
+import { assertElementIsForm } from "./utils/assertions";
 import type { EventType, FormFieldListener, ListenerOptions, TypesToListeners, OneOrMany } from "./types";
 
 interface FormObserverConstructor {
@@ -123,10 +124,7 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
   }
 
   observe(form: HTMLFormElement): boolean {
-    if (!(form instanceof HTMLFormElement)) {
-      throw new TypeError(`Expected argument to be an instance of \`HTMLFormElement\`. Instead, received ${form}.`);
-    }
-
+    assertElementIsForm(form);
     if (this.#observedForms.has(form)) return false; // Nothing to do
     this.#observedForms.add(form);
 
@@ -150,10 +148,7 @@ const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventTyp
   }
 
   unobserve(form: HTMLFormElement): boolean {
-    if (!(form instanceof HTMLFormElement)) {
-      throw new TypeError(`Expected argument to be an instance of \`HTMLFormElement\`. Instead, received ${form}.`);
-    }
-
+    assertElementIsForm(form);
     if (!this.#observedForms.has(form)) return false; // Nothing to do
     this.#observedForms.delete(form);
 

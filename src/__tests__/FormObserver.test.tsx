@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom/extend-expect";
 import type { EventType, ListenerOptions, TypesToListeners } from "../types";
+import * as Assertions from "../utils/assertions";
 import FormObserver from "../FormObserver";
 
 describe("Form Observer (Class)", () => {
@@ -127,7 +128,7 @@ describe("Form Observer (Class)", () => {
 
   beforeEach(() => {
     jest.clearAllMocks(); // For our global mock `listeners`
-    jest.restoreAllMocks(); // For any `spies` on `document.*EventListener`
+    jest.restoreAllMocks(); // For any `spies` on `document.*EventListener` or the Assertion Utilities
   });
 
   /* ---------------------------------------- Run Tests ---------------------------------------- */
@@ -199,13 +200,13 @@ describe("Form Observer (Class)", () => {
     });
 
     describe("observe (Method)", () => {
-      it("Throws a `TypeError` when anything other than a `form` is observed", async () => {
+      it("Only allows a `form` to be observed", async () => {
         const formObserver = getFormObserverByTestCase(testCase);
         const { nonForm } = renderForms();
 
-        expect(() => formObserver.observe(nonForm as HTMLFormElement)).toThrow(
-          new TypeError(`Expected argument to be an instance of \`HTMLFormElement\`. Instead, received ${nonForm}.`)
-        );
+        jest.spyOn(Assertions, "assertElementIsForm");
+        expect(() => formObserver.observe(nonForm as HTMLFormElement)).toThrow();
+        expect(Assertions.assertElementIsForm).toHaveBeenNthCalledWith(1, nonForm);
       });
 
       /*
@@ -378,13 +379,13 @@ describe("Form Observer (Class)", () => {
     });
 
     describe("unobserve (Method)", () => {
-      it("Throws a `TypeError` when anything other than a `form` is unobserved", async () => {
+      it("Only allows a `form` to be unobserved", async () => {
         const formObserver = getFormObserverByTestCase(testCase);
         const { nonForm } = renderForms();
 
-        expect(() => formObserver.unobserve(nonForm as HTMLFormElement)).toThrow(
-          new TypeError(`Expected argument to be an instance of \`HTMLFormElement\`. Instead, received ${nonForm}.`)
-        );
+        jest.spyOn(Assertions, "assertElementIsForm");
+        expect(() => formObserver.unobserve(nonForm as HTMLFormElement)).toThrow();
+        expect(Assertions.assertElementIsForm).toHaveBeenNthCalledWith(1, nonForm);
       });
 
       it("Does nothing with a `form` that isn't currently being observed", () => {

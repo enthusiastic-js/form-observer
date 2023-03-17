@@ -1,4 +1,5 @@
 import FormObserver from "./FormObserver";
+import { assertElementIsForm } from "./utils/assertions";
 import type { OneOrMany, EventType, FormFieldEvent, ListenerOptions, FormField } from "./types";
 
 /*
@@ -198,12 +199,6 @@ function eventListener(event: FormFieldEvent<EventType>): void {
 /** Derives the proper `localStorage` key for a given `form`'s field */
 function getFieldKey(formName: string, fieldName: string): `form:${string}:${string}` {
   return `form:${formName || "global-scope"}:${fieldName}` as const;
-}
-
-/** TODO: Extract this utility from BOTH `FormObserver` AND `FormStorageObserver` into a `utils/assertions.ts` file */
-function assertElementIsForm(element: Element): asserts element is HTMLFormElement {
-  if (element instanceof HTMLFormElement) return;
-  throw new TypeError(`Expected argument to be an instance of \`HTMLFormElement\`. Instead, received ${element}.`);
 }
 
 export default FormStorageObserver;
