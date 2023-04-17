@@ -119,9 +119,7 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
     // Checkboxes
     if (field instanceof HTMLInputElement && field.type === "checkbox") field.checked = storedValue as boolean;
     // Multi-Selects
-    else if (field instanceof HTMLSelectElement && field.multiple) {
-      if (!Array.isArray(storedValue)) return; // Only used for type casting
-
+    else if (field instanceof HTMLSelectElement && field.multiple && Array.isArray(storedValue)) {
       // Loop over the `options` as long as there are stored values to read
       let brokenAt: number | undefined;
       for (let i = 0; i < field.options.length; i++) {

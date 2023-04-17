@@ -18,3 +18,9 @@ We haven't come up with "official" or even "semi-official" documentation for thi
 ```
 
 then `form.elements.namedItem(NAME_IDENTIFIER)`/`form.elements[NAME_IDENTIFIER]` will erroneously return a `RadioNodeList` instead of returning the individual non-radio-button input fields. It seems that whenever `form.elements` contains items that appear to have "similar identifiers" (whether `name` _or_ `id`), that group is automatically marked as a `RadioNodeList` even if it isn't. We need to make developers aware of this potential pitfall when using the `FormStorageObserver`. Though, to be fair, this is more so a problem with the language (and/or the developer's markup) than it necessarily is with how `FormStorageObserver` approaches things.
+
+## TODO: Warnings about `FormStorageObserver.clear` When It Comes to Conditionally-rendered Fields
+
+We need to make sure end developers take into account that toggleable fields will have an odd experience with this. If a field is missing from the form at the moment that a form's data is cleared (using the `HTMLFormElement`-only overload), then that missing fields' data will not be cleared. There's no (clean) way for us to resolve this since `localStorage` doesn't accept things like `RegExp` (if we wanted to search `localStorage` based on a `form`'s name alone). So the end developer would need to take responsibility for this on their own. They'll have to clear each individual field that is "toggleable" from `localStorage` whenever they want to clear an entire form's data. The easier solution to this problem is to render ALL fields at ALL times and to only use CSS or the `hidden` HTML attribute to hide fields as needed (as opposed to conditionally rendering the field to the DOM). This would negate the problem we just described entirely.
+
+In any case. We need to add documentation on how to go about this. There's a CSS option, an HTML option, and various JS options (only give an example of one).

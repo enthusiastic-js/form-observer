@@ -50,6 +50,15 @@
     "import/no-unresolved": "off" // Let TypeScript handle import resolution
   },
   "overrides": [
-    { "files": "**/__tests__/**/*.test.ts?(x)", "rules": { "no-await-in-loop": "off", "no-restricted-syntax": "off" } }
+    {
+      "files": "**/__tests__/**/*.test.ts?(x)",
+      "rules": {
+        "no-await-in-loop": "off",
+        "no-restricted-syntax": "off",
+
+        // Import
+        "import/no-extraneous-dependencies": ["error", { "devDependencies": true }]
+      }
+    }
   ]
 }
