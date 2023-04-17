@@ -106,6 +106,9 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
     if (field instanceof HTMLFieldSetElement) return;
     if (field instanceof HTMLOutputElement) return;
     if (field instanceof HTMLObjectElement) return;
+    if (field instanceof HTMLInputElement) {
+      if (field.type === "password" || field.type === "hidden" || field.type === "file") return;
+    }
 
     const storedValueString = localStorage.getItem(getFieldKey(form.name, name));
     if (!storedValueString) return; // No value was stored for this field
