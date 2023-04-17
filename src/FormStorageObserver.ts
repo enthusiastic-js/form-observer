@@ -179,9 +179,11 @@ function eventListener(event: FormFieldEvent<EventType>): void {
   const form = field.form as HTMLFormElement;
   const scope = getFieldKey(form.name, field.name);
 
-  // Multi-Selects
+  // Multiselects
   if (field instanceof HTMLSelectElement && field.multiple) {
-    const values = Array.from(field.selectedOptions).map((option) => option.value);
+    const values: string[] = [];
+    for (let i = 0; i < field.selectedOptions.length; i += 1) values.push(field.selectedOptions[i].value);
+
     localStorage.setItem(scope, JSON.stringify(values));
     return;
   }
