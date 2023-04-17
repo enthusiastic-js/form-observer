@@ -92,12 +92,13 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
 
     // Require that the provided `name` matches the name of the form field
     if (!(field instanceof RadioNodeList) && field.name !== name) {
+      /*
+       * NOTE: We currently aren't protecting the end developer from accidentally creating a `RadioNodeList` by
+       * mismatching different elements' `id`s and `name`s. Such a check would be too expensive (or it would require a
+       * "development mode" feature, which also takes effort); but the docs should at least have warnings about this.
+       */
       const err = `Expected to find a field with name "${name}", but instead found a field with name "${field.name}".`;
-
-      const hint = field.name
-        ? "Did you accidentally give this field an `id` that matches the `name` of a different element?"
-        : "Did you forget to give this field a `name` attribute?";
-
+      const hint = "Did you accidentally provide your field's `id` instead of your field's `name`?";
       throw new Error(`${err} ${hint}`);
     }
 
