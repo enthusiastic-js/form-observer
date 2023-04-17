@@ -88,7 +88,7 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
     if (name === "") return; // Empty strings represent unnamed fields and are not allowed
 
     const field = form.elements.namedItem(name) as FormField | RadioNodeList | null;
-    if (!field) return; // Nothing to load
+    if (!field) return; // No field to load data into
 
     // Require that the provided `name` matches the name of the form field
     if (!(field instanceof RadioNodeList) && field.name !== name) {
@@ -154,10 +154,10 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
   static clear(form: HTMLFormElement, name?: string): void {
     assertElementIsForm(form);
 
-    // 1st Overload
+    // 2nd Overload
     if (name) return localStorage.removeItem(getFieldKey(form.name, name));
 
-    // 2nd Overload
+    // 1st Overload
     for (let i = 0; i < form.elements.length; i += 1) {
       const field = form.elements[i] as FormField;
       if (field.name) localStorage.removeItem(getFieldKey(form.name, field.name));
