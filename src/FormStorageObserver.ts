@@ -75,7 +75,7 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
 
     /* -------------------- 1st Overload -------------------- */
     if (name == null) {
-      for (let i = 0; i < form.elements.length; i += 1) {
+      for (let i = 0; i < form.elements.length; i++) {
         const field = form.elements[i] as FormField;
         if (field.name) FormStorageObserver.load(form, field.name);
       }
@@ -123,7 +123,7 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
 
       // Loop over the `options` as long as there are stored values to read
       let brokenAt: number | undefined;
-      for (let i = 0; i < field.options.length; i += 1) {
+      for (let i = 0; i < field.options.length; i++) {
         if (!storedValue.length) {
           brokenAt = i;
           break;
@@ -137,7 +137,7 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
       }
 
       // Deselect all remaining `options` after the stored values are emptied
-      for (let i = brokenAt as number; i < field.options.length; i += 1) field.options[i].selected = false;
+      for (let i = brokenAt as number; i < field.options.length; i++) field.options[i].selected = false;
     }
     // Other Form Fields
     else field.value = storedValue as string;
@@ -158,7 +158,7 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
     if (name) return localStorage.removeItem(getFieldKey(form.name, name));
 
     // 1st Overload
-    for (let i = 0; i < form.elements.length; i += 1) {
+    for (let i = 0; i < form.elements.length; i++) {
       const field = form.elements[i] as FormField;
       if (field.name) localStorage.removeItem(getFieldKey(form.name, field.name));
     }
@@ -182,7 +182,7 @@ function eventListener(event: FormFieldEvent<EventType>): void {
   // Multiselects
   if (field instanceof HTMLSelectElement && field.multiple) {
     const values: string[] = [];
-    for (let i = 0; i < field.selectedOptions.length; i += 1) values.push(field.selectedOptions[i].value);
+    for (let i = 0; i < field.selectedOptions.length; i++) values.push(field.selectedOptions[i].value);
 
     localStorage.setItem(scope, JSON.stringify(values));
     return;
