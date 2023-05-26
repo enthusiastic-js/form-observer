@@ -77,13 +77,13 @@ interface FormObserver {
 
 const FormObserver: FormObserverConstructor = class<T extends OneOrMany<EventType>> implements FormObserver {
   // Constructor-related Fields. Must be compatible with `document.addEventListener`
-  #types: ReadonlyArray<EventType>;
-  #listeners: ReadonlyArray<FormFieldListener<EventType>>;
-  #options?: ReadonlyArray<ListenerOptions>;
+  readonly #types: ReadonlyArray<EventType>;
+  readonly #listeners: ReadonlyArray<FormFieldListener<EventType>>;
+  readonly #options?: ReadonlyArray<ListenerOptions>;
 
   // Other Fields
   /** Contains references to all of the `HTMLFormElement`s which are currently being observed. */
-  #observedForms = new Set<HTMLFormElement>();
+  readonly #observedForms = new Set<HTMLFormElement>();
 
   constructor(types: T, listeners: OneOrMany<FormFieldListener<EventType>>, options?: OneOrMany<ListenerOptions>) {
     /* -------------------- Internal Helpers -------------------- */

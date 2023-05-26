@@ -56,7 +56,7 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Necessary due to a restriction in TS
   extends FormObserver<any>
 {
-  #manual?: boolean;
+  readonly #manual?: boolean;
   constructor(types: T, { manual, eventListenerOpts }: FormStorageObserverOptions = {}) {
     super(types, eventListener, eventListenerOpts);
     this.#manual = manual;
