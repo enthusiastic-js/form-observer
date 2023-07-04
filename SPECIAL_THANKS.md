@@ -8,8 +8,12 @@ Appreciation should be in assending order
   - TypeScript specifically
   - Testing Library specifically
 - jcalz [(StackOverflow)](https://stackoverflow.com/users/2887218/jcalz), [(GitHub)](https://github.com/jcalz) for his random TypeScript help visible on the internet
+- [marioalexsan](https://github.com/Marioalexsan) for helping me with run design decision ideas by him.
+- [Chris Ferdinandi](https://gomakethings.com/about/) --> Understanding event delegation, which led to this idea
 - Kent C. Dodds (testing knowledge, Testing Library pioneer, react knowledge, etc.)
 - The guy who taught us event delegation
 - React Hook Form was an inspiration
 - MojoTech's MojoTime
 - The Lord Jesus Christ
+
+What is a man on his own? I will give thanks to God, and I will honor those who have helped me accomplish this feat.

@@ -27,6 +27,8 @@
     "arrow-body-style": "off", // Done because of formatting. Use discretion on which type of function to use.
     "no-unreachable": "error",
     "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }],
+    "no-return-assign": ["error", "except-parens"],
+    "no-continue": "off", // Useful for keeping conditional logic in `for` loops simpler (similar to early `return`)
 
     // TypeScript Configurations
     "@typescript-eslint/no-explicit-any": "error",
