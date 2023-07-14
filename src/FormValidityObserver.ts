@@ -74,8 +74,8 @@ interface FormValidityObserver extends FormObserver {
   register(name: string, errorMessages: ValidationErrors): void;
 
   /**
-   * Validates the form fields specified in the list of field `names`. If no list is provided
-   * (or the provided list is empty), then _all_ of the observed form's fields will be validated.
+   * Validates the form fields specified in the list of field `names`. If no list is provided,
+   * then _all_ of the observed form's fields will be validated.
    *
    * Runs asynchronously if _any_ of the _validated_ fields uses an asynchronous function for the
    * {@link ValidationErrors.validate validate} constraint. Runs synchronously otherwise.
