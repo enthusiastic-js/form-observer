@@ -8,7 +8,7 @@ const attrs = { "aria-describedby": "aria-describedby", "aria-invalid": "aria-in
 type ErrorMessage = string | ((field: FormField) => string);
 type ErrorDetails = ErrorMessage | { render?: boolean; message: ErrorMessage };
 
-/** The error messages to display in the various conditions where a field fails validation. */
+/** The errors to display to the user in the various situations where a field fails validation. */
 interface ValidationErrors {
   // Standard HTML Attributes
   required?: ErrorDetails;
@@ -20,9 +20,15 @@ interface ValidationErrors {
   type?: ErrorDetails;
   pattern?: ErrorDetails;
 
-  // Custom Rule Properties
-  badInput?: ErrorDetails; // Based on Standardized `ValidityState.badInput`
-  validate?(field: FormField): void | ErrorDetails | Promise<void | ErrorDetails>; // User-defined Validation
+  // Custom Validation Properties
+  /**
+   * The error to display when the user's input is malformed, such as an incomplete date.
+   * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/ValidityState/badInput ValidityState.badInput}
+   */
+  badinput?: ErrorDetails;
+
+  /** A function that runs custom validation logic for a field. This validation is always run _last_. */
+  validate?(field: FormField): void | ErrorDetails | Promise<void | ErrorDetails>;
 }
 
 interface FormValidityObserverConstructor {
@@ -39,8 +45,7 @@ interface FormValidityObserverConstructor {
 interface FormValidityObserverOptions {
   /**
    * The `addEventListener` options to use for the observer's event listener.
-   *
-   * See {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
+   * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
    */
   eventListenerOpts?: ListenerOptions;
 }
@@ -50,43 +55,54 @@ interface FormValidityObserver extends FormObserver {
 
   // New Methods
   /**
-   * Specifies the error messages to use when a form field fails validation
+   * Specifies the error messages to display for a form field's validation constraints. If an error message
+   * is not provided for a validation constraint, then the browser's default error message for that constraint
+   * will be used instead.
    *
-   * @param name The name of the registered form field
-   * @param errorMessages
+   * Note: If the field is _only_ using the browser's default error messages, it does _not_ need to be `register`ed.
+   *
+   * @param name The `name` of the form field
+   * @param errorMessages A `key`-`value` pair of validation constraints (key) and their corresponding
+   * error messages (value)
+   *
+   * @example
+   * // If the field is empty, the error will display: "You must provide a credit card number".
+   * // If the field is too long, the error will display the browser's `tooLong` error string.
+   * // If the field passes all of its validation constraints, no error message will be shown.
+   * register("credit-card", { required: "You must provide a credit card number". })
    */
-  register(name: string, errorMessages?: ValidationErrors): void;
+  register(name: string, errorMessages: ValidationErrors): void;
 
   /**
    * Validates the form fields specified in the list of field `names`. If no list is provided
-   * (or the list is empty), then _all_ of the observed form's registered fields are validated.
+   * (or the provided list is empty), then _all_ of the observed form's fields will be validated.
    *
-   * Runs asynchronously if _any_ of the _validated_ fields uses an asynchronous function for the `validate` rule.
-   * Runs synchronously otherwise.
+   * Runs asynchronously if _any_ of the _validated_ fields uses an asynchronous function for the
+   * {@link ValidationErrors.validate validate} constraint. Runs synchronously otherwise.
    * @param names
    *
-   * @returns `true` if _all_ of the _validated_ fields pass validation and `false` otherwise
+   * @returns `true` if _all_ of the _validated_ fields pass validation and `false` otherwise.
    */
   validateFields(names?: string[]): boolean | Promise<boolean>;
 
   /**
    * Validates the form field with the specified `name`.
    *
-   * Runs asynchronously for fields whose `validate` rule is an asynchronous function.
-   * Runs synchronously otherwise.
+   * Runs asynchronously for fields whose {@link ValidationErrors.validate validate} constraint is
+   * an asynchronous function. Runs synchronously otherwise.
    *
    * @param name
-   * @returns A boolean indicating whether validation passed (`true`) or failed (`false`).
+   * @returns `true` if the field passes validation and `false` otherwise.
    */
   validateField(name: string): boolean | Promise<boolean>;
 
   /**
    * Marks the form field with the specified `name` as invalid (`[aria-invalid="true"]`)
-   * and applies an error message to it.
+   * and applies the provided error `message` to it.
    *
    * @param name The name of the invalid form field
    * @param message The error message to apply to the invalid form field
-   * @param render When `true`, the error `message` will be rendered to the DOM as HTML instead of as a raw string
+   * @param render When `true`, the error `message` will be rendered to the DOM as HTML instead of a raw string
    */
   setFieldError(name: string, message: ErrorMessage, render?: boolean): void;
 
@@ -105,7 +121,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
   /** The `form` currently being observed by the `FormValidityObserver` */
   #form?: HTMLFormElement;
 
-  /** The {@link register}ed error messages for the various fields of the observed `form` */
+  /** The {@link register}ed error messages for the various fields belonging to the observed `form` */
   #errorMessagesByFieldName: Record<string, ValidationErrors> = {};
 
   constructor(types: T, { eventListenerOpts }: FormValidityObserverOptions = {}) {
@@ -186,7 +202,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
       return Boolean(this.setFieldError(name, ...this.#getErrorDetailsFor(field, "pattern")));
 
     // Attribute-independent Errors
-    if (validity.badInput) return Boolean(this.setFieldError(name, ...this.#getErrorDetailsFor(field, "badInput")));
+    if (validity.badInput) return Boolean(this.setFieldError(name, ...this.#getErrorDetailsFor(field, "badinput")));
 
     // User-driven Validation (MUST BE DONE LAST)
     const errorOrPromise = this.#errorMessagesByFieldName[name].validate?.(field);
@@ -204,7 +220,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
    */
   #getErrorDetailsFor(field: FormField, rule: Exclude<keyof ValidationErrors, "validate">): [ErrorMessage, boolean] {
     const err = this.#errorMessagesByFieldName[field.name][rule];
-    return typeof err === "object" ? [err.message, err.render ?? false] : [err ?? field.validationMessage, false];
+    return typeof err === "object" ? [err.message, err.render ?? false] : [err || field.validationMessage, false];
   }
 
   /**
@@ -273,7 +289,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
   }
 
   // TODO: Do we NEED to require registration if fields can have default error messages?
-  register(name: string, errorMessages: ValidationErrors = {}): void {
+  register(name: string, errorMessages: ValidationErrors): void {
     if (typeof window === "undefined") return;
     this.#errorMessagesByFieldName[name] = errorMessages;
 
@@ -289,7 +305,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
 
     for (let i = 0; i < rules.length; i++) {
       const rule = rules[i];
-      if (rule === "badInput" || rule === "validate") continue; // Only check standard HTML field attributes
+      if (rule === "badinput" || rule === "validate") continue; // Only check standard HTML field attributes
       if (errorMessages[rule] === undefined) continue;
 
       // Warn devs about fields whose attributes are out of sync with their corresponding rules
@@ -369,4 +385,10 @@ export default FormValidityObserver;
  * technically does its own thing.
  *  --> EDIT: Perhaps more accurately... `register` is just saying, "Please register THESE error messages as
  *      overrides for what the browser will already do automatically..."
+ */
+
+/*
+ * TODO: Calling `FormValidityObserver.register` implies that the user has custom error messages that they
+ * want to display _instead of_ the browser's custom error messages. Therefore, the `errorMessages` argument
+ * is now required.
  */
