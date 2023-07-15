@@ -10,3 +10,14 @@
 - [ ] Maybe we should have a "potential pitfalls" or "pro tips" section?
   - [ ] For example, anyone who extends the `FormObserver` should probably use arrow functions for event handlers if they ever want to use `this` ... It will make life much easier.
   - [ ] In a similar vein, should we add a warning that radio buttons must be semantically correct in order for them to participate in field validation? This really shouldn't be an issue; but since this isn't enforced by React (due to state), some people may need to know this. This would basically just mean that radios belonging to the same group would need to share a common `name`.
+- [ ] TODO: We're doing something wrong with how we're setting up **ALL** of the `FormObserver` classes that's causing JS (or at least _TS_) to wrongly think that the name for ALL of our classes is `_a`. It seems that, generally speaking, JS/TS can derive the correct name for an anonymous class. But in our case, the `name` won't be derived unless we explicitly supply it to the class declaration (which we can't, given all of the name clashing)... So ... What do we do? We'll figure that out later. Maybe migrating to JS docs will fix this problem too?
+
+## TypeScript
+
+- The [`@link`](https://jsdoc.app/tags-inline-link.html) JSDoc annotation is _really_ helpful for referencing internal names (e.g., a method/field belonging to the current class in which the comment is scoped). However, it seems to have some limitations in TypeScript. When an `interface` is used to define a name (e.g., `interface FormValidityObserver { /* ... */ }`) _and_ that same name is used as an anonymous class (e.g., `const FormValidityObserver = class { /* ... */ }`), the internal linking works within the anonymous class, but _it breaks inside the `interface`_. (Of the two, this is probably the better way for things to break.) Is this a bug in TypeScript? Should we open an issue? (... Is `implements` the problem? Would `satisfies` fix it?)
+  - Similarly, yet separately (and likely in this same scenario), we see that the physical overriden methods within the `FormValidityObserver` are inheriting the wrong JSDoc (AND they don't show the proper JSDocs when hovering over the method parameters). But the JSDocs for methods _are_ correct when the class is physically used/instantiated. Also potentially a bug? Should we open an issue for this?
+  - The end-developer's experience isn't really impacted by these problems... so we'll open these issues in the future.
+
+## Testing
+
+- Consider migrating away from `React Testing Library` in all `@form-observer/core` tests. Keyword: **consider**. It might be more work than it's worth, but it would technically embody the idea that the core package should work with pure JS.

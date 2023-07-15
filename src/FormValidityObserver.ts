@@ -51,9 +51,35 @@ interface FormValidityObserverOptions {
 }
 
 interface FormValidityObserver extends FormObserver {
-  // Parent Methods (for JSDoc overrides)
+  // PARENT METHODS (for JSDoc overrides)
+  /**
+   * Instructs the observer to watch the validity state of the provided `form`'s fields,
+   * and connects the `form` to the observer's validation functions.
+   *
+   * (Automated field validation will only occur when a field emits an event having a type
+   * that was specified during the observer's instantiation.)
+   *
+   * **Note: A `FormValidityObserver` can only watch 1 form at a time.**
+   *
+   * @returns `true` if the `form` was not already being observed, and `false` otherwise.
+   */
+  observe(form: HTMLFormElement): boolean;
 
-  // New Methods
+  /**
+   * Stops the observer from watching the validity state of the provided `form`'s fields, and
+   * disconnects the `form` from the observer's validation functions.
+   *
+   * @returns `true` if the `form` was originally being observed, and `false` otherwise.
+   */
+  unobserve(form: HTMLFormElement): boolean;
+
+  /**
+   * Behaves the same way as `unobserve`, but without the need to provide the currently-observed
+   * `form` as an argument.
+   */
+  disconnect(): void;
+
+  // NEW METHODS
   /**
    * Specifies the error messages to display for a form field's validation constraints. If an error message
    * is not provided for a validation constraint, then the browser's default error message for that constraint
@@ -122,7 +148,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
   #form?: HTMLFormElement;
 
   /** The {@link register}ed error messages for the various fields belonging to the observed `form` */
-  #errorMessagesByFieldName: Record<string, ValidationErrors> = {};
+  #errorMessagesByFieldName: Record<string, ValidationErrors | undefined> = {};
 
   constructor(types: T, { eventListenerOpts }: FormValidityObserverOptions = {}) {
     /** Event listener used to validate form fields in response to user interactions */
@@ -134,23 +160,32 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     super(types, eventListener, eventListenerOpts);
   }
 
-  // TODO: Need to only allow one form to be observed at a time. Clean up this method...
   observe(form: HTMLFormElement): boolean {
-    if (this.#form && form !== this.#form) {
-      throw new Error("A `FormValidityObserver` can only watch 1 form at a time.");
+    if (this.#form && form instanceof HTMLFormElement && form !== this.#form) {
+      // TODO: Figure out why `this.constructor.name` WRONGLY resolves to `_a`. Once fixed, use `name` instead.
+      throw new Error("A single `FormValidityObserver` can only watch 1 form at a time.");
     }
 
+    const newlyObserved = super.observe(form); // Run assertions and attach handlers before storing `form` locally
     this.#form = form;
-    return super.observe(form);
+    return newlyObserved;
   }
 
-  // TODO: Implement `unobserve` properly
   unobserve(form: HTMLFormElement): boolean {
-    if (form === this.#form) this.#errorMessagesByFieldName = {};
+    if (form === this.#form) {
+      this.#errorMessagesByFieldName = {};
+      this.#form = undefined;
+    }
+
     return super.unobserve(form);
   }
 
+  disconnect(): void {
+    if (this.#form) this.unobserve(this.#form);
+  }
+
   validateFields(names = Object.keys(this.#errorMessagesByFieldName)): boolean | Promise<boolean> {
+    assertFormExists(this.#form);
     let syncValidationPassed = true;
     let pendingValidations: Promise<boolean>[] | undefined;
 
@@ -205,7 +240,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     if (validity.badInput) return Boolean(this.setFieldError(name, ...this.#getErrorDetailsFor(field, "badinput")));
 
     // User-driven Validation (MUST BE DONE LAST)
-    const errorOrPromise = this.#errorMessagesByFieldName[name].validate?.(field);
+    const errorOrPromise = this.#errorMessagesByFieldName[name]?.validate?.(field);
     if (errorOrPromise instanceof Promise) return errorOrPromise.then((e) => this.#resolveCustomValidation(e, name));
     return this.#resolveCustomValidation(errorOrPromise, name);
   }
@@ -219,7 +254,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
    * @param rule
    */
   #getErrorDetailsFor(field: FormField, rule: Exclude<keyof ValidationErrors, "validate">): [ErrorMessage, boolean] {
-    const err = this.#errorMessagesByFieldName[field.name][rule];
+    const err = this.#errorMessagesByFieldName[field.name]?.[rule];
     return typeof err === "object" ? [err.message, err.render ?? false] : [err || field.validationMessage, false];
   }
 
