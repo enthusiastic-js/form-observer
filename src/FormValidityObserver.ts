@@ -237,7 +237,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
 
   validateField(name: string): boolean | Promise<boolean> {
     const field = this.#getTargetField(name);
-    if (!field) return false; // TODO: should we give a warning that the field doesn't exit? Same for other methods.
+    if (!field) return false; // TODO: should we give a warning that the field doesn't exist? Same for other methods.
 
     const { validity } = field;
     field.setCustomValidity(""); // Reset the custom error message in case a default browser error is displayed next.
@@ -267,17 +267,17 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
 
     // User-driven Validation (MUST BE DONE LAST)
     const errorOrPromise = this.#errorMessagesByFieldName[name]?.validate?.(field);
-    if (errorOrPromise instanceof Promise) return errorOrPromise.then((e) => this.#resolveCustomValidation(e, name));
-    return this.#resolveCustomValidation(errorOrPromise, name);
+    if (errorOrPromise instanceof Promise) return errorOrPromise.then((e) => this.#resolveCustomValidation(name, e));
+    return this.#resolveCustomValidation(name, errorOrPromise);
   }
 
-  // TODO: Improve JSDoc
   /**
-   * Internal helper function for {@link validateField}. Extracts the information from a `rule`'s `ErrorDetails`
-   * into a manageable tuple. Used primarily to create a simple, reusable way to pass data to {@link setFieldError}.
+   * **Internal** helper function for {@link validateField}. Extracts the error message settings related to a
+   * field's constraint (`rule`) into a manageable tuple. Used _strictly_ as a simple, reusable way
+   * to pass data to {@link setFieldError}.
    *
    * @param field
-   * @param rule
+   * @param rule The constraint for which the error message details should be retrieved
    */
   #getErrorDetailsFor(field: FormField, rule: Exclude<keyof ValidationErrors, "validate">): [ErrorMessage, boolean] {
     const err = this.#errorMessagesByFieldName[field.name]?.[rule];
@@ -285,16 +285,15 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
   }
 
   /**
-   * Internal helper for {@link validateField}. Serves as a reusable means to resolve errors returned
-   * from a custom validation function.
+   * **Internal** helper for {@link validateField}. Used _strictly_ as a reusable way to handle the result of
+   * a custom validation function.
    *
-   * @param error The `ErrorDetails` to apply to the `field`, if any
-   * @param fieldName The `name` of the field to which the `error` is applied
+   * @param fieldName The `name` of the `field` for which the custom validation was run
+   * @param error The error returned from the custom validation function, if any
    *
-   * @returns A `boolean` representing whether or not the `field` passed validation (`true`) or failed it (`false`)
+   * @returns `true` if the field passed validation (indicated by a falsy `error` value) and `false` otherwise.
    */
-  #resolveCustomValidation(error: ErrorDetails | void, fieldName: string): boolean {
-    // All Validatidation Succeeded. (Assumes custom validation was done LAST.)
+  #resolveCustomValidation(fieldName: string, error: ErrorDetails | void): boolean {
     if (!error) {
       this.clearFieldError(fieldName);
       return true;
