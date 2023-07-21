@@ -148,7 +148,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
   #form?: HTMLFormElement;
 
   /** The {@link register}ed error messages for the various fields belonging to the observed `form` */
-  #errorMessagesByFieldName: Record<string, ValidationErrors | undefined> = {};
+  #errorMessagesByFieldName: Map<string, ValidationErrors | undefined> = new Map();
 
   constructor(types: T, { eventListenerOpts }: FormValidityObserverOptions = {}) {
     /** Event listener used to validate form fields in response to user interactions */
@@ -173,7 +173,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
 
   unobserve(form: HTMLFormElement): boolean {
     if (form === this.#form) {
-      this.#errorMessagesByFieldName = {};
+      this.#errorMessagesByFieldName.clear();
       this.#form = undefined;
     }
 
@@ -276,7 +276,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     if (validity.badInput) return Boolean(this.setFieldError(name, ...this.#getErrorDetailsFor(field, "badinput")));
 
     // User-driven Validation (MUST BE DONE LAST)
-    const errorOrPromise = this.#errorMessagesByFieldName[name]?.validate?.(field);
+    const errorOrPromise = this.#errorMessagesByFieldName.get(name)?.validate?.(field);
     if (errorOrPromise instanceof Promise) return errorOrPromise.then((e) => this.#resolveCustomValidation(name, e));
     return this.#resolveCustomValidation(name, errorOrPromise);
   }
@@ -290,7 +290,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
    * @param rule The constraint for which the error message details should be retrieved
    */
   #getErrorDetailsFor(field: FormField, rule: Exclude<keyof ValidationErrors, "validate">): [ErrorMessage, boolean] {
-    const err = this.#errorMessagesByFieldName[field.name]?.[rule];
+    const err = this.#errorMessagesByFieldName.get(field.name)?.[rule];
     return typeof err === "object" ? [err.message, err.render ?? false] : [err || field.validationMessage, false];
   }
 
@@ -360,7 +360,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
 
   register(name: string, errorMessages: ValidationErrors): void {
     if (typeof window === "undefined") return;
-    this.#errorMessagesByFieldName[name] = errorMessages;
+    this.#errorMessagesByFieldName.set(name, errorMessages);
 
     // Exit early if no `form` has been observed yet. (This is mainly done for JS-framework implementations.)
     if (!this.#form) return;
