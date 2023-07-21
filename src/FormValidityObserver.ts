@@ -225,7 +225,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
   }
 
   /**
-   * **Internal** helper function for {@link validateFields}. Acts as a _reusable_ way to validate form
+   * **Internal** helper for {@link validateFields}. Acts as a _reusable_ way to validate form
    * fields iteratively while **updating the internal state** of {@link validateFields}
    * (i.e., `syncValidationPassed` and `pendingValidations`).
    *
@@ -282,7 +282,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
   }
 
   /**
-   * **Internal** helper function for {@link validateField}. Extracts the error message settings related to a
+   * **Internal** helper for {@link validateField}. Extracts the error message settings related to a
    * field's constraint (`rule`) into a manageable tuple. Used _strictly_ as a simple, reusable way
    * to pass data to {@link setFieldError}.
    *
@@ -337,7 +337,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
 
     /*
      * TODO: Maybe explain why we do support BOTH accessible errors AND native browser errors SIMULTANEOUSLY
-     * (native browser behavior)
+     * (it's because the native browser behavior will automatically cause an experience like this one)
      */
     // Raw String Variant
     if (errorElement) errorElement.textContent = error;
@@ -385,10 +385,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     }
   }
 
-  /**
-   * Returns the correct form field to use for a validation or error-handling action.
-   * Also asserts that a valid `form` is currently being `observe`d before allowing the caller to continue.
-   */
+  /** **Internal** helper. Returns the correct form field to use for a validation or error-handling action. */
   #getTargetField(name: string): FormField | null {
     assertFormExists(this.#form);
     const field = this.#form.elements.namedItem(name) as FormField | RadioNodeList | null;
