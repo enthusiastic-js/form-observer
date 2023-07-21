@@ -358,19 +358,18 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     field.setCustomValidity("");
   }
 
-  // TODO: Do we NEED to require registration if fields can have default error messages?
   register(name: string, errorMessages: ValidationErrors): void {
     if (typeof window === "undefined") return;
     this.#errorMessagesByFieldName[name] = errorMessages;
 
-    // Exit early if no `form` has been observed yet. This is mainly done for JS-framework implementations.
+    // Exit early if no `form` has been observed yet. (This is mainly done for JS-framework implementations.)
     if (!this.#form) return;
 
     // Verify that a valid field was registered
     const field = this.#getTargetField(name);
     if (!field) throw new Error(`No form field with the name "${name}" was found for registration.`);
 
-    // Compare rules with field attributes
+    // Warn devs about fields whose attributes are out of sync with their corresponding rules (constraints)
     const rules = Object.keys(errorMessages) as Array<keyof ValidationErrors>;
 
     for (let i = 0; i < rules.length; i++) {
@@ -378,7 +377,6 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
       if (rule === "badinput" || rule === "validate") continue; // Only check standard HTML field attributes
       if (errorMessages[rule] === undefined) continue;
 
-      // Warn devs about fields whose attributes are out of sync with their corresponding rules
       if (field.hasAttribute(rule)) continue;
       const err = `A field named "${name}" was registered with rule "${rule}" but lacks a corresponding attribute.`;
       throw new Error(err);
