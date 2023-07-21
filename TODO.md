@@ -12,6 +12,16 @@
   - [ ] In a similar vein, should we add a warning that radio buttons must be semantically correct in order for them to participate in field validation? This really shouldn't be an issue; but since this isn't enforced by React (due to state), some people may need to know this. This would basically just mean that radios belonging to the same group would need to share a common `name`.
 - [ ] TODO: We're doing something wrong with how we're setting up **ALL** of the `FormObserver` classes that's causing JS (or at least _TS_) to wrongly think that the name for ALL of our classes is `_a`. It seems that, generally speaking, JS/TS can derive the correct name for an anonymous class. But in our case, the `name` won't be derived unless we explicitly supply it to the class declaration (which we can't, given all of the name clashing)... So ... What do we do? We'll figure that out later. Maybe migrating to JS docs will fix this problem too?
 
+### `FormValidityObserver` Optimizations
+
+- [ ] Would it be helpful to have an `optimize` option for `FormValidityObserver` where the developer _promises_ to `register` all fields that they want validated (and `unregister` anything that later shouldn't be validated), so that we can loop over all of the registered field `name`s instead of looping over `form.elements` when `validateFields` is called without an argument?
+- [ ] Is there a way that we could call `form.checkValidity()` if **none** of the fields have a registered custom `validate` function? Would that be a meaningful performance boost (if any)? (If we did that, we might also need to add a `capture`d `invalid` event handler to make sure error messages are properly updated if needed.)
+  - **Note**: It may be sufficient/appropriate to delegate this to user land. Perhaps we could simply add documentation saying, "For a performance boost, if you don't have any custom `validate` functions, just use `form.checkValidity()`" or something like that. (This, again, is _assuming_ that `form.checkValidity()` yields a significant performance boost over `observer.validateFields()`. We need to test that.) If we go with this approach, we'd probably still need to register `invalid` event handlers. So we need to think about how we'd go about that if we want to go that route.
+
+### `FormValidityObserver` Potential Future Ideas/Features
+
+- [ ] Provide a way for users to specify the value of `aria-invalid` (e.g., `spelling`). Maybe we could do this through the `ValidationErrors` configuration? (**Note: This idea might not even be significant or truly needed.**)
+
 ## TypeScript
 
 - The [`@link`](https://jsdoc.app/tags-inline-link.html) JSDoc annotation is _really_ helpful for referencing internal names (e.g., a method/field belonging to the current class in which the comment is scoped). However, it seems to have some limitations in TypeScript. When an `interface` is used to define a name (e.g., `interface FormValidityObserver { /* ... */ }`) _and_ that same name is used as an anonymous class (e.g., `const FormValidityObserver = class { /* ... */ }`), the internal linking works within the anonymous class, but _it breaks inside the `interface`_. (Of the two, this is probably the better way for things to break.) Is this a bug in TypeScript? Should we open an issue? (... Is `implements` the problem? Would `satisfies` fix it?)

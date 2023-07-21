@@ -184,48 +184,37 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     if (this.#form) this.unobserve(this.#form);
   }
 
-  /*
-   * TODO: If the user doesn't `register` certain fields, how are we going to validate all of them here?
-   * ... We could loop over the `form`'s fields and create an `Array`/`Set` of `name`s... But wouldn't
-   * we have to do that every time `validateFields()` was called? ... Maybe we need to go back to
-   * require `register` for all fields, even if no error messages are being added...
-   *
-   * NOTE: It might be that there's no possible turning back from our new concept of `register` ...
-   * The thing is, our event handler will validate ALL of the observed form's fields EVEN IF
-   * some of them are unregistered. Technically we could tell the developer, "You need to register
-   * your field first"; but if they forget to do this, they'll get a slightly ambiguous error message.
-   * We could provided clearer error messaging, but that would require adding logic to check the
-   * `#errorMessagesByFieldName` proeprty. So... There are tradeoffs here. We could go back, but should we?
-   *
-   * EDIT (to NOTE above): See the concerns mentioned in the `TODO` ... A lookup that enforces that a field
-   * be registered might be more practical... Note that if we enforce this, we [probably] wouldn't need
-   * to add an assertion for registration to `validate` ... If a field doesn't partake in validation at
-   * all, maybe it doesn't need to be registered? In which case only doing optional chaining with `validate`
-   * instead of enforcing a call to `register` could be friendly...
-   *
-   * EDIT (to the EDIT above): But there are other complications if we require all fields to be registered...
-   * Will we have to check for registration on `EVERY` validation function? Do we want to incur that debt?
-   * Would it be better to just loop over `form.elements` right in this function while keeping a "local
-   * cache" of the field names that have already been validated? Idk... We really need to think on this.
-   * WELLLLL... if we NEEDED to enforce registration everywhere, we could probably do the enforcing from
-   * inside `#getTargetField`... that could work. Again, we need to think on this.
-   */
-  validateFields(names = Object.keys(this.#errorMessagesByFieldName)): boolean | Promise<boolean> {
+  validateFields(names?: string[]): boolean | Promise<boolean> {
     assertFormExists(this.#form);
-    let syncValidationPassed = true;
+    let syncValidationPassed = true as boolean; // eslint-disable-line prefer-const -- This value is mutated
     let pendingValidations: Promise<boolean>[] | undefined;
 
-    for (let i = 0; names.length; i++) {
-      const result = this.validateField(names[i]);
+    // Validate SPECIFIC fields
+    if (names) {
+      for (let i = 0; names.length; i++) this.#iterateField(names[i], syncValidationPassed, pendingValidations);
+    }
+    // Validate ALL fields
+    else {
+      const validatedFields = new Set<string>();
 
-      if (result === true) continue;
-      if (result === false) {
-        syncValidationPassed = false;
-        continue;
+      for (let i = 0; this.#form.elements.length; i++) {
+        const field = this.#form.elements[i] as FormField;
+        const { name } = field;
+
+        // Only `name`d fields that can participate in form validation are validated
+        if (!name || field instanceof HTMLOutputElement || field instanceof HTMLObjectElement) continue;
+        if (field instanceof HTMLFieldSetElement) continue; // See: https://github.com/whatwg/html/issues/6870
+
+        // Avoid validating the same `radiogroup` more than once
+        if (validatedFields.has(name)) {
+          const radiogroup = this.#form.elements.namedItem(name) as RadioNodeList;
+          i += radiogroup.length - 2; // Skip all remaining radio buttons
+          continue;
+        }
+
+        this.#iterateField(name, syncValidationPassed, pendingValidations);
+        validatedFields.add(name);
       }
-
-      if (pendingValidations) pendingValidations.push(result);
-      else pendingValidations = [result];
     }
 
     if (!pendingValidations) return syncValidationPassed;
@@ -233,6 +222,27 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     return Promise.allSettled(pendingValidations).then((results) => {
       return syncValidationPassed && results.every((r) => r.status === "fulfilled" && r.value === true);
     });
+  }
+
+  /**
+   * **Internal** helper function for {@link validateFields}. Acts as a _reusable_ way to validate form
+   * fields iteratively while **updating the internal state** of {@link validateFields}
+   * (i.e., `syncValidationPassed` and `pendingValidations`).
+   *
+   * @param name The `name` of the form field currently being iterated
+   * @param syncValidationPassed The internal `syncValidationPassed` state of {@link validateFields}
+   * @param pendingValidations The internal `pendingValidations` state of {@link validateFields}
+   */
+  #iterateField(name: string, syncValidationPassed: boolean, pendingValidations: Promise<boolean>[] | undefined): void {
+    const result = this.validateField(name);
+    if (result === true) return;
+    if (result === false) {
+      syncValidationPassed = false; // eslint-disable-line no-param-reassign -- Mutation is needed here
+      return;
+    }
+
+    if (pendingValidations) pendingValidations.push(result);
+    else pendingValidations = [result]; // eslint-disable-line no-param-reassign -- Mutation is needed here
   }
 
   validateField(name: string): boolean | Promise<boolean> {
