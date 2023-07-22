@@ -8,13 +8,13 @@ import FormValidityObserver from "../FormValidityObserver";
 
 describe("Form Validity Observer (Class)", () => {
   // Form Validity Observer Constants
-  const types = ["change", "focusout"] as const satisfies ReadonlyArray<EventType>;
+  const types = Object.freeze(["change", "focusout"] as const) satisfies ReadonlyArray<EventType>;
 
   /* ---------------------------------------- Global Helpers ---------------------------------------- */
   /** An `HTMLElement` that is able to partake in form field validation */
-  type ValidatedField = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+  type ValidatableField = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
-  function renderWithinForm(field: ValidatedField, useAccessibleError?: boolean): HTMLFormElement {
+  function renderWithinForm(field: ValidatableField, useAccessibleError?: boolean): HTMLFormElement {
     const form = document.createElement("form");
     form.setAttribute("aria-label", "Validated Form");
 
@@ -53,8 +53,6 @@ describe("Form Validity Observer (Class)", () => {
     // Reset anything that we've rendered to the DOM. (Without a JS Framework implementation, we must do this manually.)
     document.body.textContent = "";
   });
-
-  beforeEach(() => (document.body.textContent = ""));
 
   /* ---------------------------------------- Run Tests ---------------------------------------- */
   it("Is a child of the base `FormObserver` class", () => {
@@ -193,11 +191,11 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Resets the error messages for the provided `form`'s fields IF it was being observed", async () => {
         const errorMessage = "You owe me a value.";
+        const formValidityObserver = new FormValidityObserver(types);
         renderWithinForm(createElementWithProps("input", { name: "first-name", type: "text", required: true }));
 
         const form = screen.getByRole<HTMLFormElement>("form");
         const input = screen.getByRole<HTMLInputElement>("textbox");
-        const formValidityObserver = new FormValidityObserver(types);
 
         formValidityObserver.observe(form);
         formValidityObserver.register(input.name, { required: errorMessage });
@@ -213,13 +211,13 @@ describe("Form Validity Observer (Class)", () => {
         formValidityObserver.unobserve(form);
         formValidityObserver.observe(form);
 
-        // The old custom error messages are no longer in use because the connected `form` was unobserved
+        // The previous custom error messages are no longer in use because the connected `form` was unobserved
         await userEvent.type(input, "{Tab}");
         expect(input.validationMessage).not.toBe("");
         expect(input.validationMessage).not.toBe(errorMessage);
       });
 
-      it("Returns `true` if the received `form` WAS already being observed (and `false` otherwise)", () => {
+      it("Returns `true` if the received `form` was ALREADY being observed (and `false` otherwise)", () => {
         const form = document.createElement("form");
         const formValidityObserver = new FormValidityObserver(types);
 
