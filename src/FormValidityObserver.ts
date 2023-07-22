@@ -2,7 +2,7 @@ import FormObserver from "./FormObserver";
 import type { OneOrMany, EventType, FormFieldEvent, ListenerOptions, FormField } from "./types";
 
 const radiogroupSelector = "fieldset[role='radiogroup']";
-const attrs = { "aria-describedby": "aria-describedby", "aria-invalid": "aria-invalid" } as const;
+const attrs = Object.freeze({ "aria-describedby": "aria-describedby", "aria-invalid": "aria-invalid" });
 
 // TODO: Should we make `ErrorMessage`/`ErrorDetails` Generic so that we can also render JSX (instead of just strings)?
 type ErrorMessage = string | ((field: FormField) => string);
@@ -33,7 +33,7 @@ interface ValidationErrors {
 
 interface FormValidityObserverConstructor {
   /**
-   * Provides a way to validate an `HTMLFormElement`'s fields (and to display accessible errors for those fields)
+   * Provides a way to validate an `HTMLFormElement`'s fields (and to display _accessible_ errors for those fields)
    * in response to the events that the fields emit.
    *
    * @param types The type(s) of event(s) that trigger(s) form field validation.
@@ -53,10 +53,10 @@ interface FormValidityObserverOptions {
 interface FormValidityObserver extends FormObserver {
   // PARENT METHODS (for JSDoc overrides)
   /**
-   * Instructs the observer to watch the validity state of the provided `form`'s fields,
-   * and connects the `form` to the observer's validation functions.
+   * Instructs the observer to watch the validity state of the provided `form`'s fields.
+   * Also connects the `form` to the observer's validation functions.
    *
-   * (Automated field validation will only occur when a field emits an event having a type
+   * (_Automated_ field validation will only occur when a field emits an event having a type
    * that was specified during the observer's instantiation.)
    *
    * **Note: A `FormValidityObserver` can only watch 1 form at a time.**
@@ -66,8 +66,8 @@ interface FormValidityObserver extends FormObserver {
   observe(form: HTMLFormElement): boolean;
 
   /**
-   * Stops the observer from watching the validity state of the provided `form`'s fields, and
-   * disconnects the `form` from the observer's validation functions.
+   * Stops the observer from watching the validity state of the provided `form`'s fields.
+   * Also disconnects the `form` from the observer's validation functions.
    *
    * @returns `true` if the `form` was originally being observed, and `false` otherwise.
    */
@@ -225,7 +225,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
   }
 
   /**
-   * **Internal** helper for {@link validateFields}. Acts as a _reusable_ way to validate form
+   * **Internal** helper for {@link validateFields}. Acts _strictly_ as a _reusable_ way to validate form
    * fields iteratively while **updating the internal state** of {@link validateFields}
    * (i.e., `syncValidationPassed` and `pendingValidations`).
    *
@@ -327,7 +327,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     const error = typeof message === "function" ? message(field) : message;
     const errorElement = document.getElementById(radiogroupOrField.getAttribute(attrs["aria-describedby"]) as string);
 
-    // Custom HTML Variant
+    // Raw HTML Variant
     if (render) {
       if (!errorElement) return;
       if ("setHTML" in errorElement && typeof errorElement.setHTML === "function") errorElement.setHTML(error);
@@ -369,7 +369,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     const field = this.#getTargetField(name);
     if (!field) throw new Error(`No form field with the name "${name}" was found for registration.`);
 
-    // Warn devs about fields whose attributes are out of sync with their corresponding rules (constraints)
+    // Warn devs about fields whose attributes are out of sync with their corresponding error message settings
     const rules = Object.keys(errorMessages) as Array<keyof ValidationErrors>;
 
     for (let i = 0; i < rules.length; i++) {
