@@ -8,6 +8,98 @@ This is a TEMPORARY file intended to capture some thoughts that I want to put in
 
 **Warning**: For performance reasons, each instance of `FormObserver` assumes that _all_ of the `form`s which it observes belong to the same `Document`. More specifically, it assumes that the `ownerDocument` of the first `form` that you observe will also be the `ownerDocument` of every other `form` that you observe. If you want to observe `forms` on the same page that belong to entirely different `Document`s, then you should create separate `FormObserver`s for each `Document` involved. (If you're unfamiliar with [`Node.ownerDocument`](https://developer.mozilla.org/en-US/docs/Web/API/Node/ownerDocument), then this is likely something that you _don't_ need to worry about. It would be incredibly unusual to try to observe `form`s across different `Document`s anyway.)
 
+### Custom Elements
+
+**Note: If you don't use Custom Elements, and/or you're not interested in them, you can ignore this section.**
+
+Because the `FormObserver` builds on top of native JS features instead of relying on a JS framework (e.g., React), it is _completely_ compatible with native [Web Components](https://developer.mozilla.org/en-US/docs/Web/API/Web_components). However, there are some things to keep in mind when attempting to use them.
+
+#### Your Custom Element Must Be a Valid Form Control
+
+The `FormObserver` (and all of its subclasses) will only observe elements that are actually recognized as form controls. If you're using regular HTML elements, this basically includes any elements that are supported by the [`HTMLFormElement.elements`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/elements) property by default. If you're using Custom Elements, this _also_ includes any elements that are [specifically identified as form controls](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/attachInternals). Thus, any Custom Element that you want to be observed will need the following setup at a minimum:
+
+```ts
+class CustomField extends HTMLElement {
+  static formAssociated = true;
+  #internals;
+
+  constructor() {
+    super();
+    this.#internals = this.attachInternals();
+  }
+}
+
+customElements.define("custom-field", CustomField);
+```
+
+This is also the code that would be required to allow your Custom Element to participate in HTML forms in general. So the `FormObserver` isn't requiring any additional work on your part.
+
+Note: You are free to make the `ElementInternals` public, but it is highly recommended to keep this property [private](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Private_class_fields). (It is completely safe to expose the _properties_ on the `ElementInternals` interface. Only the reference to the `ElementInternals` object needs to be kept private.)
+
+#### Be Mindful of the Shadow Boundary
+
+The [Shadow DOM](https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_shadow_DOM) is a very useful tool for encapsulating the details of a Web Component. However, this tool is not very practical when it comes to HTML forms. Remember, the _purpose_ of the Shadow DOM is to _prevent_ anything on the outside from accessing a Web Component's internal elements; and the "internal elements" include any fields in the Shadow DOM. This means that a `form` in the Light DOM _cannot_ see fields in the Shadow DOM. Similarly, a `form` in the Shadow DOM _cannot_ see fields in the Light DOM _even if the fields are [slotted](https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_templates_and_slots)_. Consider the following code:
+
+```html
+<form id="light-form">
+  <input name="input-light-dom" type="text" />
+  <shadow-input></shadow-input>
+  <button type="submit">Submit Me!</button>
+</form>
+
+<input name="blocked" form="shadow-form" />
+<shadow-form>
+  <textarea name="slotted" form="shadow-form"></textarea>
+</shadow-form>
+```
+
+```ts
+class ShadowInput extends HTMLElement {
+  #shadow;
+
+  constructor() {
+    super();
+    this.#shadow = this.attachShadow({ mode: "open" });
+
+    const input = document.createElement("input");
+    input.setAttribute("name", "input-shadow-dom");
+    input.setAttribute("form", "light-form");
+    this.#shadow.appendChild(input);
+  }
+}
+
+class ShadowForm extends HTMLElement {
+  #shadow;
+
+  constructor() {
+    super();
+    this.#shadow = this.attachShadow({ mode: "open" });
+
+    this.#shadow.innerHTML = `
+      <form id="shadow-form">
+        <input name="internal">
+        <slot></slot>
+      </form>
+    `;
+  }
+}
+
+customElements.define("shadow-input", ShadowInput);
+customElements.define("shadow-form", ShadowForm);
+```
+
+(You can test this code out on the [MDN Playground](https://developer.mozilla.org/en-US/play) if you like.)
+
+In this example, the `input-shadow-dom` field is _completely invisible_ to the `light-form` form element. This field is invisible to the form despite the fact that the field is technically a _child_ of the form _and_ the fact that the field's `form` attribute points to the `light-form` element. The `light-form` form element cannot see the `input-shadow-dom` field because the Shadow DOM prevents the form in the Light DOM from accessing the field in the Shadow DOM. Thus, the form in the Light DOM can only see the `input-light-dom` field and the submit button.
+
+Similarly, _both_ the `blocked` input _and_ the `slotted` textarea are _completely invisible_ to the `shadow-form` form element even though both of the fields have `form` attributes that point to the form element. Because the input and even the _slotted_ textarea are defined in the Light DOM, the form element in the Shadow DOM refuses to welcome those elements entirely. Thus, the form in the Shadow DOM can only see the `internal` input.
+
+In the above example, the `input-shadow-dom` field, the `blocked` field, and the `slotted` field _don't partake in any HTML forms at all_. This means that these fields don't partake in form submission, nor any of the other form-related features that fields can usually take advantage of. Theoretically, someone could try to bypass these restrictions, but all such efforts would complicate things unnecessarily. Consequently, in order to keep your code clean, functional, and reliable, you should either put your _entire_ form in the Light DOM _or_ in the Shadow DOM. You should never try to mix your form's fields between the Light DOM and the Shadow DOM, nor should you try to mix your form's fields between _separate_ Shadow DOM instances.
+
+How does this relate to the `FormObserver`? Well, naturally a `FormObserver` can only observe fields that are visible to the watched form. Because a field in the Shadow DOM would be invisible to a form in the Light DOM, it would also be invisible to a `FormObserver` which observes a form in the Light DOM. Again, for everything to function correctly, you should either put the _entire_ form -- including its fields -- in the Light DOM, or put the _entire_ form in the Shadow DOM. Then and only then will both the native JS form features _and_ the `FormObserver` work as desired.
+
+This is not a limitation of the `FormObserver`, nor is it a limitation of the Shadow DOM. It is an intentional design decision to make sure that the Shadow DOM truly is not disrupted by anything from the outside. In other words, the `FormObserver` is simply complying with what the current web standards require. The Shadow DOM does not have to be used in every situation where a Custom Element is used. In fact, it is recommended to avoid the Shadow DOM when it comes to Custom Elements that function as form controls.
+
 ## `FormStorageObserver`
 
 ### Be Careful Not to Mismatch Your Fields' `id`s and `name`s
@@ -356,3 +448,82 @@ The idea here is to make form validation as quick and easy as possible for those
   - Again, if your forms are progressively enhanced, you will already be satisfying this. If you're new to progressive enhancement, then don't worry. It's very easy to update your code -- whether written with pure JS or with the help of a JS framework -- to satify this requirement.
 - A radio button group will only be validated if it is inside a [`fieldset`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/fieldset) element with the [`radiogroup`](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/radiogroup_role) role.
   - If your forms provide [accessible radio button groups](https://www.w3.org/WAI/tutorials/forms/grouping/#radio-buttons) to your users, you will already be satisfying this. We believe this requirement improves accessibility for end users and provides a clear way for the `FormValidityObserver` to identify radio groups _without_ sacrificing developer experience. (If you want deeper insight into why we made this decision, see [_Why Are Radio Buttons Only Validated When They're inside a `fieldset` with Role `radiogroup`?_](./DEVELOPMENT_NOTES.md#why-are-radio-buttons-only-validated-when-theyre-inside-a-fieldset-with-role-radiogroup-formvalidityobserver).)
+
+### Custom Elements
+
+**Note: If you don't use Custom Elements, and/or you're not interested in them, you can ignore this section.**
+
+Unlike several of the other form validation libraries out there, the `FormValidityObserver` is compatible with native [Web Components](https://developer.mozilla.org/en-US/docs/Web/API/Web_components). In addition to the guidelines given in the [`FormObserver` documentation](#custom-elements), there are a few things to keep in mind when using Custom Elements with the `FormValidityObserver`.
+
+#### Expose the Validity State of Your Custom Element
+
+Custom Elements do not expose their [`ValidityState`](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/validity) by default. Because the `FormValidityObserver` relies on the `ValidityState` of form fields to perform proper validation, your Custom Element will need to expose its `ValidityState` like so:
+
+```ts
+class CustomField extends HTMLElement {
+  static formAssociated = true;
+  #internals;
+
+  constructor() {
+    super();
+    this.#internals = this.attachInternals();
+    // Other Setup ...
+  }
+
+  get validity() {
+    return this.#internals.validity;
+  }
+}
+
+customElements.define("custom-field", CustomField);
+```
+
+The `FormValidityObserver` _requires_ the `ValidityState` of Custom Elements to be exposed via the `validity` property because this is consistent with the behavior of native form controls. This is already a best practice if you're writing Custom Elements that others will be using since it creates a more intuitive developer experience. It is recommended to keep the `ElementInternals` private and to use a getter (_without_ a setter) for the `validity` property to prevent unwanted mutations from the outside.
+
+Optionally, you can also expose the `validationMessage` and `willValidate` properties of your Custom Element. (These should also be exposed as getters without setters.) In addition to helping the end users of your Web Component, exposing the `validationMessage` property will enable the `FormValidityObserver` to show default error messages for your component whenever it fails validation. (This means that by default you won't have to use `FormValidityObserver.register` on any instances of your Custom Element.)
+
+#### (Optionally) Expose a `setCustomValidity` Method
+
+No Custom Element that acts as a form control has a `setCustomValidity` method by default. Instead, it has a [`setValidity`](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/setValidity) method which handles _all_ of the ways that the element's `ValidityState` can be marked as valid or invalid.
+
+Technically speaking, a robust Custom Element can manage all of its `ValidityState` and error messaging internally; so a public `setCustomValidity` method isn't necessary. For this reason, the `FormValidityObserver` does not require you to expose this method on your class.
+
+That said, if you're writing Web Components that others will be using, then it's a best practice to expose a `setCustomValidity` method. This is because it's impossible to predict all the ways in which other developers will use your Custom Element. A `setCustomValidity` method that mimics the behavior of native form controls will be more intuitive for your end users and satisfy whatever custom error handling needs they may have.
+
+```ts
+class CustomField extends HTMLElement {
+  static formAssociated = true;
+  #internals;
+
+  constructor() {
+    super();
+    this.#internals = this.attachInternals();
+    // Other Setup ...
+  }
+
+  get validity() {
+    return this.#internals.validity;
+  }
+
+  /**
+   * Sets a custom error message that is displayed when a form is submitted.
+   * @param {string} error
+   * @returns {void}
+   */
+  setCustomValidity(error) {
+    this.#internals.setValidity({ customError: Boolean(error) }, error);
+  }
+}
+
+customElements.define("custom-field", CustomField);
+```
+
+This is a simple example that can be improved on if desired. For instance, if you want to play it safe, you can coerce the `error` argument to a string. To fully mimic the browser's native behavior, the `setCustomValidity` method should also check to see if there are any other broken validation constraints before attempting to clear the error message.
+
+#### Be Mindful of Accessibility
+
+When working with Custom Elements that also act as form fields, you should be careful to ensure that _the element which acts as a form field is also the element that will receive the field-related ARIA attributes_.
+
+For example, if you're creating a [`combobox`](https://developer.mozilla.org/docs/Web/Accessibility/ARIA/Roles/combobox_role) component that's intended to act as a superior `<select />` field, then you'd want to design your Web Component such that the element with the `combobox` role is the element that sets up the `ElementInternals` _and_ that receives all of the field-related ARIA attributes (such as `aria-invalid`). This will typically make it easier for you to build accessible components, especially if you're leveraging helpful features like the [`invalid` event](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/invalid_event).
+
+As far as the `FormValidityObserver` is concerned, it assumes that your Web Components follow this structure. More specifically, it assumes that the element which holds the `ElementInternals` is the element whose ARIA attributes should be automatically updated. This typically isn't something you'll need to think about unless your custom form control is a complex component composed of multiple sub-components.
