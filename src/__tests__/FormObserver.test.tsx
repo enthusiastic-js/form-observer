@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/dom";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom/extend-expect";
 import type { EventType, ListenerOptions, TypesToListeners } from "../types";
@@ -54,28 +54,26 @@ describe("Form Observer (Class)", () => {
   function renderForms() {
     const labels = { primaryForm: "Primary Form", secondaryForm: "Secondary Form", nonForm: "Not a Form" } as const;
 
-    render(
-      <>
-        <textarea name="message" form="primary-form" />
-        <form id="primary-form" aria-label={labels.primaryForm}>
-          <input name="name" type="text" />
-          <input name="email" type="email" />
+    document.body.innerHTML = `
+      <textarea name="message" form="primary-form"></textarea>
+      <form id="primary-form" aria-label="${labels.primaryForm}">
+        <input name="name" type="text" />
+        <input name="email" type="email" />
 
-          <select name="selector" defaultValue="One">
-            <option>One</option>
-            <option>Two</option>
-            <option>Three</option>
-          </select>
-        </form>
+        <select name="selector">
+          <option selected>One</option>
+          <option>Two</option>
+          <option>Three</option>
+        </select>
+      </form>
 
-        <textarea name="review" form="secondary-form" />
-        <form id="secondary-form" aria-label={labels.secondaryForm}>
-          <input name="occupation" type="text" />
-        </form>
+      <textarea name="review" form="secondary-form"></textarea>
+      <form id="secondary-form" aria-label="${labels.secondaryForm}">
+        <input name="occupation" type="text" />
+      </form>
 
-        <section aria-label={labels.nonForm}>This is not a form!!!</section>
-      </>
-    );
+      <section aria-label="${labels.nonForm}">This is not a form!!!</section>
+    `;
 
     // Assert that BOTH `form`s own fields that are outside of themselves AND that are inside of themselves
     const primaryForm = screen.getByRole("form", { name: labels.primaryForm }) as HTMLFormElement;
@@ -129,6 +127,7 @@ describe("Form Observer (Class)", () => {
   beforeEach(() => {
     jest.clearAllMocks(); // For our global mock `listeners`
     jest.restoreAllMocks(); // For any `spies` on `document.*EventListener` or the Assertion Utilities
+    document.body.textContent = ""; // Reset anything we've manually rendered to the DOM
   });
 
   /* ---------------------------------------- Run Tests ---------------------------------------- */
@@ -220,8 +219,9 @@ describe("Form Observer (Class)", () => {
         const formObserver = getFormObserverByTestCase(testCase);
 
         // Render Form
-        const { primaryForm } = renderForms();
+        const { primaryForm, secondaryForm } = renderForms();
         formObserver.observe(primaryForm);
+        formObserver.observe(secondaryForm);
 
         // Assert that the `primaryForm` obtained a new field AFTER being observed
         const newField = document.createElement("input");
@@ -232,51 +232,53 @@ describe("Form Observer (Class)", () => {
         expect(primaryForm.elements).toContain(newField);
 
         // Run Tests for Each Test Case
-        for (const field of primaryForm.elements) {
-          await userEvent.click(field);
+        for (const form of [primaryForm, secondaryForm]) {
+          for (const field of form.elements) {
+            await userEvent.click(field);
 
-          // Single Type, Single Listener, Single Options
-          if (testCase === testCases[0]) {
-            /* eslint-disable jest/no-conditional-expect */
-            expect(listeners[0]).toHaveBeenCalledWith(expect.any(events[types[0]]));
-            expect(listeners[0]).toHaveBeenCalledWith(expect.objectContaining({ target: field }));
-            expect(listeners[0]).toHaveBeenCalledTimes(1);
+            // Single Type, Single Listener, Single Options
+            if (testCase === testCases[0]) {
+              /* eslint-disable jest/no-conditional-expect */
+              expect(listeners[0]).toHaveBeenCalledWith(expect.any(events[types[0]]));
+              expect(listeners[0]).toHaveBeenCalledWith(expect.objectContaining({ target: field }));
+              expect(listeners[0]).toHaveBeenCalledTimes(1);
 
-            expect(listeners[1]).not.toHaveBeenCalled(); // Shouldn't have been setup
-            /* eslint-enable jest/no-conditional-expect */
+              expect(listeners[1]).not.toHaveBeenCalled(); // Shouldn't have been setup
+              /* eslint-enable jest/no-conditional-expect */
 
-            listeners[0].mockClear();
+              listeners[0].mockClear();
+            }
+            // Multiple Types, Single Listener, Single Options
+            else if (testCase === testCases[1]) {
+              /* eslint-disable jest/no-conditional-expect */
+              expect(listeners[0]).toHaveBeenCalledWith(expect.any(events[types[0]]));
+              expect(listeners[0]).toHaveBeenCalledWith(expect.any(events[types[1]]));
+              expect(listeners[0]).toHaveBeenCalledTimes(2);
+              expect(listeners[0]).not.toHaveBeenCalledWith(expect.not.objectContaining({ target: field }));
+
+              expect(listeners[1]).not.toHaveBeenCalled(); // Shouldn't have been setup
+              /* eslint-enable jest/no-conditional-expect */
+
+              listeners[0].mockClear();
+            }
+            // Multiple Types, Multiple Listeners, Multiple Options
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            else if (testCase === testCases[2]) {
+              /* eslint-disable jest/no-conditional-expect */
+              expect(listeners[0]).toHaveBeenCalledWith(expect.any(events[types[0]]));
+              expect(listeners[0]).toHaveBeenCalledWith(expect.objectContaining({ target: field }));
+              expect(listeners[0]).toHaveBeenCalledTimes(1);
+
+              expect(listeners[1]).toHaveBeenCalledWith(expect.any(events[types[1]]));
+              expect(listeners[1]).toHaveBeenCalledWith(expect.objectContaining({ target: field }));
+              expect(listeners[1]).toHaveBeenCalledTimes(1);
+              /* eslint-enable jest/no-conditional-expect */
+
+              listeners.forEach((l) => l.mockClear());
+            }
+            // Guard against invalid test cases
+            else throwUnsupportedTestCaseError(testCase);
           }
-          // Multiple Types, Single Listener, Single Options
-          else if (testCase === testCases[1]) {
-            /* eslint-disable jest/no-conditional-expect */
-            expect(listeners[0]).toHaveBeenCalledWith(expect.any(events[types[0]]));
-            expect(listeners[0]).toHaveBeenCalledWith(expect.any(events[types[1]]));
-            expect(listeners[0]).toHaveBeenCalledTimes(2);
-            expect(listeners[0]).not.toHaveBeenCalledWith(expect.not.objectContaining({ target: field }));
-
-            expect(listeners[1]).not.toHaveBeenCalled(); // Shouldn't have been setup
-            /* eslint-enable jest/no-conditional-expect */
-
-            listeners[0].mockClear();
-          }
-          // Multiple Types, Multiple Listeners, Multiple Options
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-          else if (testCase === testCases[2]) {
-            /* eslint-disable jest/no-conditional-expect */
-            expect(listeners[0]).toHaveBeenCalledWith(expect.any(events[types[0]]));
-            expect(listeners[0]).toHaveBeenCalledWith(expect.objectContaining({ target: field }));
-            expect(listeners[0]).toHaveBeenCalledTimes(1);
-
-            expect(listeners[1]).toHaveBeenCalledWith(expect.any(events[types[1]]));
-            expect(listeners[1]).toHaveBeenCalledWith(expect.objectContaining({ target: field }));
-            expect(listeners[1]).toHaveBeenCalledTimes(1);
-            /* eslint-enable jest/no-conditional-expect */
-
-            listeners.forEach((l) => l.mockClear());
-          }
-          // Guard against invalid test cases
-          else throwUnsupportedTestCaseError(testCase);
         }
       });
 
@@ -400,15 +402,22 @@ describe("Form Observer (Class)", () => {
 
       it("Stops listening for events from a `form`'s fields", async () => {
         const formObserver = getFormObserverByTestCase(testCase);
-        const { primaryForm } = renderForms();
+        const { primaryForm, secondaryForm } = renderForms();
 
+        // Observe forms
         formObserver.observe(primaryForm);
+        formObserver.observe(secondaryForm);
+
+        // Unobserve forms
         formObserver.unobserve(primaryForm);
+        formObserver.unobserve(secondaryForm);
 
         // Regardless of the `testCase`, NOTHING should be called
-        for (const field of primaryForm.elements) {
-          await userEvent.click(field);
-          listeners.forEach((l) => expect(l).not.toHaveBeenCalled());
+        for (const form of [primaryForm, secondaryForm]) {
+          for (const field of form.elements) {
+            await userEvent.click(field);
+            listeners.forEach((l) => expect(l).not.toHaveBeenCalled());
+          }
         }
       });
 
@@ -488,6 +497,8 @@ describe("Form Observer (Class)", () => {
         // Disconnect
         formObserver.disconnect();
         expect(formObserver.unobserve).toHaveBeenCalledTimes(2);
+        expect(formObserver.unobserve).toHaveBeenCalledWith(primaryForm);
+        expect(formObserver.unobserve).toHaveBeenCalledWith(secondaryForm);
       });
     });
   });
