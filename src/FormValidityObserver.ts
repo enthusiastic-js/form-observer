@@ -317,14 +317,15 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
   setFieldError(name: string, message: ErrorMessage, render?: boolean): void {
     const field = this.#getTargetField(name);
     if (!field) return;
-    if (!message) return;
+
+    const error = typeof message === "function" ? message(field) : message;
+    if (!error) return;
 
     const radiogroupOrField = field.type === "radio" ? field.closest(radiogroupSelector) : field;
     // TODO: Maybe we should give devs a warning on this instead of failing silently. SAME FOR `clearFieldError`.
     if (!radiogroupOrField) return; // Bail out if a `radio` button does not have a containing `radiogroup`
 
     radiogroupOrField.setAttribute(attrs["aria-invalid"], String(true));
-    const error = typeof message === "function" ? message(field) : message;
     const errorElement = document.getElementById(radiogroupOrField.getAttribute(attrs["aria-describedby"]) as string);
 
     // Raw HTML Variant
@@ -341,7 +342,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
      */
     // Raw String Variant
     if (errorElement) errorElement.textContent = error;
-    field.setCustomValidity(error);
+    field.setCustomValidity(error); // TODO: Account for Custom Elements?
   }
 
   clearFieldError(name: string): void {
@@ -355,7 +356,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     const errorElement = document.getElementById(radiogroupOrField.getAttribute(attrs["aria-describedby"]) as string);
 
     if (errorElement) errorElement.textContent = "";
-    field.setCustomValidity("");
+    field.setCustomValidity(""); // TODO: Account for Custom Elements?
   }
 
   register(name: string, errorMessages: ValidationErrors): void {
