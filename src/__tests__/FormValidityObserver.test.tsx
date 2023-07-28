@@ -255,12 +255,69 @@ describe("Form Validity Observer (Class)", () => {
   });
 
   describe("Validation Methods", () => {
-    function getTextFromMarkup(htmlString: string): string {
-      const container = document.createElement("div");
-      container.innerHTML = htmlString;
-      return container.textContent as string;
+    const radioValues = Object.freeze(["1", "2", "3"] as const);
+
+    /* -------------------- Validation Message Helpers -------------------- */
+    /**
+     * Renders all of the commonly recognized form fields inside a `form` element with empty values.
+     *
+     * @returns References to the `form`, the radiogroup (`fieldset`), and the other `fields`
+     * that belong to the `form` (excluding the radio buttons).
+     */
+    function renderEmptyFields() {
+      expect(radioValues).toHaveLength(new Set(radioValues).size); // Assert Uniqueness
+      expect(radioValues.length).toBeGreaterThan(1); // Assert Multiple Values
+
+      document.body.innerHTML = `
+          <form aria-label="Form Fields">
+            <input name="text" type="text" />
+            <input name="checkbox" type="checkbox" />
+            <textarea name="textarea"></textarea>
+            <fieldset role="radiogroup">
+              ${radioValues.map((v) => `<input name="radio" type="radio" value=${v} />`).join("")}
+            </fieldset>
+
+            <select name="select"></select>
+            <select name="multiselect" multiple></select>
+          </form>
+        `;
+
+      // Verify setup conditions for `form`
+      const form = screen.getByRole<HTMLFormElement>("form");
+      const [input, textarea] = screen.getAllByRole("textbox") as [HTMLInputElement, HTMLTextAreaElement];
+      expect(input.matches("input[name][type='text']")).toBe(true);
+      expect(textarea.matches("textarea[name]")).toBe(true);
+
+      const checkbox = screen.getByRole<HTMLInputElement>("checkbox");
+      expect(checkbox.matches("input[name][type='checkbox']")).toBe(true);
+
+      const fieldset = screen.getByRole<HTMLFieldSetElement>("radiogroup");
+      const radios = Array.from(fieldset.elements) as HTMLInputElement[];
+      expect(new Set(radios.map((r) => r.value)).size).toBe(radioValues.length);
+      radios.forEach((r) => expect(r.matches("input[name][type='radio'][value]")).toBe(true));
+
+      const select = screen.getByRole<HTMLSelectElement>("combobox");
+      expect(select.matches("select[name]:not([multiple])")).toBe(true);
+
+      const multiselect = screen.getByRole<HTMLSelectElement>("listbox");
+      expect(multiselect.matches("select[name][multiple]")).toBe(true);
+
+      const arr = [form, fieldset, input, textarea, checkbox, select, multiselect] as const;
+      const map = { form, fieldset, fields: [input, textarea, checkbox, select, multiselect] } as const;
+      return Object.assign(arr, map);
     }
 
+    /**
+     * Asserts that the provided `field` is valid, and that it has no error messages associated with it.
+     * For `radiogroup`s, asserts that _both_ the `radiogroup` _and_ its associated radio buttons are all
+     * valid and have no error messages.
+     *
+     * **DO NOT call this function inside the `clearFieldError` tests (i.e., the `clearFieldError`
+     * describe block)!**
+     *
+     * **Note**: To run assertions on a `radiogroup`, call this function with a radio button. (Works with
+     * orphaned, standalone radio buttons as well.)
+     */
     function expectNoErrorsFor(field: ValidatableField): void {
       // Unique Validation for Radio Buttons
       if (field.type === "radio") {
@@ -341,40 +398,14 @@ describe("Form Validity Observer (Class)", () => {
       }
     }
 
+    /** Extracts the text content of a raw HTML string */
+    function getTextFromMarkup(htmlString: string): string {
+      const container = document.createElement("div");
+      container.innerHTML = htmlString;
+      return container.textContent as string;
+    }
+
     describe("setFieldError (Method)", () => {
-      const radioValues = Object.freeze(["1", "2", "3"] as const);
-
-      /* -------------------- Local Helpers -------------------- */
-      function renderEmptyFields() {
-        expect(radioValues).toHaveLength(new Set(radioValues).size); // Assert Uniqueness
-        expect(radioValues.length).toBeGreaterThan(1); // Assert Multiple Values
-
-        document.body.innerHTML = `
-          <form aria-label="Form Fields">
-            <input name="text" type="text" />
-            <input name="checkbox" type="checkbox" />
-            <textarea name="textarea"></textarea>
-            <fieldset role="radiogroup">
-              ${radioValues.map((v) => `<input name="radio" type="radio" value=${v} />`).join("")}
-            </fieldset>
-
-            <select name="select"></select>
-            <select name="multiselect" multiple></select>
-          </form>
-        `;
-
-        const form = screen.getByRole<HTMLFormElement>("form");
-        const [input, textarea] = screen.getAllByRole("textbox") as [HTMLInputElement, HTMLTextAreaElement];
-        const checkbox = screen.getByRole<HTMLInputElement>("checkbox");
-        const fieldset = screen.getByRole<HTMLFieldSetElement>("radiogroup");
-        const select = screen.getByRole<HTMLSelectElement>("combobox");
-        const multiselect = screen.getByRole<HTMLSelectElement>("listbox");
-
-        const arr = [form, fieldset, input, textarea, checkbox, select, multiselect] as const;
-        const map = { form, fieldset, fields: [input, textarea, checkbox, select, multiselect] } as const;
-        return Object.assign(arr, map);
-      }
-
       it("Marks a field as invalid (`aria-invalid`) and gives it the provided error message", () => {
         const errorMessage = "This field isn't correct!";
         const formValidityObserver = new FormValidityObserver(types);
@@ -713,6 +744,7 @@ describe("Form Validity Observer (Class)", () => {
     });
 
     describe("clearFieldError (Method)", () => {});
+
     describe("register (Method)", () => {});
     describe("validateFields (Method)", () => {});
     describe("validateField (Method)", () => {

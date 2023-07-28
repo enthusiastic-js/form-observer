@@ -321,6 +321,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     const error = typeof message === "function" ? message(field) : message;
     if (!error) return;
 
+    // TODO: Should we rename this variable to something else like `errorOwner`?
     const radiogroupOrField = field.type === "radio" ? field.closest(radiogroupSelector) : field;
     // TODO: Maybe we should give devs a warning on this instead of failing silently. SAME FOR `clearFieldError`.
     if (!radiogroupOrField) return; // Bail out if a `radio` button does not have a containing `radiogroup`
