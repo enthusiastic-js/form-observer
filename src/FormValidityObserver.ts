@@ -343,7 +343,9 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
      */
     // Raw String Variant
     if (errorElement) errorElement.textContent = error;
-    field.setCustomValidity(error); // TODO: Account for Custom Elements?
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Support Web Components without Method
+    field.setCustomValidity?.(error);
   }
 
   clearFieldError(name: string): void {
@@ -357,7 +359,8 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     const errorElement = document.getElementById(radiogroupOrField.getAttribute(attrs["aria-describedby"]) as string);
 
     if (errorElement) errorElement.textContent = "";
-    field.setCustomValidity(""); // TODO: Account for Custom Elements?
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Support Web Components without Method
+    field.setCustomValidity?.("");
   }
 
   register(name: string, errorMessages: ValidationErrors): void {

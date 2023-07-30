@@ -6,6 +6,7 @@ import type { EventType, ListenerOptions, FormField } from "../types";
 import FormObserver from "../FormObserver";
 import FormValidityObserver from "../FormValidityObserver";
 
+// TODO: Rename this to a `.ts` file since this file is no longer intended to hold JSX. (Don't lie about file types.)
 describe("Form Validity Observer (Class)", () => {
   /* ---------------------------------------- Global Constants ---------------------------------------- */
   const attrs = Object.freeze({ "aria-invalid": "aria-invalid", "aria-describedby": "aria-describedby" });
@@ -309,14 +310,11 @@ describe("Form Validity Observer (Class)", () => {
 
     /**
      * Asserts that the provided `field` is valid, and that it has no error messages associated with it.
-     * For `radiogroup`s, asserts that _both_ the `radiogroup` _and_ its associated radio buttons are all
-     * valid and have no error messages.
+     * When passed a radio button, asserts that the entire radio group (including the accessible `fieldset`)
+     * is valid, and that _none_ of the elements have any error messages associated with them.
      *
-     * **DO NOT call this function inside the `clearFieldError` tests (i.e., the `clearFieldError`
-     * describe block)!**
-     *
-     * **Note**: To run assertions on a `radiogroup`, call this function with a radio button. (Works with
-     * orphaned, standalone radio buttons as well.)
+     * **WARNING: DO NOT call this function inside the `clearFieldError` tests (i.e., the `clearFieldError`
+     * describe block)! Use regular assertions that meet the test criteria instead.**
      */
     function expectNoErrorsFor(field: ValidatableField): void {
       // Unique Validation for Radio Buttons
@@ -354,46 +352,48 @@ describe("Form Validity Observer (Class)", () => {
       }
     }
 
-    /** The options passed to the {@link expectErrorFor} function */
-    interface ExpectErrorForOptions {
-      /** Indicates that the error should be accessible. Defaults to `false` unless {@link rendered} is `true`. */
-      accessible?: boolean;
-
-      /** Indicates that the error message was rendered to the DOM as raw HTML. Defaults to `false`. */
-      rendered?: boolean;
-    }
-
-    /** TODO: Finish Implementing this */
-    function expectErrorFor(
-      field: ValidatableField,
-      error: string,
-      { accessible, rendered }: ExpectErrorForOptions = {}
-    ): void {
+    /**
+     * Asserts that the provided `field` is _invalid_, and that it has an error message associated with it.
+     * When passed a radio button, asserts that the entire radio group (including the accessible `fieldset`)
+     * is invalid, and that there are error message(s) associated with the correct element(s).
+     *
+     * **WARNING: DO NOT call this function inside the `setFieldError` tests (i.e., the `setFieldError`
+     * describe block)! Use regular assertions that meet the test criteria instead.**
+     *
+     * @param field The invalid form field.
+     * @param error The error that the user _perceives_ for the form field. This should be a pure string,
+     * **not** a function nor HTML.
+     * @param method The approach used to display the error message. `a11y` indicates that the error
+     * message was rendered as an _accessible_ pure string. `html` indicates that the error message
+     * was rendered _as raw HTML_. `none` (**default**) indicates that the message was created as a pure string,
+     * but not accessibly.
+     */
+    function expectErrorFor(field: ValidatableField, error: string, method: "none" | "a11y" | "html" = "none"): void {
       // Unique Validation for Radio Buttons
       if (field.type === "radio") {
-        const accessibleGroup = field.closest("fieldset[role='radiogroup']") as HTMLFieldSetElement;
+        const radiogroup = field.closest("fieldset[role='radiogroup']") as HTMLFieldSetElement;
 
         // Enforce Valid Markup
-        expect(accessibleGroup).toBeInTheDocument();
-        const radios = Array.from(accessibleGroup.elements) as HTMLInputElement[];
+        expect(radiogroup).toBeInTheDocument();
+        const radios = Array.from(radiogroup.elements) as HTMLInputElement[];
         expect(radios.every((radio) => radio instanceof HTMLInputElement && radio.type === "radio")).toBe(true);
 
         // Check Fieldset
-        expect(accessibleGroup).toHaveAttribute(attrs["aria-invalid"], String(true));
-        if (accessible) expect(accessibleGroup).toHaveAccessibleDescription(error);
+        expect(radiogroup).toHaveAttribute(attrs["aria-invalid"], String(true));
+        if (method !== "none") expect(radiogroup).toHaveAccessibleDescription(error);
 
         // Check Radios
-        expect(radios[0].validationMessage).toBe(error);
+        expect(radios[0].validationMessage).toBe(method === "html" ? "" : error);
         radios.slice(1).forEach((radio) => expect(radio.validationMessage).toBe(""));
         radios.forEach((radio) => {
           expect(radio).not.toHaveAttribute(attrs["aria-invalid"]);
-          if (accessible) expect(radio).not.toHaveAccessibleDescription();
+          if (method !== "none") expect(radio).not.toHaveAccessibleDescription();
         });
       }
       // All Other Fields
       else {
-        expect(field.validationMessage).toBe(error);
-        if (accessible) expect(field).toHaveAccessibleDescription(error);
+        expect(field.validationMessage).toBe(method === "html" ? "" : error);
+        if (method !== "none") expect(field).toHaveAccessibleDescription(error);
         expect(field).toHaveAttribute(attrs["aria-invalid"], String(true));
       }
     }
@@ -608,7 +608,7 @@ describe("Form Validity Observer (Class)", () => {
         expect((Element.prototype as PolyfilledElement).setHTML).toBe(undefined);
       });
 
-      it("Skips fields that do not belong to the observed `form`", () => {
+      it("Ignores fields that do not belong to the observed `form`", () => {
         const fieldName = "orphan-field";
         const errorMessage = "This field is UNREAL!!!";
         const formValidityObserver = new FormValidityObserver(types);
@@ -629,7 +629,7 @@ describe("Form Validity Observer (Class)", () => {
         expect(orphanField.validationMessage).toBe("");
       });
 
-      it("Skips fields that do not have a `name`", () => {
+      it("Ignores fields that do not have a `name`", () => {
         const errorMessage = "This field is ANONYMOUS!!!";
         const formValidityObserver = new FormValidityObserver(types);
 
@@ -648,7 +648,7 @@ describe("Form Validity Observer (Class)", () => {
         expect(namelessField.validationMessage).toBe("");
       });
 
-      it("Skips radio buttons that do not belong to an ACCESSIBLE GROUP (`fieldset[role='radiogroup']`)", () => {
+      it("Ignores radio buttons that do not belong to an ACCESSIBLE GROUP (`fieldset[role='radiogroup']`)", () => {
         const role = "radiogroup";
         const fieldName = "rogue-radios";
         const errorMessage = "These radio buttons don't have what it takes...";
@@ -662,7 +662,7 @@ describe("Form Validity Observer (Class)", () => {
         );
 
         // Test Radio Directly in `form`
-        newRadios.forEach((radio) => form.appendChild(radio));
+        form.append(...newRadios);
 
         formValidityObserver.setFieldError(newRadios[0].name, errorMessage);
         expectNoErrorsFor(newRadios[0]);
@@ -672,25 +672,23 @@ describe("Form Validity Observer (Class)", () => {
         div.setAttribute("role", role);
         form.appendChild(div);
 
-        newRadios.forEach((radio) => {
-          div.insertAdjacentElement("beforeend", radio);
-          expect(form.elements).toContain(radio);
-        });
+        div.append(...newRadios);
+        newRadios.forEach((radio) => expect(form.elements).toContain(radio));
 
         formValidityObserver.setFieldError(newRadios[0].name, errorMessage);
         expectNoErrorsFor(newRadios[0]);
+        expect(div).not.toHaveAttribute(attrs["aria-invalid"]);
 
         // Test Radio in a `fieldset` without a `radiogroup` Role
         const newFieldset = document.createElement("fieldset");
         form.appendChild(newFieldset);
 
-        newRadios.forEach((radio) => {
-          newFieldset.insertAdjacentElement("beforeend", radio);
-          expect(form.elements).toContain(radio);
-        });
+        newFieldset.append(...newRadios);
+        newRadios.forEach((radio) => expect(form.elements).toContain(radio));
 
         formValidityObserver.setFieldError(newRadios[0].name, errorMessage);
         expectNoErrorsFor(newRadios[0]);
+        expect(newFieldset).not.toHaveAttribute(attrs["aria-invalid"]);
       });
 
       it("Does nothing if an error message is not provided", () => {
@@ -743,7 +741,172 @@ describe("Form Validity Observer (Class)", () => {
       });
     });
 
-    describe("clearFieldError (Method)", () => {});
+    describe("clearFieldError (Method)", () => {
+      const errorString = "<div>This error is static!</div>";
+      const errorFunc = (field: FormField) => `<div>Element "${field.tagName}" of type "${field.type}" is bad!</div>`;
+      const errors = Object.freeze([errorString, errorFunc] as const);
+
+      it("Marks a field as valid (via `aria-invalid`) and removes its error message", () => {
+        const formValidityObserver = new FormValidityObserver(types);
+
+        // Render Forms
+        const { form, fieldset, fields } = renderEmptyFields();
+        const radios = Array.from(fieldset.elements) as HTMLInputElement[];
+        formValidityObserver.observe(form);
+
+        // Run Assertions
+        errors.forEach((e) => {
+          // Apply Errors to Radio Button Group First
+          formValidityObserver.setFieldError(radios[0].name, e, false);
+          expectErrorFor(radios[0], typeof e === "function" ? e(radios[0]) : e, "none");
+
+          // Verify That Radio Button Group Errors Are Properly Cleared
+          formValidityObserver.clearFieldError(radios[0].name);
+          expect(fieldset).toHaveAttribute(attrs["aria-invalid"], String(false));
+
+          radios.forEach((radio) => {
+            expect(radio.validationMessage).toBe("");
+            expect(radio).not.toHaveAttribute(attrs["aria-invalid"]);
+          });
+
+          fields.forEach((field) => {
+            // Apply Errors to Field First
+            formValidityObserver.setFieldError(field.name, e, false);
+            expectErrorFor(field, typeof e === "function" ? e(field) : e, "none");
+
+            // Verify That Field Errors Are Properly Cleared
+            formValidityObserver.clearFieldError(field.name);
+            expect(field.validationMessage).toBe("");
+            expect(field).toHaveAttribute(attrs["aria-invalid"], String(false));
+          });
+        });
+      });
+
+      /*
+       * Note: Although it's very similar to the previous test and has the exact same setup, we're running this
+       * test separately to prove (in the previous test) that nothing crashes if no accessible error messages exist.
+       */
+      it("Removes a field's ACCESSIBLE error message if it exists", () => {
+        const formValidityObserver = new FormValidityObserver(types);
+
+        // Render Forms
+        const { form, fieldset, fields } = renderEmptyFields();
+        const radios = Array.from(fieldset.elements) as HTMLInputElement[];
+        [fieldset, ...fields].forEach((f) => {
+          const errorId = `${f instanceof HTMLFieldSetElement ? "fieldset" : f.name}-error`;
+          f.setAttribute(attrs["aria-describedby"], errorId);
+          document.body.appendChild(createElementWithProps("div", { id: errorId }));
+        });
+        formValidityObserver.observe(form);
+
+        // Run Assertions
+        errors.forEach((e) => {
+          // Apply Errors to Radio Group First
+          formValidityObserver.setFieldError(radios[0].name, e, false);
+          expectErrorFor(radios[0], typeof e === "function" ? e(radios[0]) : e, "a11y");
+
+          // Verify That [Accessible] Radio Button Group Errors Are Properly Cleared
+          formValidityObserver.clearFieldError(radios[0].name);
+          expect(fieldset).not.toHaveAccessibleDescription();
+          radios.forEach((radio) => expect(radio).not.toHaveAccessibleDescription());
+
+          fields.forEach((field) => {
+            // Apply Errors to Field First
+            formValidityObserver.setFieldError(field.name, e, false);
+            expectErrorFor(field, typeof e === "function" ? e(field) : e, "a11y");
+
+            // Verify That [Accessible] Field Errors Are Properly Cleared
+            formValidityObserver.clearFieldError(field.name);
+            expect(field).not.toHaveAccessibleDescription();
+          });
+        });
+      });
+
+      it("Ignores fields that do not belong to the observed `form`", () => {
+        const fieldName = "orphaned-field";
+        const formValidityObserver = new FormValidityObserver(types);
+
+        // Render Forms
+        const { form } = renderEmptyFields();
+        const orphanedField = createElementWithProps("textarea", { name: fieldName }) satisfies ValidatableField;
+        form.appendChild(orphanedField);
+        formValidityObserver.observe(form);
+
+        expect(form.elements).toContain(orphanedField);
+        expect(orphanedField).toHaveAttribute("name", expect.stringMatching(/[a-z]+/));
+
+        formValidityObserver.setFieldError(orphanedField.name, errorString, false);
+        expectErrorFor(orphanedField, errorString, "none");
+
+        // Run Assertions
+        document.body.insertAdjacentElement("beforeend", orphanedField);
+        expect(form.elements).not.toContain(orphanedField);
+
+        formValidityObserver.clearFieldError(orphanedField.name);
+        expect(orphanedField).toHaveAttribute(attrs["aria-invalid"], String(true));
+        expect(orphanedField.validationMessage).toBe(errorString);
+      });
+
+      it("Ignores fields that do not have a `name`", () => {
+        const fieldName = "transient-field";
+        const formValidityObserver = new FormValidityObserver(types);
+
+        // Render Forms
+        const { form } = renderEmptyFields();
+        const transientField = createElementWithProps("textarea", { name: fieldName }) satisfies ValidatableField;
+        form.appendChild(transientField);
+        formValidityObserver.observe(form);
+
+        expect(form.elements).toContain(transientField);
+        expect(transientField).toHaveAttribute("name", expect.stringMatching(/[a-z]+/));
+
+        formValidityObserver.setFieldError(transientField.name, errorString, false);
+        expectErrorFor(transientField, errorString, "none");
+
+        // Run Assertions
+        transientField.setAttribute("name", "");
+        formValidityObserver.clearFieldError(transientField.name);
+
+        expect(transientField).toHaveAttribute(attrs["aria-invalid"], String(true));
+        expect(transientField.validationMessage).toBe(errorString);
+      });
+
+      it("Ignores radio buttons that do not belong to an ACCESSIBLE GROUP (`fieldset[role='radiogroup']`)", () => {
+        const role = "radiogroup";
+        const formValidityObserver = new FormValidityObserver(types);
+
+        // Render Form
+        const { form, fieldset } = renderEmptyFields();
+        const radios = Array.from(fieldset.elements) as HTMLInputElement[];
+        formValidityObserver.observe(form);
+
+        formValidityObserver.setFieldError(radios[0].name, errorString);
+        expectErrorFor(radios[0], errorString, "none");
+
+        // Test Radio in a `fieldset` without a `radiogroup` Role
+        fieldset.removeAttribute("role");
+
+        formValidityObserver.clearFieldError(radios[0].name);
+        expect(fieldset).toHaveAttribute(attrs["aria-invalid"], String(true));
+        expect(radios[0].validationMessage).toBe(errorString);
+
+        // Test Radio in a NON-`fieldset` with a `radiogroup` Role
+        const div = document.createElement("div");
+        div.setAttribute("role", role);
+        form.appendChild(div);
+
+        div.append(...radios);
+        radios.forEach((radio) => expect(form.elements).toContain(radio));
+
+        formValidityObserver.clearFieldError(radios[0].name);
+        expect(radios[0].validationMessage).toBe(errorString);
+
+        // Test Radio Directly in `form`
+        form.append(...radios);
+        formValidityObserver.clearFieldError(radios[0].name);
+        expect(radios[0].validationMessage).toBe(errorString);
+      });
+    });
 
     describe("register (Method)", () => {});
     describe("validateFields (Method)", () => {});
@@ -818,7 +981,7 @@ describe("Form Validity Observer (Class)", () => {
         /** HTML field elements that are _naturally_ validated by the browser. */
         type TestField = Extract<FormField, HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>;
 
-        /** TODO: Replace with {@link expectErrorFor} */
+        /** TODO: Replace with {@link expectErrorFor}. EDIT: Is such a thing possible given default browser errors? */
         function expectInvalidField(field: TestField, testCase: TestTypes): void {
           if (!testCases.includes(testCase)) throw new TypeError(`Test Case not supported: ${testCase}.`);
 
