@@ -18,17 +18,32 @@ describe("Form Validity Observer (Class)", () => {
   /** An `HTMLElement` that is able to partake in form field validation */
   type ValidatableField = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
-  function renderWithinForm<T extends ValidatableField>(field: T, useAccessibleError?: boolean) {
+  /** The options for the {@link renderField} utility function */
+  interface RenderFieldOptions {
+    /** Indicates that the field is expected to have an accessible error message. Defaults to `false`. */
+    accessible?: boolean;
+  }
+
+  /**
+   * Renders a single field in a `form` for testing.
+   *
+   * @param field
+   * @param options
+   * @returns References to the `field` that was provided and the `form` in which it was rendered.
+   */
+  function renderField<T extends ValidatableField>(field: T, { accessible }: RenderFieldOptions = {}) {
     const form = document.createElement("form");
     form.setAttribute("aria-label", "Form with Single Field");
-
-    document.body.appendChild(form);
     form.appendChild(field);
+    document.body.appendChild(form);
+
+    const references = Object.freeze(Object.assign([form, field] as const, { form, field } as const));
+    if (!accessible) return references;
 
     const descriptionId = "description";
     form.appendChild(createElementWithProps("div", { id: descriptionId }));
-    if (useAccessibleError) field.setAttribute("aria-describedby", descriptionId);
-    return Object.freeze(Object.assign([form, field] as const, { form, field } as const));
+    field.setAttribute("aria-describedby", descriptionId);
+    return references;
   }
 
   /** Creates an HTMLElement with the provided properties. If no props are needed, prefer `document.createElement`. */
@@ -196,7 +211,7 @@ describe("Form Validity Observer (Class)", () => {
       it("Resets the error messages for the provided `form`'s fields IF it was being observed", async () => {
         const errorMessage = "You owe me a value.";
         const formValidityObserver = new FormValidityObserver(types);
-        renderWithinForm(createElementWithProps("input", { name: "first-name", type: "text", required: true }));
+        renderField(createElementWithProps("input", { name: "first-name", type: "text", required: true }));
 
         const form = screen.getByRole<HTMLFormElement>("form");
         const input = screen.getByRole<HTMLInputElement>("textbox");
@@ -916,7 +931,7 @@ describe("Form Validity Observer (Class)", () => {
     describe("validateField (Method)", () => {
       it("Returns `true` when a field PASSES validation and `false` when a field FAILS validation", () => {
         // Render Field
-        const { form, field } = renderWithinForm(createElementWithProps("input", { name: "input", required: true }));
+        const { form, field } = renderField(createElementWithProps("input", { name: "input", required: true }));
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(form);
 
@@ -930,7 +945,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Sets the field's error when it fails validation", () => {
         // Setup
-        const { form, field } = renderWithinForm(createElementWithProps("input", { name: "input", required: true }));
+        const { form, field } = renderField(createElementWithProps("input", { name: "input", required: true }));
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(form);
 
@@ -946,7 +961,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Clears the field's error when it passes validation", () => {
         // Setup
-        const { form, field } = renderWithinForm(createElementWithProps("input", { name: "input", required: true }));
+        const { form, field } = renderField(createElementWithProps("input", { name: "input", required: true }));
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(form);
 
@@ -970,7 +985,7 @@ describe("Form Validity Observer (Class)", () => {
       it("Supports custom, user-defined validation", () => {
         // Render Field
         const badValue = "LAME";
-        const { form, field } = renderWithinForm(createElementWithProps("input", { name: "input", value: badValue }));
+        const { form, field } = renderField(createElementWithProps("input", { name: "input", value: badValue }));
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(form);
 
@@ -1005,7 +1020,7 @@ describe("Form Validity Observer (Class)", () => {
       it("Supports ASYNCHRONOUS user-defined validation", async () => {
         // Render Field
         const badValue = "Unfaithful";
-        const { form, field } = renderWithinForm(createElementWithProps("input", { name: "input", value: badValue }));
+        const { form, field } = renderField(createElementWithProps("input", { name: "input", value: badValue }));
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(form);
 
@@ -1050,7 +1065,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("HIERARCHICALLY displays the error message(s) for the constraint(s) that the field has broken", () => {
         /* ---------- Setup ---------- */
-        const { form, field } = renderWithinForm(createElementWithProps("input", { name: "overriden", value: "RIP" }));
+        const { form, field } = renderField(createElementWithProps("input", { name: "overriden", value: "RIP" }));
         const formValidityObserver = new FormValidityObserver(types[0]);
         jest.spyOn(formValidityObserver, "setFieldError");
         jest.spyOn(formValidityObserver, "clearFieldError");
@@ -1173,9 +1188,9 @@ describe("Form Validity Observer (Class)", () => {
       it("Renders a field's error message as HTML when the error configuration requires it", () => {
         // Render Field
         const error = "<div>Some people will render me correctly, and others won't.</div>";
-        const { form, field } = renderWithinForm(
+        const { form, field } = renderField(
           createElementWithProps("input", { name: "field", type: "number", required: true, min: "1", max: "1336" }),
-          true
+          { accessible: true }
         );
 
         // Setup `FormValidityObserver`
@@ -1217,7 +1232,9 @@ describe("Form Validity Observer (Class)", () => {
       it("Renders a field's error message as HTML when the user-defined validation requires it", async () => {
         // Render Field
         const error = "<p>Shall I be rendered? Or not?</div>";
-        const { form, field } = renderWithinForm(createElementWithProps("input", { name: "user-validated" }), true);
+        const { form, field } = renderField(createElementWithProps("input", { name: "user-validated" }), {
+          accessible: true,
+        });
 
         // Setup `FormValidityObserver`
         const formValidityObserver = new FormValidityObserver(types[0]);
@@ -1252,7 +1269,7 @@ describe("Form Validity Observer (Class)", () => {
       it("Removes stale custom `validationMessage`s from a field during validation", () => {
         // Render Field
         const customError = "Don't leave me!";
-        const { form, field } = renderWithinForm(
+        const { form, field } = renderField(
           createElementWithProps("input", { name: "field", required: true, pattern: "\\d+" })
         );
 
@@ -1384,7 +1401,7 @@ describe("Form Validity Observer (Class)", () => {
 
         describe.each(testCases)("for %s", (testCase) => {
           const [method, type, rendering] = testCase.split(" ");
-          const useAccessibleError = method === "Accessible";
+          const accessible = method === "Accessible";
 
           // TODO: Need a way to handle scenarios where we render markup for the error instead
           // TODO: We need to refactor `FormValidityObserver` before we can really go any further.
@@ -1396,7 +1413,7 @@ describe("Form Validity Observer (Class)", () => {
           describe("<input /> Validation", () => {
             // eslint-disable-next-line jest/expect-expect -- TODO: Update ESLint config instead
             it("Validates the `input`'s field type", async () => {
-              renderWithinForm(createElementWithProps("input", { name: "email", type: "email" }), useAccessibleError);
+              renderField(createElementWithProps("input", { name: "email", type: "email" }), { accessible });
               const form = screen.getByRole("form") as HTMLFormElement;
               const formValidityObserver = new FormValidityObserver(types[0]);
 
