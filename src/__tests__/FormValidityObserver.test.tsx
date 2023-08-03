@@ -18,9 +18,9 @@ describe("Form Validity Observer (Class)", () => {
   /** An `HTMLElement` that is able to partake in form field validation */
   type ValidatableField = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
-  function renderWithinForm(field: ValidatableField, useAccessibleError?: boolean): HTMLFormElement {
+  function renderWithinForm<T extends ValidatableField>(field: T, useAccessibleError?: boolean) {
     const form = document.createElement("form");
-    form.setAttribute("aria-label", "Validated Form");
+    form.setAttribute("aria-label", "Form with Single Field");
 
     document.body.appendChild(form);
     form.appendChild(field);
@@ -28,7 +28,7 @@ describe("Form Validity Observer (Class)", () => {
     const descriptionId = "description";
     form.appendChild(createElementWithProps("div", { id: descriptionId }));
     if (useAccessibleError) field.setAttribute("aria-describedby", descriptionId);
-    return form;
+    return Object.freeze(Object.assign([form, field] as const, { form, field } as const));
   }
 
   /** Creates an HTMLElement with the provided properties. If no props are needed, prefer `document.createElement`. */
@@ -369,6 +369,8 @@ describe("Form Validity Observer (Class)", () => {
      * but not accessibly.
      */
     function expectErrorFor(field: ValidatableField, error: string, method: "none" | "a11y" | "html" = "none"): void {
+      expect(error).not.toBe("");
+
       // Unique Validation for Radio Buttons
       if (field.type === "radio") {
         const radiogroup = field.closest("fieldset[role='radiogroup']") as HTMLFieldSetElement;
@@ -383,8 +385,10 @@ describe("Form Validity Observer (Class)", () => {
         if (method !== "none") expect(radiogroup).toHaveAccessibleDescription(error);
 
         // Check Radios
-        expect(radios[0].validationMessage).toBe(method === "html" ? "" : error);
+        expect(radios[0].validity.customError).toBe(method !== "html");
+        if (method !== "html") expect(radios[0].validationMessage).toEqual(error);
         radios.slice(1).forEach((radio) => expect(radio.validationMessage).toBe(""));
+
         radios.forEach((radio) => {
           expect(radio).not.toHaveAttribute(attrs["aria-invalid"]);
           if (method !== "none") expect(radio).not.toHaveAccessibleDescription();
@@ -392,7 +396,8 @@ describe("Form Validity Observer (Class)", () => {
       }
       // All Other Fields
       else {
-        expect(field.validationMessage).toBe(method === "html" ? "" : error);
+        expect(field.validity.customError).toBe(method !== "html");
+        if (method !== "html") expect(field.validationMessage).toEqual(error);
         if (method !== "none") expect(field).toHaveAccessibleDescription(error);
         expect(field).toHaveAttribute(attrs["aria-invalid"], String(true));
       }
@@ -908,8 +913,448 @@ describe("Form Validity Observer (Class)", () => {
       });
     });
 
+    describe("validateField (Method)", () => {
+      it("Returns `true` when a field PASSES validation and `false` when a field FAILS validation", () => {
+        // Render Field
+        const { form, field } = renderWithinForm(createElementWithProps("input", { name: "input", required: true }));
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        formValidityObserver.observe(form);
+
+        // Failure (Missing Value)
+        expect(formValidityObserver.validateField(field.name)).toBe(false);
+
+        // Success
+        field.value = "Some Value"; // Avoid triggering events
+        expect(formValidityObserver.validateField(field.name)).toBe(true);
+      });
+
+      it("Sets the field's error when it fails validation", () => {
+        // Setup
+        const { form, field } = renderWithinForm(createElementWithProps("input", { name: "input", required: true }));
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        formValidityObserver.observe(form);
+
+        jest.spyOn(formValidityObserver, "setFieldError");
+
+        // Run Assertions
+        expect(formValidityObserver.validateField(field.name)).toBe(false);
+
+        expectErrorFor(field, field.validationMessage);
+        expect(formValidityObserver.setFieldError).toHaveBeenCalledTimes(1);
+        expect(formValidityObserver.setFieldError).toHaveBeenCalledWith(field.name, field.validationMessage, false);
+      });
+
+      it("Clears the field's error when it passes validation", () => {
+        // Setup
+        const { form, field } = renderWithinForm(createElementWithProps("input", { name: "input", required: true }));
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        formValidityObserver.observe(form);
+
+        jest.spyOn(formValidityObserver, "setFieldError");
+        jest.spyOn(formValidityObserver, "clearFieldError");
+
+        // Failure (Value Missing)
+        expect(formValidityObserver.validateField(field.name)).toBe(false);
+        expectErrorFor(field, field.validationMessage);
+
+        // Success
+        field.value = "Some Value"; // Avoid triggering events
+        expect(formValidityObserver.validateField(field.name)).toBe(true);
+        expect(formValidityObserver.setFieldError).toHaveBeenCalledTimes(1); // Method is NOT called on success
+
+        expectNoErrorsFor(field);
+        expect(formValidityObserver.clearFieldError).toHaveBeenCalledTimes(1);
+        expect(formValidityObserver.clearFieldError).toHaveBeenCalledWith(field.name);
+      });
+
+      it("Supports custom, user-defined validation", () => {
+        // Render Field
+        const badValue = "LAME";
+        const { form, field } = renderWithinForm(createElementWithProps("input", { name: "input", value: badValue }));
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        formValidityObserver.observe(form);
+
+        // Setup Test Details
+        jest.spyOn(formValidityObserver, "setFieldError");
+        jest.spyOn(formValidityObserver, "clearFieldError");
+
+        const error = "This field is LAAAAAAME!!!";
+        const validate = jest.fn((f: HTMLInputElement) => (f.value === badValue ? error : undefined));
+        formValidityObserver.register(field.name, { validate });
+
+        // Failure (Custom Validation Failure)
+        expect(formValidityObserver.validateField(field.name)).toBe(false);
+        expect(validate).toHaveBeenCalledWith(field);
+        expect(validate).toHaveBeenCalledTimes(1);
+
+        expectErrorFor(field, error);
+        expect(formValidityObserver.setFieldError).toHaveBeenCalledTimes(1);
+        expect(formValidityObserver.setFieldError).toHaveBeenCalledWith(field.name, error);
+
+        // Success
+        field.value = ""; // Avoid triggering events
+        expect(formValidityObserver.validateField(field.name)).toBe(true);
+        expect(validate).toHaveBeenNthCalledWith(2, field);
+        expect(validate).toHaveBeenCalledTimes(2);
+
+        expectNoErrorsFor(field);
+        expect(formValidityObserver.clearFieldError).toHaveBeenCalledTimes(1);
+        expect(formValidityObserver.clearFieldError).toHaveBeenCalledWith(field.name);
+      });
+
+      it("Supports ASYNCHRONOUS user-defined validation", async () => {
+        // Render Field
+        const badValue = "Unfaithful";
+        const { form, field } = renderWithinForm(createElementWithProps("input", { name: "input", value: badValue }));
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        formValidityObserver.observe(form);
+
+        // Setup Test Details
+        jest.spyOn(formValidityObserver, "setFieldError");
+        jest.spyOn(formValidityObserver, "clearFieldError");
+
+        const error = "You didn't fulfill your promise to me...";
+        const validate = jest.fn((f: HTMLInputElement) => {
+          return new Promise<string | undefined>((resolve) => {
+            setTimeout(() => resolve(f.value === badValue ? error : undefined), 1000);
+          });
+        });
+        formValidityObserver.register(field.name, { validate });
+
+        // Async Failure (Custom Validation Failure)
+        const failingPromise = formValidityObserver.validateField(field.name);
+        expect(failingPromise).toEqual(expect.any(Promise));
+
+        // No errors are updated until after the promise is resolved
+        expectNoErrorsFor(field);
+        expect(await failingPromise).toBe(false);
+
+        expectErrorFor(field, error);
+        expect(formValidityObserver.setFieldError).toHaveBeenCalledTimes(1);
+        expect(formValidityObserver.setFieldError).toHaveBeenCalledWith(field.name, error);
+
+        // Async Success
+        field.value = ""; // Avoid triggering events
+        const succeedingPromise = formValidityObserver.validateField(field.name);
+        expect(succeedingPromise).toEqual(expect.any(Promise));
+
+        // Again, error state isn't updated until after promise resolves.
+        // Note: Because of conflicting acceptance criteria, we can't use the `validationMessage` to verify this.
+        expect(field).toHaveAttribute(attrs["aria-invalid"], String(true));
+        expect(await succeedingPromise).toBe(true);
+
+        expectNoErrorsFor(field);
+        expect(formValidityObserver.clearFieldError).toHaveBeenCalledTimes(1);
+        expect(formValidityObserver.clearFieldError).toHaveBeenCalledWith(field.name);
+      });
+
+      it("HIERARCHICALLY displays the error message(s) for the constraint(s) that the field has broken", () => {
+        /* ---------- Setup ---------- */
+        const { form, field } = renderWithinForm(createElementWithProps("input", { name: "overriden", value: "RIP" }));
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        jest.spyOn(formValidityObserver, "setFieldError");
+        jest.spyOn(formValidityObserver, "clearFieldError");
+
+        // Override field's `ValidityState` for testing
+        type OverridenValidity = { -readonly [K in keyof ValidityState]: ValidityState[K] };
+
+        Object.defineProperty(field, "validity", {
+          writable: true,
+          configurable: false,
+          value: {
+            badInput: true,
+            patternMismatch: true,
+            rangeOverflow: true,
+            rangeUnderflow: true,
+            stepMismatch: true,
+            tooLong: true,
+            tooShort: true,
+            typeMismatch: true,
+            valueMissing: true,
+
+            get customError() {
+              return field.validationMessage !== "";
+            },
+            get valid() {
+              const validationKeys = Object.keys(this).filter((k) => k !== "valid");
+              return validationKeys.every((k) => this[k as keyof ValidityState] === false);
+            },
+          } satisfies ValidityState,
+        });
+
+        Object.entries(field.validity)
+          .filter(([k]) => k !== "customError" && k !== "valid") // Unused Properties
+          .forEach(([, v]) => expect(v).toBe(true));
+
+        // Create custom error messages (in case JSDOM doesn't support unique "browser messages" by default)
+        const errorMessages = Object.freeze({
+          required: "You think you don't need me?",
+          minlength: "Please, tell me more...",
+          maxlength: "SAY LESS!",
+          min: "You need a larger number!",
+          max: "Um... That number is a little bit too large, though...",
+          step: "You can't just give me ANY kind of number!",
+          type: "Did you forget what kind of input I am?",
+          pattern: "Okay. Here's what I want...",
+          badinput: "Seriously, I cannot understand a single thing you're saying.",
+          validate: (f: HTMLInputElement) => `The value ${f.value} is incorrect, bro.`,
+        }) satisfies Required<Parameters<(typeof formValidityObserver)["register"]>[1]>;
+
+        // Require that ALL of the custom error messages are UNIQUE. (This is just for clarity/future-proofing)
+        Object.values(errorMessages).forEach((e, i, a) =>
+          a.slice(i + 1).forEach((E) => {
+            const getError = (error: typeof e) => (typeof error === "function" ? error(field) : error);
+            expect(getError(e)).not.toBe(getError(E));
+          })
+        );
+
+        /* ---------- Run Assertions ---------- */
+        // Register Error Messages, THEN observe `form`
+        formValidityObserver.register(field.name, errorMessages);
+        formValidityObserver.observe(form);
+
+        /** An array of form field constraints and their corresponding {@link ValidityState} properties. */
+        const constraints = [
+          ["required", "valueMissing"],
+          ["minlength", "tooShort"],
+          ["min", "rangeUnderflow"],
+          ["maxlength", "tooLong"],
+          ["max", "rangeOverflow"],
+          ["step", "stepMismatch"],
+          ["type", "typeMismatch"],
+          ["pattern", "patternMismatch"],
+        ] as const satisfies ReadonlyArray<readonly [keyof typeof errorMessages, keyof ValidityState]>;
+
+        // Doubly make sure we'll be testing EVERY validation option (for clarity/future-proofing)
+        {
+          const validationProperties = constraints.map(([, prop]) => prop);
+          Object.keys(field.validity).forEach((validationProperty) => {
+            if (validationProperty === "customError" || validationProperty === "valid") return; // Unused properties
+            if (validationProperty === "badInput") return; // We handle `badInput` separately
+            expect(validationProperties).toContain(validationProperty);
+          });
+        }
+
+        // Check Regular Field Constraints
+        constraints.forEach(([attribute, validationProperty], i) => {
+          expect(formValidityObserver.validateField(field.name)).toBe(false);
+
+          expectErrorFor(field, errorMessages[attribute]);
+          expect(formValidityObserver.setFieldError).toHaveBeenCalledTimes(i + 1);
+          expect(formValidityObserver.setFieldError).toHaveBeenCalledWith(field.name, errorMessages[attribute], false);
+
+          (field.validity as OverridenValidity)[validationProperty] = false;
+        });
+
+        // Check Browser's "Bad Input" Constraint
+        expect(formValidityObserver.validateField(field.name)).toBe(false);
+
+        expectErrorFor(field, errorMessages.badinput);
+        expect(formValidityObserver.setFieldError).toHaveBeenCalledTimes(9);
+        expect(formValidityObserver.setFieldError).toHaveBeenCalledWith(field.name, errorMessages.badinput, false);
+        (field.validity as OverridenValidity).badInput = false;
+
+        // Check User-Defined Validation
+        expect(formValidityObserver.validateField(field.name)).toBe(false);
+
+        expect(formValidityObserver.setFieldError).toHaveBeenCalledTimes(10);
+        expect(formValidityObserver.setFieldError).toHaveBeenCalledWith(field.name, errorMessages.validate(field));
+        expectErrorFor(field, errorMessages.validate(field));
+
+        // Validation Passes When All Constraints Are Satisfied
+        formValidityObserver.register(field.name, {}); // Aggressively remove the custom function that forced errors
+        expect(formValidityObserver.validateField(field.name)).toBe(true);
+
+        expectNoErrorsFor(field);
+        expect(formValidityObserver.clearFieldError).toHaveBeenCalledTimes(1);
+        expect(formValidityObserver.clearFieldError).toHaveBeenCalledWith(field.name);
+      });
+
+      it("Renders a field's error message as HTML when the error configuration requires it", () => {
+        // Render Field
+        const error = "<div>Some people will render me correctly, and others won't.</div>";
+        const { form, field } = renderWithinForm(
+          createElementWithProps("input", { name: "field", type: "number", required: true, min: "1", max: "1336" }),
+          true
+        );
+
+        // Setup `FormValidityObserver`
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        formValidityObserver.observe(form);
+
+        const errorConfiguration: Parameters<(typeof formValidityObserver)["register"]>[1] = {
+          required: { message: error },
+          min: { message: error, render: false },
+          max: { message: error, render: true },
+        };
+        formValidityObserver.register(field.name, errorConfiguration);
+
+        // Test with `render` Option Omitted
+        expect(field.validity.valueMissing).toBe(true);
+        expect(errorConfiguration.required).not.toHaveProperty("render");
+
+        expect(formValidityObserver.validateField(field.name)).toBe(false);
+        expectErrorFor(field, error, "a11y");
+
+        // Test with `render` Option Disabled
+        field.value = "0"; // Avoid triggering events
+        expect(field.validity.rangeUnderflow).toBe(true);
+        expect(errorConfiguration.min).toHaveProperty("render", false);
+
+        expect(formValidityObserver.validateField(field.name)).toBe(false);
+        expectErrorFor(field, error, "a11y");
+
+        // Test with `render` Option Required
+        field.value = "1337"; // Avoid triggering events
+        expect(field.validity.rangeOverflow).toBe(true);
+        expect(errorConfiguration.max).toHaveProperty("render", true);
+
+        expect(formValidityObserver.validateField(field.name)).toBe(false);
+        expectErrorFor(field, expect.not.stringMatching(error), "html");
+        expectErrorFor(field, getTextFromMarkup(error), "html");
+      });
+
+      it("Renders a field's error message as HTML when the user-defined validation requires it", async () => {
+        // Render Field
+        const error = "<p>Shall I be rendered? Or not?</div>";
+        const { form, field } = renderWithinForm(createElementWithProps("input", { name: "user-validated" }), true);
+
+        // Setup `FormValidityObserver`
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        formValidityObserver.observe(form);
+
+        const validate = jest.fn();
+        formValidityObserver.register(field.name, { validate });
+
+        // Test with `render` Option Omitted
+        validate.mockReturnValueOnce({ message: error });
+        expect(formValidityObserver.validateField(field.name)).toBe(false);
+        expectErrorFor(field, error, "a11y");
+
+        // Test with `render` Option Disabled
+        validate.mockReturnValueOnce({ message: error, render: false });
+        expect(formValidityObserver.validateField(field.name)).toBe(false);
+        expectErrorFor(field, error, "a11y");
+
+        // Test with `render` Option Required (Sync)
+        validate.mockReturnValueOnce({ message: error, render: true });
+        expect(formValidityObserver.validateField(field.name)).toBe(false);
+        expectErrorFor(field, expect.not.stringMatching(error), "html");
+        expectErrorFor(field, getTextFromMarkup(error), "html");
+
+        // Test with `render` Option Required (Async)
+        validate.mockReturnValueOnce(Promise.resolve({ message: error, render: true }));
+        expect(await formValidityObserver.validateField(field.name)).toBe(false);
+        expectErrorFor(field, expect.not.stringMatching(error), "html");
+        expectErrorFor(field, getTextFromMarkup(error), "html");
+      });
+
+      it("Removes stale custom `validationMessage`s from a field during validation", () => {
+        // Render Field
+        const customError = "Don't leave me!";
+        const { form, field } = renderWithinForm(
+          createElementWithProps("input", { name: "field", required: true, pattern: "\\d+" })
+        );
+
+        // Setup `FormValidityObserver`
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        formValidityObserver.observe(form);
+
+        const errorConfiguration = { required: customError } as const;
+        formValidityObserver.register(field.name, errorConfiguration);
+
+        // Cause a Custom Error to be displayed
+        expect(field.validity.valueMissing).toBe(true);
+        expect(errorConfiguration).toHaveProperty("required");
+
+        expect(formValidityObserver.validateField(field.name)).toBe(false);
+        expectErrorFor(field, customError, "none");
+
+        // Verify that an obsolete Custom Error is properly replaced by a new, relevant Browser Error
+        field.value = "Letter"; // Avoid triggering events
+        expect(field.validity.valueMissing).toBe(false);
+        expect(field.validity.patternMismatch).toBe(true);
+        expect(errorConfiguration).not.toHaveProperty("pattern");
+
+        expect(formValidityObserver.validateField(field.name)).toBe(false);
+        expectErrorFor(field, field.validationMessage, "none");
+        expectErrorFor(field, expect.not.stringMatching(customError), "none");
+      });
+
+      it("Ignores fields that aren't associated with the observed `form`", () => {
+        const fieldName = "orphan-field";
+        const formValidityObserver = new FormValidityObserver(types);
+        jest.spyOn(formValidityObserver, "setFieldError");
+        jest.spyOn(formValidityObserver, "clearFieldError");
+
+        // Render Form
+        const { form } = renderEmptyFields();
+        const orphanField = createElementWithProps("textarea", { name: fieldName, required: true });
+        document.body.appendChild(orphanField);
+        formValidityObserver.observe(form);
+
+        expect(form.elements).toContain(form.elements[0]);
+        expect(form.elements).not.toContain(orphanField);
+        expect(orphanField).toHaveAttribute("name", expect.stringMatching(/[a-z]+/));
+
+        // Test Orphan Field (Setting Errors)
+        expect(orphanField.validity.valid).toBe(false);
+
+        // Error is not set even though field is invalid
+        expect(formValidityObserver.validateField(orphanField.name)).toBe(false); // "Fails" due to rejected field
+        expect(formValidityObserver.setFieldError).not.toHaveBeenCalled();
+        expect(orphanField).not.toHaveAttribute(attrs["aria-invalid"]);
+
+        // Test Orphan Field (Removing Errors)
+        orphanField.value = "Some Value"; // Avoid triggering events
+        expect(orphanField.validity.valid).toBe(true);
+        orphanField.setAttribute(attrs["aria-invalid"], String(true));
+
+        // Error is not cleared even though field is valid
+        expect(formValidityObserver.validateField(orphanField.name)).toBe(false); // "Fails" due to rejected field
+        expect(formValidityObserver.clearFieldError).not.toHaveBeenCalled();
+        expect(orphanField).toHaveAttribute(attrs["aria-invalid"], String(true));
+      });
+
+      it("Ignores fields that don't have a `name`", () => {
+        const formValidityObserver = new FormValidityObserver(types);
+        jest.spyOn(formValidityObserver, "setFieldError");
+        jest.spyOn(formValidityObserver, "clearFieldError");
+
+        // Render Form
+        const { form } = renderEmptyFields();
+        const namelessField = createElementWithProps("textarea", { required: true });
+        form.appendChild(namelessField);
+        formValidityObserver.observe(form);
+
+        expect(form.elements).toContain(namelessField);
+        expect(namelessField).not.toHaveAttribute("name");
+
+        // Test Nameless Field (Setting Errors)
+        expect(namelessField.validity.valid).toBe(false);
+
+        // Error is not set even though field is invalid
+        expect(formValidityObserver.validateField(namelessField.name)).toBe(false); // "Fails" due to rejected field
+        expect(formValidityObserver.setFieldError).not.toHaveBeenCalled();
+        expect(namelessField).not.toHaveAttribute(attrs["aria-invalid"]);
+
+        // Test Orphan Field (Removing Errors)
+        namelessField.value = "Some Value"; // Avoid triggering events
+        expect(namelessField.validity.valid).toBe(true);
+        namelessField.setAttribute(attrs["aria-invalid"], String(true));
+
+        // Error is not cleared even though field is valid
+        expect(formValidityObserver.validateField(namelessField.name)).toBe(false); // "Failes" due to rejected field
+        expect(formValidityObserver.clearFieldError).not.toHaveBeenCalled();
+        expect(namelessField).toHaveAttribute(attrs["aria-invalid"], String(true));
+      });
+    });
+
     describe("register (Method)", () => {});
-    describe("validateFields (Method)", () => {});
+    describe("validateFields (Method)", () => {
+      // TODO: Is this good phrasing?
+      it.todo("Waits until ALL asynchronous validation functions have finished before returning a value");
+    });
     describe("validateField (Method)", () => {
       /*
        * NOTE: These tests are not complete yet. They have been temporarily halted while workong on methods.
