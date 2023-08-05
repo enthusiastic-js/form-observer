@@ -186,18 +186,18 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
 
   validateFields(names?: string[]): boolean | Promise<boolean> {
     assertFormExists(this.#form);
-    let syncValidationPassed = true as boolean; // eslint-disable-line prefer-const -- This value is mutated
-    let pendingValidations: Promise<boolean>[] | undefined;
+    /** The internal state of {@link validateFields}. These values are _mutated_ by the `#iterateField` helper. */
+    const state = { syncValidationPassed: true, pendingValidations: undefined as Promise<boolean>[] | undefined };
 
     // Validate SPECIFIC fields
     if (names) {
-      for (let i = 0; names.length; i++) this.#iterateField(names[i], syncValidationPassed, pendingValidations);
+      for (let i = 0; i < names.length; i++) this.#iterateField(names[i], state);
     }
     // Validate ALL fields
     else {
-      const validatedFields = new Set<string>();
+      const validatedRadiogroups = new Set<string>();
 
-      for (let i = 0; this.#form.elements.length; i++) {
+      for (let i = 0; i < this.#form.elements.length; i++) {
         const field = this.#form.elements[i] as FormField;
         const { name } = field;
 
@@ -206,43 +206,45 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
         if (field instanceof HTMLFieldSetElement) continue; // See: https://github.com/whatwg/html/issues/6870
 
         // Avoid validating the same `radiogroup` more than once
-        if (validatedFields.has(name)) {
+        if (validatedRadiogroups.has(name)) {
           const radiogroup = this.#form.elements.namedItem(name) as RadioNodeList;
           i += radiogroup.length - 2; // Skip all remaining radio buttons
           continue;
         }
 
-        this.#iterateField(name, syncValidationPassed, pendingValidations);
-        validatedFields.add(name);
+        this.#iterateField(name, state);
+        if (field.type === "radio") validatedRadiogroups.add(name);
       }
     }
 
-    if (!pendingValidations) return syncValidationPassed;
+    if (!state.pendingValidations) return state.syncValidationPassed;
 
-    return Promise.allSettled(pendingValidations).then((results) => {
-      return syncValidationPassed && results.every((r) => r.status === "fulfilled" && r.value === true);
+    return Promise.allSettled(state.pendingValidations).then((results) => {
+      return state.syncValidationPassed && results.every((r) => r.status === "fulfilled" && r.value === true);
     });
   }
 
   /**
    * **Internal** helper for {@link validateFields}. Acts _strictly_ as a _reusable_ way to validate form
-   * fields iteratively while **updating the internal state** of {@link validateFields}
+   * fields iteratively while **mutating the internal state** of `validateFields`
    * (i.e., `syncValidationPassed` and `pendingValidations`).
    *
    * @param name The `name` of the form field currently being iterated
-   * @param syncValidationPassed The internal `syncValidationPassed` state of {@link validateFields}
-   * @param pendingValidations The internal `pendingValidations` state of {@link validateFields}
+   * @param state The internal state of `validateFields`
    */
-  #iterateField(name: string, syncValidationPassed: boolean, pendingValidations: Promise<boolean>[] | undefined): void {
+  #iterateField(
+    name: string,
+    state: { syncValidationPassed: boolean; pendingValidations: Promise<boolean>[] | undefined }
+  ): void {
     const result = this.validateField(name);
     if (result === true) return;
     if (result === false) {
-      syncValidationPassed = false; // eslint-disable-line no-param-reassign -- Mutation is needed here
+      state.syncValidationPassed = false; // eslint-disable-line no-param-reassign -- Mutation is needed here
       return;
     }
 
-    if (pendingValidations) pendingValidations.push(result);
-    else pendingValidations = [result]; // eslint-disable-line no-param-reassign -- Mutation is needed here
+    if (state.pendingValidations) state.pendingValidations.push(result);
+    else state.pendingValidations = [result]; // eslint-disable-line no-param-reassign -- Mutation is needed here
   }
 
   validateField(name: string): boolean | Promise<boolean> {

@@ -285,18 +285,18 @@ describe("Form Validity Observer (Class)", () => {
       expect(radioValues.length).toBeGreaterThan(1); // Assert Multiple Values
 
       document.body.innerHTML = `
-          <form aria-label="Form Fields">
-            <input name="text" type="text" />
-            <input name="checkbox" type="checkbox" />
-            <textarea name="textarea"></textarea>
-            <fieldset role="radiogroup">
-              ${radioValues.map((v) => `<input name="radio" type="radio" value=${v} />`).join("")}
-            </fieldset>
+        <form aria-label="Form Fields">
+          <input name="text" type="text" />
+          <input name="checkbox" type="checkbox" />
+          <textarea name="textarea"></textarea>
+          <fieldset role="radiogroup">
+            ${radioValues.map((v) => `<input name="radio" type="radio" value=${v} />`).join("")}
+          </fieldset>
 
-            <select name="select"></select>
-            <select name="multiselect" multiple></select>
-          </form>
-        `;
+          <select name="select"></select>
+          <select name="multiselect" multiple></select>
+        </form>
+      `;
 
       // Verify setup conditions for `form`
       const form = screen.getByRole<HTMLFormElement>("form");
@@ -1031,7 +1031,7 @@ describe("Form Validity Observer (Class)", () => {
         const error = "You didn't fulfill your promise to me...";
         const validate = jest.fn((f: HTMLInputElement) => {
           return new Promise<string | undefined>((resolve) => {
-            setTimeout(() => resolve(f.value === badValue ? error : undefined), 1000);
+            setTimeout(() => resolve(f.value === badValue ? error : undefined), 500);
           });
         });
         formValidityObserver.register(field.name, { validate });
@@ -1367,11 +1367,373 @@ describe("Form Validity Observer (Class)", () => {
       });
     });
 
-    describe("register (Method)", () => {});
     describe("validateFields (Method)", () => {
-      // TODO: Is this good phrasing?
-      it.todo("Waits until ALL asynchronous validation functions have finished before returning a value");
+      /** An extension of the `Promise` class that reveals when and how the promise has `settled` (for testing). */
+      class ObservablePromise<T> extends Promise<T> {
+        #settled = false;
+        #status: "pending" | "fulfilled" | "rejected" = "pending";
+
+        constructor(
+          executor: (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: unknown) => void) => void
+        ) {
+          super((resolve, reject) => {
+            executor(
+              (value) => {
+                resolve(value);
+                this.#settled = true;
+                this.#status = "fulfilled";
+              },
+              (reason) => {
+                reject(reason);
+                this.#settled = true;
+                this.#status = "rejected";
+              }
+            );
+          });
+        }
+
+        get settled() {
+          return this.#settled;
+        }
+
+        get status() {
+          return this.#status;
+        }
+      }
+
+      // "All Fields" Overload
+      it("Validates ALL of the observed form's (`named`) fields when no arguments are provided", () => {
+        // Render Form
+        const { form } = renderEmptyFields();
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        formValidityObserver.observe(form);
+        jest.spyOn(formValidityObserver, "validateField");
+
+        // Verify Required Test Conditions
+        const formControls = Array.from(form.elements);
+        const validatableFields = formControls.filter((e): e is ValidatableField => e.tagName !== "FIELDSET");
+        const uniqueFieldNames = new Set(validatableFields.map((f) => f.name));
+
+        // We must have MULTIPLE validatable fields in the `form`
+        expect(uniqueFieldNames.size).toBeGreaterThan(1);
+
+        // Run Assertions
+        formValidityObserver.validateFields();
+        expect(formValidityObserver.validateField).toHaveBeenCalledTimes(uniqueFieldNames.size);
+        validatableFields.forEach((f) => expect(formValidityObserver.validateField).toHaveBeenCalledWith(f.name));
+      });
+
+      // "Specific Fields" Overload
+      it("Validates the form fields SPECIFIED by `name`", () => {
+        // Render Form
+        const { form } = renderEmptyFields();
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        formValidityObserver.observe(form);
+        jest.spyOn(formValidityObserver, "validateField");
+
+        // Verify Required Test Conditions
+        const formControls = Array.from(form.elements);
+        const validatableFields = formControls.filter((e): e is ValidatableField => e.tagName !== "FIELDSET");
+        const uniqueFieldNames = new Set(validatableFields.map((f) => f.name));
+
+        // We must have MULTIPLE validatable fields in our SUBSET
+        const specificFields = Array.from(uniqueFieldNames).slice(Math.ceil(uniqueFieldNames.size * 0.5));
+        expect(specificFields.length).toBeGreaterThan(1);
+
+        // Run Assertions
+        formValidityObserver.validateFields(specificFields);
+        expect(formValidityObserver.validateField).toHaveBeenCalledTimes(specificFields.length);
+        expect(formValidityObserver.validateField).not.toHaveBeenCalledTimes(uniqueFieldNames.size);
+
+        validatableFields.forEach(({ name }) => {
+          /* eslint-disable jest/no-conditional-expect */
+          if (specificFields.includes(name)) expect(formValidityObserver.validateField).toHaveBeenCalledWith(name);
+          else expect(formValidityObserver.validateField).not.toHaveBeenCalledWith(name);
+          /* eslint-enable jest/no-conditional-expect */
+        });
+      });
+
+      it("Returns `true` if ALL of the VALIDATED fields PASS validation", () => {
+        /* ---------- (Initial) Setup ---------- */
+        // Render Form
+        const { form } = renderEmptyFields();
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        formValidityObserver.observe(form);
+
+        // ALL form controls should be valid
+        const formControls = Array.from(form.elements) as FormField[];
+        formControls.forEach((f) => expect(f.validity.valid).toBe(true));
+
+        // We must have MULTIPLE validatable fields in the `form`
+        const validatableFields = formControls.filter((e): e is ValidatableField => e.tagName !== "FIELDSET");
+        const uniqueFieldNames = new Set(validatableFields.map((f) => f.name));
+        expect(uniqueFieldNames.size).toBeGreaterThan(1);
+
+        /* ---------- Test "All Fields" Overload ---------- */
+        expect(formValidityObserver.validateFields()).toBe(true);
+
+        /* ---------- Test "Specific Fields" Overload ---------- */
+        // Extract specific fields to validate
+        const specificFields = Array.from(uniqueFieldNames).slice(Math.ceil(uniqueFieldNames.size * 0.5));
+        expect(specificFields.length).toBeGreaterThan(1);
+
+        // Make all of the unspecified fields invalid
+        validatableFields.forEach((f) => {
+          if (!specificFields.includes(f.name)) f.setAttribute("required", "");
+        });
+        expect(validatableFields.some((f) => !f.validity.valid)).toBe(true);
+
+        // NARROWED Validation still passes because only the valid, specified fields were validated
+        expect(formValidityObserver.validateFields(specificFields)).toBe(true);
+      });
+
+      it("Returns `false` if ANY of the VALIDATED fields FAIL validation", () => {
+        /* ---------- (Initial) Setup ---------- */
+        // Render Form
+        const { form } = renderEmptyFields();
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        formValidityObserver.observe(form);
+
+        // ALL form controls should START OUT valid
+        const formControls = Array.from(form.elements) as FormField[];
+        formControls.forEach((f) => expect(f.validity.valid).toBe(true));
+
+        // We must have MULTIPLE validatable fields in the `form`
+        const validatableFields = formControls.filter((e): e is ValidatableField => e.tagName !== "FIELDSET");
+        const uniqueFieldNames = new Set(validatableFields.map((f) => f.name));
+        expect(uniqueFieldNames.size).toBeGreaterThan(1);
+
+        /* ---------- Test "All Fields" Overload ---------- */
+        validatableFields.forEach((f) => {
+          // Make a single field invalid and run validation
+          f.setAttribute("required", "");
+          expect(f.validity.valid).toBe(false);
+          expect(formValidityObserver.validateFields()).toBe(false);
+
+          // Guarantee that all fields are valid in preparation for the next iteration/test
+          f.removeAttribute("required");
+          expect(formValidityObserver.validateFields()).toBe(true);
+        });
+
+        /* ---------- Test "Specific Fields" Overload ---------- */
+        // Verify that all fields are valid again
+        formControls.forEach((f) => expect(f.validity.valid).toBe(true));
+
+        // Extract specific fields to validate
+        const specificFields = Array.from(uniqueFieldNames).slice(Math.ceil(uniqueFieldNames.size * 0.5));
+        expect(specificFields.length).toBeGreaterThan(1);
+
+        // Run narrowed validation
+        validatableFields.forEach((f) => {
+          // Make a single field invalid and run validation
+          f.setAttribute("required", "");
+          expect(f.validity.valid).toBe(false);
+
+          const validationPassed = formValidityObserver.validateFields(specificFields);
+          expect(validationPassed).toBe(!specificFields.includes(f.name));
+
+          // Guarantee that all fields are valid in preparation for the next iteration
+          f.removeAttribute("required");
+          expect(formValidityObserver.validateFields(specificFields)).toBe(true);
+        });
+      });
+
+      it("Waits until ALL asynchronous validation functions have `settled` before returning a value", async () => {
+        /* ---------- (Initial) Setup ---------- */
+        // Setup User-defined Validation Functions
+        /**
+         * Creates an async validation function that (optionally) returns an `error`
+         * after the specifed amount of `time` (ms).
+         */
+        const createAsyncValidator = (time: number, error?: string) => () => {
+          return new ObservablePromise<string | undefined>((resolve) => {
+            setTimeout(resolve, time, error);
+          });
+        };
+
+        const names = { sync: "sync", async: "async", "async-mid": "async-mid", "async-long": "async-long" } as const;
+        const validators = Object.freeze({
+          sync: jest.fn().mockReturnValue("Synchronous Failure!"),
+          async: jest.fn(createAsyncValidator(250)),
+          "async-mid": jest.fn(createAsyncValidator(500, "Async Failure!")),
+          "async-long": jest.fn(createAsyncValidator(1000, "")),
+        }) satisfies { [K in keyof typeof names]: jest.Mock };
+
+        // Render Form
+        document.body.innerHTML = `
+          <form aria-label="Async Testing">
+            <input name="${names.sync}" type="checkbox" />
+            <textarea name="${names.async}"></textarea>
+            <select name="${names["async-mid"]}"></select>
+            <select name="${names["async-long"]}" multiple></select>
+          </form>
+        `;
+
+        // Observe Form + Configure Errors
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
+        Object.entries(validators).forEach(([name, validate]) => formValidityObserver.register(name, { validate }));
+
+        // Replace native `Promise` class so that we can spy on promises during testing
+        const OriginalPromise = window.Promise;
+        window.Promise = ObservablePromise;
+
+        /* ---------- Test "All Fields" Overload ---------- */
+        const failingPromise = formValidityObserver.validateFields();
+        expect(failingPromise).toEqual(expect.any(OriginalPromise));
+
+        expect(await failingPromise).toBe(false);
+        expect(validators.async.mock.results[0].value.settled).toBe(true);
+        expect(validators["async-mid"].mock.results[0].value.settled).toBe(true);
+        expect(validators["async-long"].mock.results[0].value.settled).toBe(true);
+
+        /* ---------- Test "Specific Fields" Overload ---------- */
+        // Validations That Ultimately Fail (Sync + Async Failures)
+        expect(await formValidityObserver.validateFields([names.sync, names.async, names["async-long"]])).toBe(false);
+        expect(await formValidityObserver.validateFields([names.async, names["async-mid"], names["async-long"]])).toBe(
+          false
+        );
+
+        // Validation That Ultimately Succeeds
+        const succeedingPromise = formValidityObserver.validateFields([names.async, names["async-long"]]);
+        expect(succeedingPromise).toEqual(expect.any(OriginalPromise));
+
+        expect(await succeedingPromise).toBe(true);
+        expect(validators["async-mid"].mock.results[3]).toBe(undefined);
+        expect(validators.async.mock.results[3].value.settled).toBe(true);
+        expect(validators["async-long"].mock.results[3].value.settled).toBe(true);
+
+        // Restore the original `Promise` class to avoid disrupting other tests
+        window.Promise = OriginalPromise;
+      });
+
+      it("Returns `false` if ANY asynchronous validation functions `reject`", async () => {
+        /* ---------- (Initial) Setup ---------- */
+        // Setup User-defined Validation Functions
+        const names = { sync: "sync", fulfilled: "fulfilled", rejected: "rejected" } as const;
+        const validators = Object.freeze({
+          sync: jest.fn(),
+          fulfilled: jest.fn(() => Promise.resolve(undefined)),
+          rejected: jest.fn(() => Promise.reject(undefined)),
+        }) satisfies { [K in keyof typeof names]: jest.Mock };
+
+        // Render Form
+        document.body.innerHTML = `
+          <form aria-label="Async Testing">
+            <input name="${names.sync}" type="checkbox" />
+            <textarea name="${names.fulfilled}"></textarea>
+            <select name="${names.rejected}"></select>
+          </form>
+        `;
+
+        // Observe Form + Configure Errors
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
+        Object.entries(validators).forEach(([name, validate]) => formValidityObserver.register(name, { validate }));
+
+        /* ---------- Test "All Fields" Overload ---------- */
+        const failingPromise = formValidityObserver.validateFields();
+        expect(failingPromise).toEqual(expect.any(Promise));
+        expect(await failingPromise).toBe(false);
+
+        /* ---------- Test "Specific Fields" Overload ---------- */
+        // Validations Where No `reject`ions Occurred
+        expect(formValidityObserver.validateFields([names.sync])).toBe(true);
+        expect(await formValidityObserver.validateFields([names.sync, names.fulfilled])).toBe(true);
+
+        // Validation Where `reject`ion(s) Occurred
+        const otherFailingPromise = formValidityObserver.validateFields([names.fulfilled, names.rejected]);
+        expect(otherFailingPromise).toEqual(expect.any(Promise));
+        expect(await failingPromise).toBe(false);
+      });
+
+      describe("Unique Behavior of 'All Fields' Overload", () => {
+        it("Does not validate the same `radiogroup` more than once (Performance Test)", () => {
+          const radioName = "radio";
+
+          // Render Form
+          document.body.innerHTML = `
+            <form aria-label="Radio Button Group Testing">
+              <fieldset role="radiogroup">
+                ${radioValues.map((v) => `<input name="${radioName}" type="radio" value=${v} />`).join("")}
+              </fieldset>
+            </form>
+          `;
+
+          // Observe Form
+          const formValidityObserver = new FormValidityObserver(types[0]);
+          formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
+          jest.spyOn(formValidityObserver, "validateField");
+
+          // Run Assertions
+          formValidityObserver.validateFields();
+          expect(formValidityObserver.validateField).toHaveBeenCalledTimes(1);
+          expect(formValidityObserver.validateField).toHaveBeenCalledWith(radioName);
+        });
+
+        it("Ignores form controls that don't have a `name`", () => {
+          const validatableFieldName = "validatable";
+
+          // Render HTML
+          document.body.innerHTML = `
+            <form aria-label="Test Form>
+              <input type="text" />
+              <input name="${validatableFieldName}" type="text" />
+            </form>
+          `;
+
+          // Observe Form
+          const formValidityObserver = new FormValidityObserver(types[0]);
+          formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
+          jest.spyOn(formValidityObserver, "validateField");
+
+          // Run Assertions
+          formValidityObserver.validateFields();
+          expect(formValidityObserver.validateField).toHaveBeenCalledTimes(1);
+          expect(formValidityObserver.validateField).toHaveBeenCalledWith(validatableFieldName);
+        });
+
+        /*
+         * NOTE: This test might be updated in the future so that `fieldset`s are not included in the list
+         * of skipped HTML elements. See: https://github.com/whatwg/html/issues/6870.
+         *
+         * ALSO: Technically speaking, non-submit `HTMLButtonElement`s do not partake in constraint validation.
+         * See: https://developer.mozilla.org/en-US/docs/Web/HTML/Constraint_validation.
+         * Even so, `button`s are good candidates for _accessible_ form controls (like `combobox`es)
+         * which might require _custom_ validation logic. So we're generally allowing `button`s to
+         * partake in the `FormValidityObserver`'s validation logic -- at least for now.
+         */
+        it("Ignores form controls that don't participate in form validation", () => {
+          const validatableFieldName = "validatable";
+
+          // Render Form
+          document.body.innerHTML = `
+            <form aria-label="Form with Unsupported Elements">
+              <output name="output">My Output</output>
+              <object name="object"></object>
+              <fieldset name="fieldset"></fieldset>
+              <input name="${validatableFieldName}" type="text" />
+            </form>
+          `;
+
+          const form = screen.getByRole<HTMLFormElement>("form");
+          expect(Array.from(form.elements).every((e) => e.getAttribute("name"))).toBeTruthy();
+
+          // Observe Form
+          const formValidityObserver = new FormValidityObserver(types[0]);
+          formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
+          jest.spyOn(formValidityObserver, "validateField");
+
+          // Run Assertions (unsupported elements are ignored)
+          formValidityObserver.validateFields();
+          expect(formValidityObserver.validateField).toHaveBeenCalledTimes(1);
+          expect(formValidityObserver.validateField).toHaveBeenCalledWith(validatableFieldName);
+        });
+      });
     });
+
+    describe("register (Method)", () => {});
+
     describe("validateField (Method)", () => {
       /*
        * NOTE: These tests are not complete yet. They have been temporarily halted while workong on methods.
