@@ -303,29 +303,13 @@ If you've paid close attention, you'll notice that all of the methods on `FormVa
 
 The `validateField`, `setFieldError`, and `clearFieldError` methods require access to the underlying `form` element in order to work properly. The reason is that when a user passes the `name` argument to one of these methods, the method needs to identify the _correct_ field which has the _correct_ `name` _and_ which belongs to the _correct_ `form`. The simplest and most accurate way to determine the correct field by `name` is to leverage the `namedItem` method exposed by the _currently-observed_ `form`. Consequently, these methods require a `form` to be observed before being called. (Even if these methods could somehow work _without_ observing a `form`, it still wouldn't really make sense to start validating fields without identifying the `form` of interest anyway.)
 
-By contrast the `register` method _does not_ require access to the underlying `form` element. All that `register` needs to do is keep track of the rules associated with the various fields. It can organize these constraints into key-value pairs, where the `key` is the `name` of the form field and the `value` is the ruleset associated with said form field. Thus, there is no need for `register` to require a `form` to be observed.
+By contrast the `register` method _does not_ require access to the underlying `form` element. All that `register` needs to do is keep track of the error messages associated a field's constraints. It can organize these constraints into key-value pairs, where the `key` is the `name` of the form field and the `value` is the group (object) of error messages associated with said field. Thus, there is no need for `register` to require a `form` to be observed.
 
-When a `form` _is_ being observed, the `register` method will run some additional checks to help developers avoid unintended calls to `register`. But this is not an additional "feature" for `register`, per se. Rather, it's just something that's intended to help keep the developer's code cleaner. If the `register` method does not _require_ access to the underlying `form` element to offer its primary value to developers, then the method should not _enforce_ that a `form` is observed before allowing itself to be called.
-
-#### 2&rpar; Props Spreading in JS Frameworks Removes the Need for Attribute-Rule Reconciliation
-
-We just recently mentioned that `register` runs some additional checks for developers if a `form` is already being observed. To be more specific, these checks make sure that when a rule is registered for a field, the field also has the corresponding validation attribute. For instance, an `input` registered with the `required` rule should also have the `required` attribute. This is what we call "attribute-rule reconciliation", which is necessary to make sure that the `FormValidityObserver`'s validation logic can hook into the browser's [`ValidityState`](https://developer.mozilla.org/en-US/docs/Web/API/ValidityState) for fields.
-
-But what if `register` could setup the rules belonging to a field _and_ apply the correct attributes to said field simultaneously? This is not possible for `register` when an application is using raw HTML and JS only. (Specifically, it is not possible during the initial page load.) However, `register` can accomplish this goal in JS frameworks that support props spreading. (And all reptutable JS frameworks do support props spreading.)
-
-All framework-specific implementations of the `FormValidityObserver` can roughly get away with something like the following:
-
-```tsx
-<input {...register("my-name", { pattern: { value: "\\d+", message: "Use proper pattern please." } })} />
-```
-
-And these frameworks-specific implementations of `register` can use the information in the supplied object to apply the proper attributes to the form field. If the `register` method is _guaranteed_ to apply the correct attributes to a field, then there is no need for an attribute-rule reconciliation step.
-
-#### 3&rpar; Requiring a `form` to Be Observed before Calling `register` Breaks SSR and Initial Page Load in JS Frameworks
+#### 2&rpar; Requiring a `form` to Be Observed before Calling `register` Breaks SSR and Initial Page Load in JS Frameworks
 
 All JS frameworks require a component to be mounted _before_ the developer can access any underlying DOM nodes that the component renders. This, of course, makes sense. The developer cannot operate on a DOM node that doesn't exist yet. Thus, the developer must wait to operate on DOM nodes until _after_ the component has finished mounting and finished rendering actual elements to the DOM.
 
-Unfortunately, this places a restriction on `FormValidityObserver`. As mentioned earlier, the most convient way to use `register` in a JS framework is as follows:
+Unfortunately, this places a restriction on `FormValidityObserver`. The most convient way to use `register` in a JS framework is as follows:
 
 ```tsx
 <input {...register("my-name", { pattern: { value: "\\d+", message: "Use proper pattern please." } })} />
@@ -333,7 +317,7 @@ Unfortunately, this places a restriction on `FormValidityObserver`. As mentioned
 
 However, with this approach, the call to `register` would happen _during_ the initial client-side render (i.e., _before_ the component has mounted and thus _before_ any `form` elements can be observed) and during SSR (where there is no concept of a browser or DOM node at all). This means that -- if we _required_ a `form` to be observed before calling `register` -- all calls to `register` would fail during SSR / initial page load, resulting in confusing errors to developers using JS frameworks.
 
-This is the strongest reason _not_ to require a `form` to be observed before calling `register`. And from the aforementioned points, such a decision basically affords little to no harm to the developer. Thus, we decided to allow `register` to be called without a observing a `form` first.
+This is the strongest reason _not_ to require a `form` to be observed before calling `register`. And from the aforementioned points, such a decision basically affords no harm to the developer. Thus, we decided to allow `register` to be called without a observing a `form` first.
 
 ### Why Doesn't the Core `FormValidityObserver` Apply the Proper Attributes to Form Fields?
 

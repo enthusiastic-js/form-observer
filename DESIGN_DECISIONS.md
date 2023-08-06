@@ -6,9 +6,9 @@ If you've already read my [`Development Notes`](./DEVELOPMENT_NOTES.md), then yo
 
 Note that as you see the arguments laid out here, I'm more so trying to convince my future self than I am trying to convince you. If the arguments convince you too, hopefully that means I'm saying things that are valid.
 
-**This file is only updated when previously-established designs are overturned/re-written**. Therefore, as a rule, when something goes through its first iteration, this file _will not_ be updated.
+**This file is only updated when previously-established designs are overturned/re-written**. Therefore, as a [general] rule, when something goes through its first iteration, this file _will not_ be updated.
 
-This file is similar to a `Changelog`: It specifies the dates (in descending order) at which certain noteworthy design changes were made, and it explains the reasoning behind those changes. Maybe you'll find this helpful; maybe you won't. In either case, I likely will. :)
+This file is similar to a `Changelog`: It specifies the dates (in descending order) at which certain noteworthy design changes were made, and it explains the reasoning behind those changes. Maybe you'll find this helpful; maybe you won't. In either case, I likely will. :&rpar;
 
 It's possible that the need for this is already captured in the concept of `PR` (Pull Request) history. We will try to run with this approach _and_ the approach of PRs before coming to a final decision on what to use to accomplish this history-preserving goal.
 
@@ -97,3 +97,23 @@ Because `sessionStorage` and `localStorage` behave the exact same way when it co
 **Second: We lose the benefit of static methods/functions if we support multiple storage options**. When we choose to _exclusively_ use `localStorage`, we can simplify things by creating local functions and static class methods that are only defined once. But if the end developer starts dictating what kind of storage is used, that information will need to be passed in as an argument to the constructor. This ultimately means that our methods will need to refer to something like `this.#storage` instead of `window.localStorage`, which in turn means that what _could have been_ a static method will need to be changed into an instance method, which in turn means that we'll be recreating functions that effectively do the exact same thing for each instance of `FormStorageObserver`. Seems wasteful, doesn't it?
 
 **Third: If the life of the `form` data is a concern, the developer will need to take responsibility for it anyway**. Although it would be a little odd, someone could argue that using `sessionStorage` makes life easier because the `form` data would automatically be cleared when the browser tab is closed. However, it doesn't make sense to leave a user's storage cluttered with obsolete data for any period of time. As soon as the `form` data becomes irrelevant, it should be removed. This benefits the users of our web apps, and it likely shields us developers from potential sources of unnecessary confusion. Whether `localStorage` or `sessionStorage` is used, this cleanup will have to be done; so we may as well keep things simple by keeping to one approach over the other (in light of the earlier points).
+
+## 2023-08-06
+
+### Remove Attribute-Constraint Reconciliation (Also Called "Attribute-Rule Reconciliation") from `FormValidityObserver.register()`
+
+This change was made for the sake of DX and Performance.
+
+Previously, the `FormValidityObserver.register()` method would run some strict checks on the field whose error messages were being registered. Specifically, the observer would throw an error if the field being configured did not exist in the observed `form` _or_ if said field lacked any constraint-related attributes that seemed necessary based on the provided error message configuration. In the end, we have deemed this approach to be overinvasive and unprofitable. There are 2 primary reasons for this:
+
+#### 1&rpar; This "Feature" Breaks Conditional Rendering
+
+There are some applications which conditionally render form fields based on some of the values that the user has already supplied to the `form`. Some developers may want to register error messages for fields _that have not yet been rendered_. This is a valid use case. But throwing an error when a configured field is not found in the `form` will make it impossible to satisfy this use case.
+
+Although it is likely less common, similar concerns could also be brought up for conditionally applied _attributes_.
+
+#### 2&rpar; This "Feature" Creates Unnecessary Overhead
+
+It probably isn't _that_ bad to loop over the values of the `errorMessages` object passed to the `register` method in order to perform what we called "attribute-constraint reconciliation". But still... for a feature that no one asked for -- and probably that no one really cares for -- it's a net loss in performance... with no real benefit. (Technically speaking, our previous approach was also not all-encompassing anyway. We won't dive into that though.)
+
+Those two things considered, we've reverted `register` to a simple method that updates the `FormValidityObserver`'s local store of field-associated error messages. Generally speaking, attribute-constraint reconciliation won't be a concern for anyone using a JS Framework. Developers who aren't using JS frameworks can make sure that they aren't registering unused error messages on their own. We don't need to aggressively handle this for them.

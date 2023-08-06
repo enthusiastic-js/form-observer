@@ -259,6 +259,23 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
      * Edit: This is actually impossible because browsers are inconsistent with this. So we must warn users instead.
      */
 
+    /*
+     * TODO: This might actually be the wrong abstraction. We created `#getErrorDetailsFor` to try to minimize
+     * redundancy, but this code obviously has its own redundancy as well. Moreoever, this approach is
+     * not as suitable for refactors if we need to do _more_ with a field (e.g., focus it) after we see that
+     * it failed validation. Perhaps a better approach would be to create a `#getBrokenConstraint` helper
+     * which returns a string representing the STATIC (i.e., non-custom) constraint that failed
+     * (e.g., `required`, `badinput`, etc.) We could use that string to get the proper error details
+     * from `#errorMessagesByFieldName`. And with that abstraction, we could probably do away with
+     * `#getErrorDetailsFor` altogether.
+     *
+     * That said, with an approach like this, it would be nice if we could reuse the logic between "static,
+     * browser validation", and "custom, user-defined validation". Maybe we can rename `#resolveCustomValidation`
+     * to `#resolveValidation` and use that internal method for resolve static errors as well? Or maybe there's
+     * a better abstraction. Not sure yet. But we'll explore this soon after we finish writing tests for this class.
+     * (Note: A simpler abstraction than `#resolveValidation` may not be possible given our need to support `Promises`.
+     * Again, we'll see.)
+     */
     // Omission Errors
     if (validity.valueMissing) return Boolean(this.setFieldError(name, ...this.#getErrorDetailsFor(field, "required")));
 
@@ -365,29 +382,10 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     field.setCustomValidity?.("");
   }
 
+  // TODO: Would it make more sense to rename this to something like `configure`?
   register(name: string, errorMessages: ValidationErrors): void {
     if (typeof window === "undefined") return;
     this.#errorMessagesByFieldName.set(name, errorMessages);
-
-    // Exit early if no `form` has been observed yet. (This is mainly done for JS-framework implementations.)
-    if (!this.#form) return;
-
-    // Verify that a valid field was registered
-    const field = this.#getTargetField(name);
-    if (!field) throw new Error(`No form field with the name "${name}" was found for registration.`);
-
-    // Warn devs about fields whose attributes are out of sync with their corresponding error message settings
-    const rules = Object.keys(errorMessages) as Array<keyof ValidationErrors>;
-
-    for (let i = 0; i < rules.length; i++) {
-      const rule = rules[i];
-      if (rule === "badinput" || rule === "validate") continue; // Only check standard HTML field attributes
-      if (errorMessages[rule] === undefined) continue;
-
-      if (field.hasAttribute(rule)) continue;
-      const err = `A field named "${name}" was registered with rule "${rule}" but lacks a corresponding attribute.`;
-      throw new Error(err);
-    }
   }
 
   /** **Internal** helper. Returns the correct form field to use for a validation or error-handling action. */

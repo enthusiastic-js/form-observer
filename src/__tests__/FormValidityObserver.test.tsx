@@ -1124,7 +1124,6 @@ describe("Form Validity Observer (Class)", () => {
         );
 
         /* ---------- Run Assertions ---------- */
-        // Register Error Messages, THEN observe `form`
         formValidityObserver.register(field.name, errorMessages);
         formValidityObserver.observe(form);
 
@@ -1732,7 +1731,74 @@ describe("Form Validity Observer (Class)", () => {
       });
     });
 
-    describe("register (Method)", () => {});
+    describe("register (Method)", () => {
+      // NOTE: For a more extensive test, see the "Hierarchy Test" in the `validateField (Method)` section
+      it("Configures the custom error messages that will be displayed when the provided field fails validation", () => {
+        const customFieldName = "custom-error-field";
+        const customError = "You can't ignore me!";
+
+        // Render Form
+        document.body.innerHTML = `
+          <form aria-label="Test Form">
+            <input name="1st-default-message" type="text" required />
+            <input name="2nd-default-message" type="text" required />
+            <input name="${customFieldName}" type="text" required />
+          </form>
+        `;
+
+        const form = screen.getByRole<HTMLFormElement>("form");
+        const fields = Array.from(form.elements) as HTMLInputElement[];
+        const configuredField = form.elements.namedItem(customFieldName) as HTMLInputElement;
+
+        // Verify that ALL fields are `input`s having the SAME attributes (excluding `name`)
+        fields.forEach((f, _, array) => {
+          expect(f).toEqual(expect.any(HTMLInputElement));
+          const attributes = Array.from(f.attributes).filter((a) => a.name !== "name");
+
+          // Note: We can't use the `slice` approach this time because a latter field could have more attributes
+          array.forEach((F) => {
+            attributes.forEach((a) => expect(f.getAttribute(a.name)).toBe(F.getAttribute(a.name)));
+          });
+        });
+
+        // Observer Form
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        formValidityObserver.observe(form);
+
+        // Run Assertions
+        formValidityObserver.register(customFieldName, { required: customError });
+        fields.forEach((f) => formValidityObserver.validateField(f.name));
+
+        const defaultBrowserError = fields[0].validationMessage;
+        expectErrorFor(fields[0], defaultBrowserError, "none");
+        expectErrorFor(fields[1], defaultBrowserError, "none");
+        expectErrorFor(configuredField, expect.not.stringMatching(defaultBrowserError), "none");
+        expectErrorFor(configuredField, customError, "none");
+      });
+
+      it("Does nothing on the server side (i.e., in a non-browser environment)", () => {
+        const error = "I can't believe I was ignored!";
+
+        // Render Form
+        const { form, field } = renderField(createElementWithProps("input", { name: "weird-field", required: true }));
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        formValidityObserver.observe(form);
+
+        // Delete `window` to simulate a non-browser environment
+        const { window } = globalThis;
+        delete (globalThis as { window?: Window }).window;
+
+        // Run Assertions
+        formValidityObserver.register(field.name, { required: error });
+        formValidityObserver.validateField(field.name);
+
+        expectErrorFor(field, expect.not.stringMatching(error), "none");
+        expectErrorFor(field, field.validationMessage, "none");
+
+        // Restore the `window` to avoid disrupting other future tests
+        globalThis.window = window;
+      });
+    });
 
     describe("validateField (Method)", () => {
       /*
