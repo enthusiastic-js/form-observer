@@ -2032,3 +2032,34 @@ describe("Form Validity Observer (Class)", () => {
     });
   });
 });
+
+/* ---------------------------------------- TypeScript Type-only Tests ---------------------------------------- */
+/* eslint-disable no-new */
+/* eslint-disable no-unreachable */
+/* eslint-disable @typescript-eslint/no-empty-function */
+(function runTypeOnlyTests() {
+  /*
+   * This early return statement allows our type-only tests to be validated by `ts-jest` WITHOUT us getting
+   * false positives for code coverage.
+   */
+  return;
+  const event1 = "beforeinput" satisfies keyof DocumentEventMap; // Correlates to `InputEvent`
+  const event2 = "click" satisfies keyof DocumentEventMap; // Correlates to `MouseEvent`
+
+  // Single Type
+  new FormValidityObserver(event1);
+  new FormValidityObserver(event1, {});
+  new FormValidityObserver(event1, { eventListenerOpts: true });
+
+  // MultiValidity Types
+  new FormValidityObserver([event1, event2]);
+  new FormValidityObserver([event1, event2], {});
+  new FormValidityObserver([event1, event2], { eventListenerOpts: undefined });
+
+  new FormValidityObserver([event1, event2] as const);
+  new FormValidityObserver([event1, event2] as const, {});
+  new FormValidityObserver([event1, event2] as const, { eventListenerOpts: { passive: false, once: true } });
+})();
+/* eslint-enable @typescript-eslint/no-empty-function */
+/* eslint-enable no-unreachable */
+/* eslint-enable no-new */
