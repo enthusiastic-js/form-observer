@@ -34,6 +34,12 @@ interface FormStorageObserverConstructor {
 }
 
 interface FormStorageObserverOptions {
+  /*
+   * TODO: Our brief test with React makes this approach to automation seem a little rigid. Perhaps we should
+   * expose more options? Maybe we can change the `manual` property to `automate`, which accepts 1 of 4
+   * possible strings: `neither`, `setup`, `teardown`, and `both`. We'd have to update the JSDoc too, of course.
+   * But this approach seems much more flexible according to user's needs.
+   */
   /**
    * Determines whether or not the observer will automatically load/clear the form data stored in `localStorage`.
    * If `false`, the observer will automatically load any relevant data from `localStorage` when a
@@ -46,8 +52,7 @@ interface FormStorageObserverOptions {
 
   /**
    * The `addEventListener` options to use for the observer's event listener.
-   *
-   * See {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
+   * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
    */
   eventListenerOpts?: ListenerOptions;
 }
@@ -160,6 +165,7 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
 };
 
 /* -------------------- Utility Functions -------------------- */
+// TODO: Should we expose a static `FormStorageObserver.save` method instead for greater flexibility?
 /** Event Listener used to store `form` data in `localStorage` */
 function eventListener(event: FormFieldEvent<EventType>): void {
   const field = event.target;
