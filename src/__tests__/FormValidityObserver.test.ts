@@ -6,7 +6,6 @@ import type { EventType, ListenerOptions, FormField } from "../types";
 import FormObserver from "../FormObserver";
 import FormValidityObserver from "../FormValidityObserver";
 
-// TODO: Rename this to a `.ts` file since this file is no longer intended to hold JSX. (Don't lie about file types.)
 /*
  * NOTE: You may find that some of these tests are a little redundant in the assertions that they run. For
  * instance, asserting that various kinds of fields were rendered to the DOM, even though the `innerHTML`
