@@ -28,6 +28,7 @@
   - We shouldn't need to provide _access_ to the field that errored out, right? The browser just focuses the first field that errors out on its own. Is it sufficient to copy the browser's behavior there? It makes sense considering that it makes the user aware not only of the current erroneous fields, but _all_ erroneous fields that come after. (It also indicates that no preceding fields are erroneous ... provided that the developer didn't do some weird layout shifting with a flexbox or grid.)
 - [ ] Provide an easy way for users to scroll to the field that errored out.
   - Should we support a custom scroller function option for people who need more control over how scrolling happens? Or should we just expose some simple, fixed options for how to scroll. Probably both?
+- [ ] Perhaps we should dispatch the `invalid` event when validation fails? Just like the browser does? If we're claiming to _enhance_ the browser's functionality, then we don't really want to _take away_ anything that the browser does. Instead, we want to _add_ to it (as effectively, powerfully, and minimalistically as possible).
 
 ## TypeScript
 

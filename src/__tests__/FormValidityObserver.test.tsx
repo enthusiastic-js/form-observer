@@ -7,6 +7,19 @@ import FormObserver from "../FormObserver";
 import FormValidityObserver from "../FormValidityObserver";
 
 // TODO: Rename this to a `.ts` file since this file is no longer intended to hold JSX. (Don't lie about file types.)
+/*
+ * NOTE: You may find that some of these tests are a little redundant in the assertions that they run. For
+ * instance, asserting that various kinds of fields were rendered to the DOM, even though the `innerHTML`
+ * string technically already proves that said elements were rendered to the DOM. Such redundancies are a bit
+ * unorthodox. But due to the fact that this is a _library_ that _others_ besides the maintainers will be using,
+ * we want to be doubly sure that if we go around changing tests, we're changing them in a _proper_ way. Redundant
+ * assertions like the aforementioned one clarify, "Hey, this is how we _prove_ that our test criteria are
+ * actually being met. This is important. Don't change it." In some cases, redundant assertions can help readers
+ * understand the significance of the setup for a given test. (This communicates that the developer can't just
+ * use _any_ kind of setup if they want to update the test.) I wouldn't necessarily recommend this approach for a
+ * personal project -- though in some cases I might recommend it for an important, complex component that's
+ * being used across various teams at a large company. Basically, this is just paranoid safeguarding of the test cases.
+ */
 describe("Form Validity Observer (Class)", () => {
   /* ---------------------------------------- Global Constants ---------------------------------------- */
   const attrs = Object.freeze({ "aria-invalid": "aria-invalid", "aria-describedby": "aria-describedby" });
@@ -94,7 +107,7 @@ describe("Form Validity Observer (Class)", () => {
   });
 
   describe("Overriden Core Methods", () => {
-    /* -------------------- Local Assertions -------------------- */
+    /* -------------------- Assertion Helpers for Core Methods -------------------- */
     function expectValidationFunctionsToBeEnabled(observer: FormValidityObserver, enabled = true): void {
       const fakeMessage = "This error doesn't matter";
       const fakeFieldName = "field-not-in-form";
@@ -271,9 +284,9 @@ describe("Form Validity Observer (Class)", () => {
   });
 
   describe("Validation Methods", () => {
-    const radioValues = Object.freeze(["1", "2", "3"] as const);
+    const testOptions = Object.freeze(["1", "2", "3"] as const);
 
-    /* -------------------- Validation Message Helpers -------------------- */
+    /* -------------------- Assertion Helpers for Validation Methods -------------------- */
     /**
      * Renders all of the commonly recognized form fields inside a `form` element with empty values.
      *
@@ -281,8 +294,8 @@ describe("Form Validity Observer (Class)", () => {
      * that belong to the `form` (excluding the radio buttons).
      */
     function renderEmptyFields() {
-      expect(radioValues).toHaveLength(new Set(radioValues).size); // Assert Uniqueness
-      expect(radioValues.length).toBeGreaterThan(1); // Assert Multiple Values
+      expect(testOptions).toHaveLength(new Set(testOptions).size); // Assert Uniqueness
+      expect(testOptions.length).toBeGreaterThan(1); // Assert Multiple Values
 
       document.body.innerHTML = `
         <form aria-label="Form Fields">
@@ -290,7 +303,7 @@ describe("Form Validity Observer (Class)", () => {
           <input name="checkbox" type="checkbox" />
           <textarea name="textarea"></textarea>
           <fieldset role="radiogroup">
-            ${radioValues.map((v) => `<input name="radio" type="radio" value=${v} />`).join("")}
+            ${testOptions.map((v) => `<input name="radio" type="radio" value=${v} />`).join("")}
           </fieldset>
 
           <select name="select"></select>
@@ -309,7 +322,7 @@ describe("Form Validity Observer (Class)", () => {
 
       const fieldset = screen.getByRole<HTMLFieldSetElement>("radiogroup");
       const radios = Array.from(fieldset.elements) as HTMLInputElement[];
-      expect(new Set(radios.map((r) => r.value)).size).toBe(radioValues.length);
+      expect(new Set(radios.map((r) => r.value)).size).toBe(testOptions.length);
       radios.forEach((r) => expect(r.matches("input[name][type='radio'][value]")).toBe(true));
 
       const select = screen.getByRole<HTMLSelectElement>("combobox");
@@ -425,6 +438,7 @@ describe("Form Validity Observer (Class)", () => {
       return container.textContent as string;
     }
 
+    /* -------------------- Validation Method Tests -------------------- */
     describe("setFieldError (Method)", () => {
       it("Marks a field as invalid (`aria-invalid`) and gives it the provided error message", () => {
         const errorMessage = "This field isn't correct!";
@@ -677,7 +691,7 @@ describe("Form Validity Observer (Class)", () => {
         // Render Form
         const { form } = renderEmptyFields();
         formValidityObserver.observe(form);
-        const newRadios = radioValues.map((value) =>
+        const newRadios = testOptions.map((value) =>
           createElementWithProps("input", { name: fieldName, type: "radio", value })
         );
 
@@ -1654,7 +1668,7 @@ describe("Form Validity Observer (Class)", () => {
           document.body.innerHTML = `
             <form aria-label="Radio Button Group Testing">
               <fieldset role="radiogroup">
-                ${radioValues.map((v) => `<input name="${radioName}" type="radio" value=${v} />`).join("")}
+                ${testOptions.map((v) => `<input name="${radioName}" type="radio" value=${v} />`).join("")}
               </fieldset>
             </form>
           `;
@@ -1800,16 +1814,30 @@ describe("Form Validity Observer (Class)", () => {
       });
     });
 
-    describe("validateField (Method)", () => {
+    describe("Miscellaneous Features", () => {
       /*
-       * NOTE: These tests are not complete yet. They have been temporarily halted while workong on methods.
+       * NOTE: For each native form field, only the validation attributes that those fields support will be tested.
        *
-       * TODO: We'll fill in and order the other tests later. But we really want to check that the automated
-       * validation works correctly first.
+       * According to the web specifications, the `minlength` and `maxlength` validation checks
+       * don't kick in until a USER (not a script) edits a form field. Therefore, we cannot test
+       * `minlength`/`maxlength` for `input`s and `textarea`s.
        *
-       * ... Maybe automated field validation should go last since it's so huge with the loops?
+       * See:
+       * - https://stackoverflow.com/questions/45929862/why-doesnt-input-minlength-check-work-with-initial-value
+       * - https://html.spec.whatwg.org/multipage/form-control-infrastructure.html
+       *
+       * Moreover, it seems that JavaScript alone will not enable us to break the `ValidityState.badInput`
+       * constraint (just like it doesn't allow us to break the `ValidityState.tooShort` and `ValidityState.tooLong`
+       * constraints). In browsers, a `date` input would allow a user to input an incomplete date, which
+       * would break the `Validity.badInput` constraint. However, the `InputEvent` won't actually fire
+       * until a valid date is entered, and its `value` property cannot be set to an invalid string. (Any
+       * attempts to apply an invalid value to a `date` input will cause the input to be cleared instead. And when
+       * a user supplies an incomplete date, the input itself will only have an empty string for its `value` prop.)
+       * Thus, we also won't be testing the `badinput` constraint here.
        */
       describe("Automated Field Validation", () => {
+        /* -------------------- Constants for Automated Field Validation Tests -------------------- */
+        // Provide categories for the various scenarios in which we want to verify that Automated Field Validation works
         type ErrorMethod = "Native" | "Accessible";
         type ErrorType = "Default" | "Custom";
         type ErrorRendering = "Messages" | "Markup";
@@ -1817,84 +1845,190 @@ describe("Form Validity Observer (Class)", () => {
         type TestTypes = Exclude<`${ErrorMethod} ${ErrorType} ${ErrorRendering}`, ExcludedTestTypes>;
 
         const testCases = [
-          "Native Default Messages",
-          "Native Custom Messages",
-          "Accessible Default Messages",
-          "Accessible Custom Messages",
-          "Accessible Custom Markup",
+          "Native Default Messages", // The browser's default error messages, shown in the browser's "error bubbles"
+          "Native Custom Messages", // User-defined error messages, shown in the browser's "error bubbles"
+          "Accessible Default Messages", // The browser's default error messages, shown accessibly on the webpage
+          "Accessible Custom Messages", // User-defined error messages, shown accessibly on the webpage
+          "Accessible Custom Markup", // User-defined error messages, shown accessibly as rendered HTML on the webpage
         ] as const satisfies ReadonlyArray<TestTypes>;
 
-        const customError = "<div>This field is wrong! :(</div>";
-        expect(customError).toMatch(/<div>.*<\/div>/);
+        // Guarantee that we have a common error message that allows us to differentiate between raw strings and HTML
+        const customError = "<div>This field is wrong!!!</div>";
+
+        /* -------------------- Assertion Helpers for Automated Field Validation Tests -------------------- */
+        /** Asserts that for a given `testCase`, the provided `field` properly displays the correct error message. */
+        function expectInvalidField(field: ValidatableField, testCase: TestTypes): void {
+          if (!testCases.includes(testCase)) throw new TypeError(`Test Case not supported: ${testCase}.`);
+
+          // Determine whether the error should be what the user provides or what the browser provides by default
+          {
+            const [, type] = testCase.split(" ") as [ErrorMethod, ErrorType, ErrorRendering];
+            if (type === "Default") expect(field.validationMessage).not.toBe(customError);
+          }
+
+          // Assert that the field's error message is properly displayed
+          if (testCase === "Native Default Messages") return expectErrorFor(field, field.validationMessage, "none");
+          if (testCase === "Native Custom Messages") return expectErrorFor(field, customError, "none");
+          if (testCase === "Accessible Default Messages") return expectErrorFor(field, field.validationMessage, "a11y");
+          if (testCase === "Accessible Custom Messages") return expectErrorFor(field, customError, "a11y");
+          return expectErrorFor(field, getTextFromMarkup(customError), "html");
+        }
+
+        /* -------------------- Automated Field Validation Tests -------------------- */
+        beforeAll(() => expect(customError).toMatch(/<div>.+<\/div>/)); // eslint-disable-line jest/no-standalone-expect
 
         describe.each(testCases)("for %s", (testCase) => {
-          const [method, type, rendering] = testCase.split(" ");
+          const [method, type, rendering] = testCase.split(" ") as [ErrorMethod, ErrorType, ErrorRendering];
           const accessible = method === "Accessible";
 
-          // TODO: Need a way to handle scenarios where we render markup for the error instead
-          // TODO: We need to refactor `FormValidityObserver` before we can really go any further.
-          const validationRuleValue = (() => {
+          /** The specific `ErrorDetails` to use when `register`ing a field's error messages in a test */
+          const errorDetails = (() => {
             if (rendering === "Markup") return { message: customError, render: true } as const;
-            return type === "Custom" ? customError : undefined;
+            if (type === "Custom") return customError;
+            return undefined;
           })();
 
           describe("<input /> Validation", () => {
-            // eslint-disable-next-line jest/expect-expect -- TODO: Update ESLint config instead
-            it("Validates the `input`'s field type", async () => {
-              renderField(createElementWithProps("input", { name: "email", type: "email" }), { accessible });
-              const form = screen.getByRole("form") as HTMLFormElement;
-              const formValidityObserver = new FormValidityObserver(types[0]);
+            const constraints = [
+              { key: "required", props: { required: true }, invalid: "", valid: "Some Value" },
+              { key: "min", props: { type: "number", min: "9001" }, invalid: "9000", valid: "9001" },
+              { key: "max", props: { type: "number", max: "-5" }, invalid: "0", valid: "-10" },
+              { key: "step", props: { type: "number", step: "5", min: "23", max: "85" }, invalid: "25", valid: "28" },
+              { key: "type", props: { type: "email" }, invalid: "bademail", valid: "bademail@emails.com" },
+              { key: "pattern", props: { pattern: "\\d+" }, invalid: "onetwothree", valid: "123" },
+            ];
 
-              formValidityObserver.observe(form);
-              formValidityObserver.register("email", { type: validationRuleValue });
+            it.each(constraints)("Validates the `$key` constraint of an `input`", async (constraint) => {
+              // Render Form
+              const name = "input";
+              const { field: input } = renderField(createElementWithProps("input", { name, ...constraint.props }), {
+                accessible: true,
+              });
 
-              // Invalid Case
-              const input = screen.getByRole<HTMLInputElement>("textbox");
-              await userEvent.type(input, "bademail{Tab}");
+              // Register Error Message
+              const formValidityObserver = new FormValidityObserver(types[1]);
+              jest.spyOn(formValidityObserver, "validateField");
+
+              formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
+              formValidityObserver.register(name, { [constraint.key]: errorDetails });
+
+              // Test Invalid Field Case
+              await userEvent.type(input, `${constraint.invalid}{Tab}`);
+
               expectInvalidField(input, testCase);
+              expect(formValidityObserver.validateField).toHaveBeenCalledTimes(1);
+              expect(formValidityObserver.validateField).toHaveBeenNthCalledWith(1, name);
 
-              // Valid Case
-              await userEvent.type(input, "@emails.com{Tab}");
+              // Test Valid Field Case
+              await userEvent.type(input, `${constraint.valid}{Tab}`, {
+                initialSelectionStart: 0,
+                initialSelectionEnd: input.value.length,
+              });
+
               expectNoErrorsFor(input);
+              expect(formValidityObserver.validateField).toHaveBeenCalledTimes(2);
+              expect(formValidityObserver.validateField).toHaveBeenNthCalledWith(2, name);
             });
           });
 
           describe("<select /> Validation", () => {
-            //
+            it("Validates the `required` constraint of a `select`", async () => {
+              // Render Form
+              const name = "select";
+              renderField(createElementWithProps("select", { name, required: true }), { accessible });
+              const select = screen.getByRole<HTMLSelectElement>("combobox");
+              select.appendChild(createElementWithProps("option", { value: "", selected: true }));
+              select.append(...testOptions.map((value) => createElementWithProps("option", { value })));
+
+              // Register Error Message
+              const formValidityObserver = new FormValidityObserver(types);
+              jest.spyOn(formValidityObserver, "validateField");
+
+              formValidityObserver.observe(screen.getByRole("form") as HTMLFormElement);
+              formValidityObserver.register(name, { required: errorDetails });
+
+              // Test Invalid Field Case
+              await userEvent.type(select, "{Tab}");
+
+              expectInvalidField(select, testCase);
+              expect(formValidityObserver.validateField).toHaveBeenCalledTimes(1);
+              expect(formValidityObserver.validateField).toHaveBeenNthCalledWith(1, select.name);
+
+              // Test Valid Field Case
+              await userEvent.selectOptions(select, testOptions[0]);
+
+              expectNoErrorsFor(select);
+              expect(formValidityObserver.validateField).toHaveBeenCalledTimes(2);
+              expect(formValidityObserver.validateField).toHaveBeenNthCalledWith(2, select.name);
+            });
           });
 
           describe("<textarea /> Validation", () => {
-            //
+            it("Validates the `required` constraint of a `textarea`", async () => {
+              // Render Form
+              const name = "textarea";
+              renderField(createElementWithProps("textarea", { name, required: true }), { accessible });
+              const textarea = screen.getByRole<HTMLSelectElement>("textbox");
+
+              // Register Error Message
+              const formValidityObserver = new FormValidityObserver(types[1]);
+              jest.spyOn(formValidityObserver, "validateField");
+
+              formValidityObserver.observe(screen.getByRole("form") as HTMLFormElement);
+              formValidityObserver.register(name, { required: errorDetails });
+
+              // Test Invalid Field Case
+              await userEvent.type(textarea, "{Tab}");
+
+              expectInvalidField(textarea, testCase);
+              expect(formValidityObserver.validateField).toHaveBeenCalledTimes(1);
+              expect(formValidityObserver.validateField).toHaveBeenNthCalledWith(1, textarea.name);
+
+              // Test Valid Field Case
+              await userEvent.type(textarea, "Provide\na\nvalue{Tab}");
+
+              expectNoErrorsFor(textarea);
+              expect(formValidityObserver.validateField).toHaveBeenCalledTimes(2);
+              expect(formValidityObserver.validateField).toHaveBeenNthCalledWith(2, textarea.name);
+            });
           });
+
+          /*
+           * Note: User-Defined Validation Tests should only be run when custom error messages are expected
+           * (as opposed to the browser's default error messages).
+           */
+          if (type === "Custom") {
+            describe("Automated User-Defined Validation", () => {
+              it.each(["input", "select", "textarea"] as const)("Works with `%s`s", async (tag) => {
+                // Render Form
+                const { field } = renderField(createElementWithProps(tag, { name: tag }), { accessible });
+
+                // Register Error Message
+                const formValidityObserver = new FormValidityObserver(types[1]);
+                jest.spyOn(formValidityObserver, "validateField");
+
+                const validate = jest.fn(() => Promise.resolve(errorDetails));
+                formValidityObserver.observe(screen.getByRole("form") as HTMLFormElement);
+                formValidityObserver.register(tag, { validate });
+
+                // Test Invalid Field Case
+                await userEvent.type(field, "{Tab}");
+
+                expectInvalidField(field, testCase);
+                expect(formValidityObserver.validateField).toHaveBeenCalledTimes(1);
+                expect(formValidityObserver.validateField).toHaveBeenNthCalledWith(1, field.name);
+
+                // Test Valid Field Case
+                validate.mockReturnValueOnce(Promise.resolve(undefined));
+                await userEvent.type(field, "{Tab}");
+
+                expectNoErrorsFor(field);
+                expect(formValidityObserver.validateField).toHaveBeenCalledTimes(2);
+                expect(formValidityObserver.validateField).toHaveBeenNthCalledWith(2, field.name);
+              });
+            });
+          }
         });
-
-        /** HTML field elements that are _naturally_ validated by the browser. */
-        type TestField = Extract<FormField, HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>;
-
-        /** TODO: Replace with {@link expectErrorFor}. EDIT: Is such a thing possible given default browser errors? */
-        function expectInvalidField(field: TestField, testCase: TestTypes): void {
-          if (!testCases.includes(testCase)) throw new TypeError(`Test Case not supported: ${testCase}.`);
-
-          expect(field).toHaveAttribute("aria-invalid", String(true));
-          if (testCase === "Native Default Messages") return expect(field.validationMessage).not.toBe("");
-          if (testCase === "Native Custom Messages") return expect(field.validationMessage).toBe(customError);
-          if (testCase === "Accessible Default Messages") {
-            expect(field.validationMessage).not.toBe("");
-            expect(field).toHaveAccessibleDescription(field.validationMessage);
-            return;
-          }
-
-          if (testCase === "Accessible Custom Messages") {
-            expect(field.validationMessage).toBe(customError);
-            expect(field).toHaveAccessibleDescription(field.validationMessage);
-            return;
-          }
-
-          // Accessible Custom Markup
-          const derivedError = getTextFromMarkup(customError);
-          expect(field.validationMessage).not.toBe(derivedError);
-          expect(field).toHaveAccessibleDescription(derivedError);
-        }
       });
     });
   });
