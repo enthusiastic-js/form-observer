@@ -24,7 +24,7 @@ describe("Form Storage Observer (Class)", () => {
   beforeEach(() => jest.restoreAllMocks());
 
   it("Is a child of the base `FormObserver` class", () => {
-    expect(new FormStorageObserver(types[0]) instanceof FormObserver).toBe(true);
+    expect(new FormStorageObserver(types[0])).toEqual(expect.any(FormObserver));
   });
 
   it("Supplies the event listener options that it receives to its data storage event handler", () => {
