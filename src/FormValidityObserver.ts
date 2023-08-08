@@ -81,11 +81,11 @@ interface FormValidityObserver extends FormObserver {
 
   // NEW METHODS
   /**
-   * Specifies the error messages to display for a form field's validation constraints. If an error message
-   * is not provided for a validation constraint, then the browser's default error message for that constraint
-   * will be used instead.
+   * Configures the error messages that will be displayed for a form field's validation constraints.
+   * If an error message is not configured for a validation constraint, then the browser's default error message
+   * for that constraint will be used instead.
    *
-   * Note: If the field is _only_ using the browser's default error messages, it does _not_ need to be `register`ed.
+   * Note: If the field is _only_ using the browser's default error messages, it does _not_ need to be `configure`d.
    *
    * @param name The `name` of the form field
    * @param errorMessages A `key`-`value` pair of validation constraints (key) and their corresponding
@@ -95,9 +95,9 @@ interface FormValidityObserver extends FormObserver {
    * // If the field is empty, the error will display: "You must provide a credit card number".
    * // If the field is too long, the error will display the browser's `tooLong` error string.
    * // If the field passes all of its validation constraints, no error message will be shown.
-   * register("credit-card", { required: "You must provide a credit card number". })
+   * observer.configure("credit-card", { required: "You must provide a credit card number". })
    */
-  register(name: string, errorMessages: ValidationErrors): void;
+  configure(name: string, errorMessages: ValidationErrors): void;
 
   /**
    * Validates the form fields specified in the list of field `names`. If no list is provided,
@@ -147,7 +147,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
   /** The `form` currently being observed by the `FormValidityObserver` */
   #form?: HTMLFormElement;
 
-  /** The {@link register}ed error messages for the various fields belonging to the observed `form` */
+  /** The {@link configure}d error messages for the various fields belonging to the observed `form` */
   #errorMessagesByFieldName: Map<string, ValidationErrors | undefined> = new Map();
 
   constructor(types: T, { eventListenerOpts }: FormValidityObserverOptions = {}) {
@@ -382,8 +382,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     field.setCustomValidity?.("");
   }
 
-  // TODO: Would it make more sense to rename this to something like `configure`?
-  register(name: string, errorMessages: ValidationErrors): void {
+  configure(name: string, errorMessages: ValidationErrors): void {
     if (typeof window === "undefined") return;
     this.#errorMessagesByFieldName.set(name, errorMessages);
   }
@@ -430,35 +429,4 @@ export default FormValidityObserver;
  *  Or
  *  > "If the `HTMLFormElement` doesn't keep track of some abstract error state, do we really need to?
  *     after all, we just use the error state to render errors to the DOM don't, we? What we really need is ... "
- */
-
-/*
- * TODO: Today we realized that once a user registers a form field for validation, ALL of the field's constraints
- * are used in the `validateField` method. This would hold true even if the user supplied `true` for one
- * validation constraint, but `false`/`undefined` for a different constraint on the same field. Of course,
- * it wouldn't make sense for a developer to only warn users of what they do wrong in some scenarios and
- * not others; the browser doesn't allow this either. But this makes it clear that we don't need to support
- * `boolean`s for our `ValidationRules` interface. Once the field is registered, ALL of its constraints
- * will be checked. Technically speaking, the `ValidationRules` could be omitted altogether. Thus, the
- * `ValidationRules` interface defined for the core `FormValidityObserver` is really a `ValidationMessages`
- * interface ... though the `validate()` function is a real validation rule, technically.
- *
- * When we get to the JS Framework implementations of the `FormValidityObserver`, a "ValidationRule"
- * will automatically be accompanied by the appropriate constraint value. So this isn't really something
- * to be concerned with at the JS Framework level; it's something to consider on the core, Pure JS level.
- *
- * Now we have to rethink what `FormValidityObserver.register` really means... Now, we understand that
- * what `register()` really saying is, "Hey, FormValidityObserver, I want you to take FULL RESPONSIBILITY for the
- * validation of this form field!" The constraints passed are just a way of saying, "And by the way, I want you to
- * use these kinds of error messages for these kinds of scenarios, instead of relying on what the browser
- * natively has." The special exception to this reasoning, of course, is the `validate()` property, which
- * technically does its own thing.
- *  --> EDIT: Perhaps more accurately... `register` is just saying, "Please register THESE error messages as
- *      overrides for what the browser will already do automatically..."
- */
-
-/*
- * TODO: Calling `FormValidityObserver.register` implies that the user has custom error messages that they
- * want to display _instead of_ the browser's custom error messages. Therefore, the `errorMessages` argument
- * is now required.
  */

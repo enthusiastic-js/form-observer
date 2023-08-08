@@ -480,7 +480,7 @@ customElements.define("custom-field", CustomField);
 
 The `FormValidityObserver` _requires_ the `ValidityState` of Custom Elements to be exposed via the `validity` property because this is consistent with the behavior of native form controls. This is already a best practice if you're writing Custom Elements that others will be using since it creates a more intuitive developer experience. It is recommended to keep the `ElementInternals` private and to use a getter (_without_ a setter) for the `validity` property to prevent unwanted mutations from the outside.
 
-Optionally, you can also expose the `validationMessage` and `willValidate` properties of your Custom Element. (These should also be exposed as getters without setters.) In addition to helping the end users of your Web Component, exposing the `validationMessage` property will enable the `FormValidityObserver` to show default error messages for your component whenever it fails validation. (This means that by default you won't have to use `FormValidityObserver.register` on any instances of your Custom Element.)
+Optionally, you can also expose the `validationMessage` and `willValidate` properties of your Custom Element. (These should also be exposed as getters without setters.) In addition to helping the end users of your Web Component, exposing the `validationMessage` property will enable the `FormValidityObserver` to show default error messages for your component whenever it fails validation. (This means that by default you won't have to use `FormValidityObserver.configure` on any instances of your Custom Element.)
 
 #### (Optionally) Expose a `setCustomValidity` Method
 

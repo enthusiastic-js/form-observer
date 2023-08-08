@@ -229,7 +229,7 @@ describe("Form Validity Observer (Class)", () => {
         const input = screen.getByRole<HTMLInputElement>("textbox");
 
         formValidityObserver.observe(form);
-        formValidityObserver.register(input.name, { required: errorMessage });
+        formValidityObserver.configure(input.name, { required: errorMessage });
 
         // Unobserve an unconnected `form`
         formValidityObserver.unobserve(document.createElement("form"));
@@ -1008,7 +1008,7 @@ describe("Form Validity Observer (Class)", () => {
 
         const error = "This field is LAAAAAAME!!!";
         const validate = jest.fn((f: HTMLInputElement) => (f.value === badValue ? error : undefined));
-        formValidityObserver.register(field.name, { validate });
+        formValidityObserver.configure(field.name, { validate });
 
         // Failure (Custom Validation Failure)
         expect(formValidityObserver.validateField(field.name)).toBe(false);
@@ -1047,7 +1047,7 @@ describe("Form Validity Observer (Class)", () => {
             setTimeout(() => resolve(f.value === badValue ? error : undefined), 500);
           });
         });
-        formValidityObserver.register(field.name, { validate });
+        formValidityObserver.configure(field.name, { validate });
 
         // Async Failure (Custom Validation Failure)
         const failingPromise = formValidityObserver.validateField(field.name);
@@ -1126,7 +1126,7 @@ describe("Form Validity Observer (Class)", () => {
           pattern: "Okay. Here's what I want...",
           badinput: "Seriously, I cannot understand a single thing you're saying.",
           validate: (f: HTMLInputElement) => `The value ${f.value} is incorrect, bro.`,
-        }) satisfies Required<Parameters<(typeof formValidityObserver)["register"]>[1]>;
+        }) satisfies Required<Parameters<(typeof formValidityObserver)["configure"]>[1]>;
 
         // Require that ALL of the custom error messages are UNIQUE. (This is just for clarity/future-proofing)
         Object.values(errorMessages).forEach((e, i, a) =>
@@ -1137,7 +1137,7 @@ describe("Form Validity Observer (Class)", () => {
         );
 
         /* ---------- Run Assertions ---------- */
-        formValidityObserver.register(field.name, errorMessages);
+        formValidityObserver.configure(field.name, errorMessages);
         formValidityObserver.observe(form);
 
         /** An array of form field constraints and their corresponding {@link ValidityState} properties. */
@@ -1189,7 +1189,7 @@ describe("Form Validity Observer (Class)", () => {
         expectErrorFor(field, errorMessages.validate(field));
 
         // Validation Passes When All Constraints Are Satisfied
-        formValidityObserver.register(field.name, {}); // Aggressively remove the custom function that forced errors
+        formValidityObserver.configure(field.name, {}); // Aggressively remove the custom function that forced errors
         expect(formValidityObserver.validateField(field.name)).toBe(true);
 
         expectNoErrorsFor(field);
@@ -1209,12 +1209,12 @@ describe("Form Validity Observer (Class)", () => {
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(form);
 
-        const errorConfiguration: Parameters<(typeof formValidityObserver)["register"]>[1] = {
+        const errorConfiguration: Parameters<(typeof formValidityObserver)["configure"]>[1] = {
           required: { message: error },
           min: { message: error, render: false },
           max: { message: error, render: true },
         };
-        formValidityObserver.register(field.name, errorConfiguration);
+        formValidityObserver.configure(field.name, errorConfiguration);
 
         // Test with `render` Option Omitted
         expect(field.validity.valueMissing).toBe(true);
@@ -1253,7 +1253,7 @@ describe("Form Validity Observer (Class)", () => {
         formValidityObserver.observe(form);
 
         const validate = jest.fn();
-        formValidityObserver.register(field.name, { validate });
+        formValidityObserver.configure(field.name, { validate });
 
         // Test with `render` Option Omitted
         validate.mockReturnValueOnce({ message: error });
@@ -1290,7 +1290,7 @@ describe("Form Validity Observer (Class)", () => {
         formValidityObserver.observe(form);
 
         const errorConfiguration = { required: customError } as const;
-        formValidityObserver.register(field.name, errorConfiguration);
+        formValidityObserver.configure(field.name, errorConfiguration);
 
         // Cause a Custom Error to be displayed
         expect(field.validity.valueMissing).toBe(true);
@@ -1584,7 +1584,7 @@ describe("Form Validity Observer (Class)", () => {
         // Observe Form + Configure Errors
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
-        Object.entries(validators).forEach(([name, validate]) => formValidityObserver.register(name, { validate }));
+        Object.entries(validators).forEach(([name, validate]) => formValidityObserver.configure(name, { validate }));
 
         // Replace native `Promise` class so that we can spy on promises during testing
         const OriginalPromise = window.Promise;
@@ -1641,7 +1641,7 @@ describe("Form Validity Observer (Class)", () => {
         // Observe Form + Configure Errors
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
-        Object.entries(validators).forEach(([name, validate]) => formValidityObserver.register(name, { validate }));
+        Object.entries(validators).forEach(([name, validate]) => formValidityObserver.configure(name, { validate }));
 
         /* ---------- Test "All Fields" Overload ---------- */
         const failingPromise = formValidityObserver.validateFields();
@@ -1744,7 +1744,7 @@ describe("Form Validity Observer (Class)", () => {
       });
     });
 
-    describe("register (Method)", () => {
+    describe("configure (Method)", () => {
       // NOTE: For a more extensive test, see the "Hierarchy Test" in the `validateField (Method)` section
       it("Configures the custom error messages that will be displayed when the provided field fails validation", () => {
         const customFieldName = "custom-error-field";
@@ -1779,7 +1779,7 @@ describe("Form Validity Observer (Class)", () => {
         formValidityObserver.observe(form);
 
         // Run Assertions
-        formValidityObserver.register(customFieldName, { required: customError });
+        formValidityObserver.configure(customFieldName, { required: customError });
         fields.forEach((f) => formValidityObserver.validateField(f.name));
 
         const defaultBrowserError = fields[0].validationMessage;
@@ -1802,7 +1802,7 @@ describe("Form Validity Observer (Class)", () => {
         delete (globalThis as { window?: Window }).window;
 
         // Run Assertions
-        formValidityObserver.register(field.name, { required: error });
+        formValidityObserver.configure(field.name, { required: error });
         formValidityObserver.validateField(field.name);
 
         expectErrorFor(field, expect.not.stringMatching(error), "none");
@@ -1880,7 +1880,7 @@ describe("Form Validity Observer (Class)", () => {
           const [method, type, rendering] = testCase.split(" ") as [ErrorMethod, ErrorType, ErrorRendering];
           const accessible = method === "Accessible";
 
-          /** The specific `ErrorDetails` to use when `register`ing a field's error messages in a test */
+          /** The specific `ErrorDetails` to use when `configure`-ing a field's error messages in a test */
           const errorDetails = (() => {
             if (rendering === "Markup") return { message: customError, render: true } as const;
             if (type === "Custom") return customError;
@@ -1904,12 +1904,12 @@ describe("Form Validity Observer (Class)", () => {
                 accessible: true,
               });
 
-              // Register Error Message
+              // Configure Error Message
               const formValidityObserver = new FormValidityObserver(types[1]);
               jest.spyOn(formValidityObserver, "validateField");
 
               formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
-              formValidityObserver.register(name, { [constraint.key]: errorDetails });
+              formValidityObserver.configure(name, { [constraint.key]: errorDetails });
 
               // Test Invalid Field Case
               await userEvent.type(input, `${constraint.invalid}{Tab}`);
@@ -1939,12 +1939,12 @@ describe("Form Validity Observer (Class)", () => {
               select.appendChild(createElementWithProps("option", { value: "", selected: true }));
               select.append(...testOptions.map((value) => createElementWithProps("option", { value })));
 
-              // Register Error Message
+              // Configure Error Message
               const formValidityObserver = new FormValidityObserver(types);
               jest.spyOn(formValidityObserver, "validateField");
 
               formValidityObserver.observe(screen.getByRole("form") as HTMLFormElement);
-              formValidityObserver.register(name, { required: errorDetails });
+              formValidityObserver.configure(name, { required: errorDetails });
 
               // Test Invalid Field Case
               await userEvent.type(select, "{Tab}");
@@ -1969,12 +1969,12 @@ describe("Form Validity Observer (Class)", () => {
               renderField(createElementWithProps("textarea", { name, required: true }), { accessible });
               const textarea = screen.getByRole<HTMLSelectElement>("textbox");
 
-              // Register Error Message
+              // Configure Error Message
               const formValidityObserver = new FormValidityObserver(types[1]);
               jest.spyOn(formValidityObserver, "validateField");
 
               formValidityObserver.observe(screen.getByRole("form") as HTMLFormElement);
-              formValidityObserver.register(name, { required: errorDetails });
+              formValidityObserver.configure(name, { required: errorDetails });
 
               // Test Invalid Field Case
               await userEvent.type(textarea, "{Tab}");
@@ -2002,13 +2002,13 @@ describe("Form Validity Observer (Class)", () => {
                 // Render Form
                 const { field } = renderField(createElementWithProps(tag, { name: tag }), { accessible });
 
-                // Register Error Message
+                // Configure Error Message
                 const formValidityObserver = new FormValidityObserver(types[1]);
                 jest.spyOn(formValidityObserver, "validateField");
 
                 const validate = jest.fn(() => Promise.resolve(errorDetails));
                 formValidityObserver.observe(screen.getByRole("form") as HTMLFormElement);
-                formValidityObserver.register(tag, { validate });
+                formValidityObserver.configure(tag, { validate });
 
                 // Test Invalid Field Case
                 await userEvent.type(field, "{Tab}");

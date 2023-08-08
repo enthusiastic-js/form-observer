@@ -117,3 +117,11 @@ Although it is likely less common, similar concerns could also be brought up for
 It probably isn't _that_ bad to loop over the values of the `errorMessages` object passed to the `register` method in order to perform what we called "attribute-constraint reconciliation". But still... for a feature that no one asked for -- and probably that no one really cares for -- it's a net loss in performance... with no real benefit. (Technically speaking, our previous approach was also not all-encompassing anyway. We won't dive into that though.)
 
 Those two things considered, we've reverted `register` to a simple method that updates the `FormValidityObserver`'s local store of field-associated error messages. Generally speaking, attribute-constraint reconciliation won't be a concern for anyone using a JS Framework. Developers who aren't using JS frameworks can make sure that they aren't registering unused error messages on their own. We don't need to aggressively handle this for them.
+
+## 2023-08-07
+
+### Rename `FormValidityObserver.register` to `FormValidityObserver.configure`
+
+We're mainly making this note so that the history of this document is not confusing. What was previously referred to as the `register` method is now the `configure` method as of today.
+
+We believe that this new name makes much more sense because this method isn't actually _registering_ the field with anything. Instead, it's registering _error messages_ for a given field. But because of existing libraries like `React Hook Form` and `Final Form`, some developers may get confused and think that `FormValidityObserver.register()` is actually necessary to ensure that our library works properly. Thus, we changed the name to something more easily understood: `configure`. One could say that the method configures the error messages for the specified field. But one can also say that the method is configuring the field itself with the provided error message details. So `configure` seems to work well here.
