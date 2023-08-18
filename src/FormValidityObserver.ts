@@ -4,33 +4,36 @@ import type { OneOrMany, EventType, FormFieldEvent, ListenerOptions, FormField }
 const radiogroupSelector = "fieldset[role='radiogroup']";
 const attrs = Object.freeze({ "aria-describedby": "aria-describedby", "aria-invalid": "aria-invalid" });
 
-// TODO: Should we make `ErrorMessage`/`ErrorDetails` Generic so that we can also render JSX (instead of just strings)?
-type ErrorMessage = string | ((field: FormField) => string);
-type ErrorDetails = ErrorMessage | { render?: boolean; message: ErrorMessage };
+type ErrorMessage<M> = M | ((field: FormField) => M);
+type ErrorDetails<M> =
+  | ErrorMessage<string>
+  | { render: true; message: ErrorMessage<M> }
+  | { render?: false; message: ErrorMessage<string> };
 
 /** The errors to display to the user in the various situations where a field fails validation. */
-interface ValidationErrors {
+interface ValidationErrors<M> {
   // Standard HTML Attributes
-  required?: ErrorDetails;
-  minlength?: ErrorDetails;
-  min?: ErrorDetails;
-  maxlength?: ErrorDetails;
-  max?: ErrorDetails;
-  step?: ErrorDetails;
-  type?: ErrorDetails;
-  pattern?: ErrorDetails;
+  required?: ErrorDetails<M>;
+  minlength?: ErrorDetails<M>;
+  min?: ErrorDetails<M>;
+  maxlength?: ErrorDetails<M>;
+  max?: ErrorDetails<M>;
+  step?: ErrorDetails<M>;
+  type?: ErrorDetails<M>;
+  pattern?: ErrorDetails<M>;
 
   // Custom Validation Properties
   /**
    * The error to display when the user's input is malformed, such as an incomplete date.
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/ValidityState/badInput ValidityState.badInput}
    */
-  badinput?: ErrorDetails;
+  badinput?: ErrorDetails<M>;
 
   /** A function that runs custom validation logic for a field. This validation is always run _last_. */
-  validate?(field: FormField): void | ErrorDetails | Promise<void | ErrorDetails>;
+  validate?(field: FormField): void | ErrorDetails<M> | Promise<void | ErrorDetails<M>>;
 }
 
+// NOTE: `T` = "Event Type" and `M` = "[Error] Message Type"
 interface FormValidityObserverConstructor {
   /**
    * Provides a way to validate an `HTMLFormElement`'s fields (and to display _accessible_ errors for those fields)
@@ -39,18 +42,30 @@ interface FormValidityObserverConstructor {
    * @param types The type(s) of event(s) that trigger(s) form field validation.
    * @param options
    */
-  new <T extends OneOrMany<EventType>>(types: T, options?: FormValidityObserverOptions): FormValidityObserver;
+  new <T extends OneOrMany<EventType>, M = string>(
+    types: T,
+    options?: FormValidityObserverOptions<M>
+  ): FormValidityObserver<M>;
 }
 
-interface FormValidityObserverOptions {
+interface FormValidityObserverOptions<M> {
   /**
    * The `addEventListener` options to use for the observer's event listener.
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
    */
   eventListenerOpts?: ListenerOptions;
+
+  /**
+   * The function used to render error messages to the DOM when a validation constraint's `render` option is `true`.
+   * Defaults to a function that accepts a string and renders it to the DOM as raw HTML.
+   *
+   * You can replace the default function with your own `renderer` that renders other types of error messages
+   * (e.g., DOM Nodes, React Elements, etc.) to the DOM instead.
+   */
+  renderer?(errorContainer: HTMLElement, errorMessage: M): void;
 }
 
-interface FormValidityObserver extends FormObserver {
+interface FormValidityObserver<M = string> extends FormObserver {
   // PARENT METHODS (for JSDoc overrides)
   /**
    * Instructs the observer to watch the validity state of the provided `form`'s fields.
@@ -97,7 +112,7 @@ interface FormValidityObserver extends FormObserver {
    * // If the field passes all of its validation constraints, no error message will be shown.
    * observer.configure("credit-card", { required: "You must provide a credit card number". })
    */
-  configure(name: string, errorMessages: ValidationErrors): void;
+  configure(name: string, errorMessages: ValidationErrors<M>): void;
 
   /**
    * Validates the form fields specified in the list of field `names`. If no list is provided,
@@ -128,9 +143,12 @@ interface FormValidityObserver extends FormObserver {
    *
    * @param name The name of the invalid form field
    * @param message The error message to apply to the invalid form field
-   * @param render When `true`, the error `message` will be rendered to the DOM as HTML instead of a raw string
+   * @param render When `true`, the error `message` will be rendered to the DOM using the observer's
+   * {@link FormValidityObserverOptions.renderer `renderer`} function.
    */
-  setFieldError(name: string, message: ErrorMessage, render?: boolean): void;
+  // NOTE: Interface's Overloads MUST be kept in sync with the `ErrorDetails` type
+  setFieldError(name: string, message: ErrorMessage<M>, render: true): void;
+  setFieldError(name: string, message: ErrorMessage<string>, render?: false): void;
 
   /**
    * Marks the form field with the specified `name` as valid (`[aria-invalid="false"]`) and clears its error message.
@@ -139,18 +157,19 @@ interface FormValidityObserver extends FormObserver {
   clearFieldError(name: string): void;
 }
 
-const FormValidityObserver: FormValidityObserverConstructor = class<T extends OneOrMany<EventType>>
+const FormValidityObserver: FormValidityObserverConstructor = class<T extends OneOrMany<EventType>, M>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Necessary due to a restriction in TS
   extends FormObserver<any>
-  implements FormValidityObserver
+  implements FormValidityObserver<M>
 {
   /** The `form` currently being observed by the `FormValidityObserver` */
   #form?: HTMLFormElement;
+  #renderError: Required<FormValidityObserverOptions<M>>["renderer"];
 
   /** The {@link configure}d error messages for the various fields belonging to the observed `form` */
-  #errorMessagesByFieldName: Map<string, ValidationErrors | undefined> = new Map();
+  #errorMessagesByFieldName: Map<string, ValidationErrors<M> | undefined> = new Map();
 
-  constructor(types: T, { eventListenerOpts }: FormValidityObserverOptions = {}) {
+  constructor(types: T, { eventListenerOpts, renderer }: FormValidityObserverOptions<M> = {}) {
     /** Event listener used to validate form fields in response to user interactions */
     const eventListener = (event: FormFieldEvent<EventType>): void => {
       const fieldName = event.target.name;
@@ -158,6 +177,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     };
 
     super(types, eventListener, eventListenerOpts);
+    this.#renderError = renderer ?? (defaultErrorRenderer as Required<FormValidityObserverOptions<M>>["renderer"]);
   }
 
   observe(form: HTMLFormElement): boolean {
@@ -251,7 +271,6 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     const field = this.#getTargetField(name);
     if (!field) return false; // TODO: should we give a warning that the field doesn't exist? Same for other methods.
 
-    const { validity } = field;
     field.setCustomValidity(""); // Reset the custom error message in case a default browser error is displayed next.
 
     /*
@@ -259,85 +278,45 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
      * Edit: This is actually impossible because browsers are inconsistent with this. So we must warn users instead.
      */
 
-    /*
-     * TODO: This might actually be the wrong abstraction. We created `#getErrorDetailsFor` to try to minimize
-     * redundancy, but this code obviously has its own redundancy as well. Moreoever, this approach is
-     * not as suitable for refactors if we need to do _more_ with a field (e.g., focus it) after we see that
-     * it failed validation. Perhaps a better approach would be to create a `#getBrokenConstraint` helper
-     * which returns a string representing the STATIC (i.e., non-custom) constraint that failed
-     * (e.g., `required`, `badinput`, etc.) We could use that string to get the proper error details
-     * from `#errorMessagesByFieldName`. And with that abstraction, we could probably do away with
-     * `#getErrorDetailsFor` altogether.
-     *
-     * That said, with an approach like this, it would be nice if we could reuse the logic between "static,
-     * browser validation", and "custom, user-defined validation". Maybe we can rename `#resolveCustomValidation`
-     * to `#resolveValidation` and use that internal method for resolve static errors as well? Or maybe there's
-     * a better abstraction. Not sure yet. But we'll explore this soon after we finish writing tests for this class.
-     * (Note: A simpler abstraction than `#resolveValidation` may not be possible given our need to support `Promises`.
-     * Again, we'll see.)
-     */
-    // Omission Errors
-    if (validity.valueMissing) return Boolean(this.setFieldError(name, ...this.#getErrorDetailsFor(field, "required")));
+    const constraint = getBrokenConstraint(field.validity);
+    if (constraint) {
+      const error = this.#errorMessagesByFieldName.get(name)?.[constraint];
 
-    // Length / Magnitude Errors
-    if (validity.tooShort) return Boolean(this.setFieldError(name, ...this.#getErrorDetailsFor(field, "minlength")));
-    if (validity.rangeUnderflow) return Boolean(this.setFieldError(name, ...this.#getErrorDetailsFor(field, "min")));
-    if (validity.tooLong) return Boolean(this.setFieldError(name, ...this.#getErrorDetailsFor(field, "maxlength")));
-    if (validity.rangeOverflow) return Boolean(this.setFieldError(name, ...this.#getErrorDetailsFor(field, "max")));
-
-    // Pattern Errors
-    if (validity.stepMismatch) return Boolean(this.setFieldError(name, ...this.#getErrorDetailsFor(field, "step")));
-    if (validity.typeMismatch) return Boolean(this.setFieldError(name, ...this.#getErrorDetailsFor(field, "type")));
-    if (validity.patternMismatch)
-      return Boolean(this.setFieldError(name, ...this.#getErrorDetailsFor(field, "pattern")));
-
-    // Attribute-independent Errors
-    if (validity.badInput) return Boolean(this.setFieldError(name, ...this.#getErrorDetailsFor(field, "badinput")));
+      if (typeof error === "object") return this.#resolveValidation(field, error);
+      return this.#resolveValidation(field, error || field.validationMessage);
+    }
 
     // User-driven Validation (MUST BE DONE LAST)
     const errorOrPromise = this.#errorMessagesByFieldName.get(name)?.validate?.(field);
-    if (errorOrPromise instanceof Promise) return errorOrPromise.then((e) => this.#resolveCustomValidation(name, e));
-    return this.#resolveCustomValidation(name, errorOrPromise);
-  }
-
-  /**
-   * **Internal** helper for {@link validateField}. Extracts the error message settings related to a
-   * field's constraint (`rule`) into a manageable tuple. Used _strictly_ as a simple, reusable way
-   * to pass data to {@link setFieldError}.
-   *
-   * @param field
-   * @param rule The constraint for which the error message details should be retrieved
-   */
-  #getErrorDetailsFor(field: FormField, rule: Exclude<keyof ValidationErrors, "validate">): [ErrorMessage, boolean] {
-    const err = this.#errorMessagesByFieldName.get(field.name)?.[rule];
-    return typeof err === "object" ? [err.message, err.render ?? false] : [err || field.validationMessage, false];
+    if (errorOrPromise instanceof Promise) return errorOrPromise.then((e) => this.#resolveValidation(field, e));
+    return this.#resolveValidation(field, errorOrPromise);
   }
 
   /**
    * **Internal** helper for {@link validateField}. Used _strictly_ as a reusable way to handle the result of
-   * a custom validation function.
+   * a field validation attempt.
    *
-   * @param fieldName The `name` of the `field` for which the custom validation was run
-   * @param error The error returned from the custom validation function, if any
+   * @param field The `field` for which the validation was run
+   * @param error The error to apply to the `field`, if any
    *
    * @returns `true` if the field passed validation (indicated by a falsy `error` value) and `false` otherwise.
    */
-  #resolveCustomValidation(fieldName: string, error: ErrorDetails | void): boolean {
+  #resolveValidation(field: FormField, error: ErrorDetails<M> | void): boolean {
     if (!error) {
-      this.clearFieldError(fieldName);
+      this.clearFieldError(field.name);
       return true;
     }
 
-    if (typeof error === "object") this.setFieldError(fieldName, error.message, error.render);
-    else this.setFieldError(fieldName, error);
+    if (typeof error === "object") this.setFieldError(field.name, error.message, error.render);
+    else this.setFieldError(field.name, error);
     return false;
   }
 
-  setFieldError(name: string, message: ErrorMessage, render?: boolean): void {
+  setFieldError(name: string, message: ErrorMessage<string> | ErrorMessage<M>, render?: boolean): void {
     const field = this.#getTargetField(name);
     if (!field) return;
 
-    const error = typeof message === "function" ? message(field) : message;
+    const error = messageIsErrorFunction(message) ? message(field) : message;
     if (!error) return;
 
     // TODO: Should we rename this variable to something else like `errorOwner`?
@@ -350,10 +329,13 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
 
     // Raw HTML Variant
     if (render) {
+      // TODO: Should we mark a field as `aria-invalid` if there's nowhere to render the error?
       if (!errorElement) return;
-      if ("setHTML" in errorElement && typeof errorElement.setHTML === "function") errorElement.setHTML(error);
-      else errorElement.innerHTML = error;
-      return;
+      return this.#renderError(errorElement, error as M);
+    }
+
+    if (typeof error !== "string") {
+      throw new TypeError("A field's error message must be a `string` when the `render` option is not `true`");
     }
 
     /*
@@ -382,7 +364,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     field.setCustomValidity?.("");
   }
 
-  configure(name: string, errorMessages: ValidationErrors): void {
+  configure(name: string, errorMessages: ValidationErrors<M>): void {
     if (typeof window === "undefined") return;
     this.#errorMessagesByFieldName.set(name, errorMessages);
   }
@@ -394,6 +376,42 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     return field instanceof RadioNodeList ? (field[0] as HTMLInputElement) : field;
   }
 };
+
+/* -------------------- Utility Functions -------------------- */
+/** The default render function for {@link FormValidityObserverOptions.renderer} */
+export function defaultErrorRenderer(errorContainer: HTMLElement, error: string): void {
+  if ("setHTML" in errorContainer && typeof errorContainer.setHTML === "function") errorContainer.setHTML(error);
+  else errorContainer.innerHTML = error; // eslint-disable-line no-param-reassign -- Required to update the DOM
+}
+
+/**
+ * The typeguard used to determine if an error message is a function or a regular value. Note that the `typeof` operator
+ * cannot be used directly (i.e., inlined) until https://github.com/microsoft/TypeScript/issues/37663 is resolved.
+ */
+function messageIsErrorFunction(value: unknown): value is (field: FormField) => unknown {
+  return typeof value === "function";
+}
+
+/** Returns the **prioritized** field constraint that failed validation */
+function getBrokenConstraint(validity: ValidityState): keyof Omit<ValidationErrors<unknown>, "validate"> | undefined {
+  // Malformed Inputs
+  if (validity.badInput) return "badinput";
+
+  // Omission Errors
+  if (validity.valueMissing) return "required";
+
+  // Length / Magnitude Errors
+  if (validity.tooShort) return "minlength";
+  if (validity.rangeUnderflow) return "min";
+  if (validity.tooLong) return "maxlength";
+  if (validity.rangeOverflow) return "max";
+
+  // Formatting Errors
+  if (validity.stepMismatch) return "step";
+  if (validity.typeMismatch) return "type";
+  if (validity.patternMismatch) return "pattern";
+  return undefined;
+}
 
 /* -------------------- Local Assertion Utilities -------------------- */
 function assertFormExists(form: unknown): asserts form is HTMLFormElement {

@@ -29,6 +29,7 @@
 - [ ] Provide an easy way for users to scroll to the field that errored out.
   - Should we support a custom scroller function option for people who need more control over how scrolling happens? Or should we just expose some simple, fixed options for how to scroll. Probably both?
 - [ ] Perhaps we should dispatch the `invalid` event when validation fails? Just like the browser does? If we're claiming to _enhance_ the browser's functionality, then we don't really want to _take away_ anything that the browser does. Instead, we want to _add_ to it (as effectively, powerfully, and minimalistically as possible).
+- [ ] Would it make sense to support default error messages for the various [static] constraints? For instance, oftentimes the same static (but custom) error message is used for required fields. Having configurable default error messages can help save people from duplicating code unnecessarily.
 
 ## TypeScript
 
