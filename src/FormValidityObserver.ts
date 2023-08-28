@@ -56,6 +56,12 @@ interface FormValidityObserverOptions<M> {
   eventListenerOpts?: ListenerOptions;
 
   /**
+   * The function used to scroll a `field` (or `radiogroup`) that has failed validation into view. Defaults
+   * to a function that calls `fieldOrRadiogroup.scrollIntoView()`.
+   */
+  scroller?(fieldOrRadiogroup: FormField): void;
+
+  /**
    * The function used to render error messages to the DOM when a validation constraint's `render` option is `true`.
    * Defaults to a function that accepts a string and renders it to the DOM as raw HTML.
    *
@@ -115,16 +121,15 @@ interface FormValidityObserver<M = string> extends FormObserver {
   configure(name: string, errorMessages: ValidationErrors<M>): void;
 
   /**
-   * Validates the form fields specified in the list of field `names`. If no list is provided,
-   * then _all_ of the observed form's fields will be validated.
+   * Validates all of the observed form's fields.
    *
-   * Runs asynchronously if _any_ of the _validated_ fields uses an asynchronous function for the
+   * Runs asynchronously if _any_ of the validated fields use an asynchronous function for the
    * {@link ValidationErrors.validate validate} constraint. Runs synchronously otherwise.
-   * @param names
    *
-   * @returns `true` if _all_ of the _validated_ fields pass validation and `false` otherwise.
+   * @param options
+   * @returns `true` if _all_ of the validated fields pass validation and `false` otherwise.
    */
-  validateFields(names?: string[]): boolean | Promise<boolean>;
+  validateFields(options?: ValidateFieldsOptions): boolean | Promise<boolean>;
 
   /**
    * Validates the form field with the specified `name`.
@@ -133,9 +138,10 @@ interface FormValidityObserver<M = string> extends FormObserver {
    * an asynchronous function. Runs synchronously otherwise.
    *
    * @param name
+   * @param options
    * @returns `true` if the field passes validation and `false` otherwise.
    */
-  validateField(name: string): boolean | Promise<boolean>;
+  validateField(name: string, options?: ValidateFieldOptions): boolean | Promise<boolean>;
 
   /**
    * Marks the form field with the specified `name` as invalid (`[aria-invalid="true"]`)
@@ -157,6 +163,16 @@ interface FormValidityObserver<M = string> extends FormObserver {
   clearFieldError(name: string): void;
 }
 
+interface ValidateFieldOptions {
+  /** Indicates that the field should be focused if it fails validation. Defaults to `false`. */
+  focus?: boolean;
+}
+
+interface ValidateFieldsOptions {
+  /** Indicates that the _first_ field in the DOM that fails validation should be focused. Defaults to `false`. */
+  focus?: boolean;
+}
+
 const FormValidityObserver: FormValidityObserverConstructor = class<T extends OneOrMany<EventType>, M>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Necessary due to a restriction in TS
   extends FormObserver<any>
@@ -164,12 +180,13 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
 {
   /** The `form` currently being observed by the `FormValidityObserver` */
   #form?: HTMLFormElement;
+  #scrollTo: Required<FormValidityObserverOptions<M>>["scroller"];
   #renderError: Required<FormValidityObserverOptions<M>>["renderer"];
 
   /** The {@link configure}d error messages for the various fields belonging to the observed `form` */
   #errorMessagesByFieldName: Map<string, ValidationErrors<M> | undefined> = new Map();
 
-  constructor(types: T, { eventListenerOpts, renderer }: FormValidityObserverOptions<M> = {}) {
+  constructor(types: T, { eventListenerOpts, scroller, renderer }: FormValidityObserverOptions<M> = {}) {
     /** Event listener used to validate form fields in response to user interactions */
     const eventListener = (event: FormFieldEvent<EventType>): void => {
       const fieldName = event.target.name;
@@ -177,6 +194,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     };
 
     super(types, eventListener, eventListenerOpts);
+    this.#scrollTo = scroller ?? defaultScroller;
     this.#renderError = renderer ?? (defaultErrorRenderer as Required<FormValidityObserverOptions<M>>["renderer"]);
   }
 
@@ -204,70 +222,88 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     if (this.#form) this.unobserve(this.#form);
   }
 
-  validateFields(names?: string[]): boolean | Promise<boolean> {
+  validateFields(options?: ValidateFieldsOptions): boolean | Promise<boolean> {
     assertFormExists(this.#form);
-    /** The internal state of {@link validateFields}. These values are _mutated_ by the `#iterateField` helper. */
-    const state = { syncValidationPassed: true, pendingValidations: undefined as Promise<boolean>[] | undefined };
+    let syncValidationPassed = true;
+    let pendingValidations: Promise<boolean>[] | undefined;
+    const validatedRadiogroups = new Set<string>();
 
-    // Validate SPECIFIC fields
-    if (names) {
-      for (let i = 0; i < names.length; i++) this.#iterateField(names[i], state);
-    }
-    // Validate ALL fields
-    else {
-      const validatedRadiogroups = new Set<string>();
+    // Validate Each Field
+    for (let i = 0; i < this.#form.elements.length; i++) {
+      const field = this.#form.elements[i] as FormField;
+      if (fieldNotValidatable(field)) continue;
+      const { name } = field;
 
-      for (let i = 0; i < this.#form.elements.length; i++) {
-        const field = this.#form.elements[i] as FormField;
-        const { name } = field;
-
-        // Only `name`d fields that can participate in form validation are validated
-        if (!name || field instanceof HTMLOutputElement || field instanceof HTMLObjectElement) continue;
-        if (field instanceof HTMLFieldSetElement) continue; // See: https://github.com/whatwg/html/issues/6870
-
-        // Avoid validating the same `radiogroup` more than once
-        if (validatedRadiogroups.has(name)) {
-          const radiogroup = this.#form.elements.namedItem(name) as RadioNodeList;
-          i += radiogroup.length - 2; // Skip all remaining radio buttons
-          continue;
-        }
-
-        this.#iterateField(name, state);
-        if (field.type === "radio") validatedRadiogroups.add(name);
+      // Avoid validating the same `radiogroup` more than once
+      if (validatedRadiogroups.has(name)) {
+        const radiogroup = this.#form.elements.namedItem(name) as RadioNodeList;
+        i += radiogroup.length - 2; // Skip all remaining radio buttons
+        continue;
       }
+
+      // Keep track of radio buttons that get validated
+      if (field.type === "radio") validatedRadiogroups.add(name);
+
+      // Validate Field and Update Internal State
+      const result = this.validateField(name);
+      if (result === true) continue;
+      if (result === false) {
+        syncValidationPassed = false;
+        continue;
+      }
+
+      if (pendingValidations) pendingValidations.push(result);
+      else pendingValidations = [result];
     }
 
-    if (!state.pendingValidations) return state.syncValidationPassed;
+    if (!pendingValidations) {
+      return this.#resolveGroupedValidation({ pass: syncValidationPassed, validatedRadiogroups }, options);
+    }
 
-    return Promise.allSettled(state.pendingValidations).then((results) => {
-      return state.syncValidationPassed && results.every((r) => r.status === "fulfilled" && r.value === true);
+    return Promise.allSettled(pendingValidations).then((results) => {
+      const pass = syncValidationPassed && results.every((r) => r.status === "fulfilled" && r.value === true);
+      return this.#resolveGroupedValidation({ pass, validatedRadiogroups }, options);
     });
   }
 
   /**
-   * **Internal** helper for {@link validateFields}. Acts _strictly_ as a _reusable_ way to validate form
-   * fields iteratively while **mutating the internal state** of `validateFields`
-   * (i.e., `syncValidationPassed` and `pendingValidations`).
+   * **Internal** helper for {@link validateFields}. Used _strictly_ as a reusable way to handle the result
+   * of a _form-wide_ validation attempt.
    *
-   * @param name The `name` of the form field currently being iterated
-   * @param state The internal state of `validateFields`
+   * @param data The internal data from `validateFields` that needs to be shared with this method
+   * @param options The options that were used for the form's validation
+   *
+   * @returns `true` if the form passed validation (indicated by a truthy `data.pass` value) and `false` otherwise.
    */
-  #iterateField(
-    name: string,
-    state: { syncValidationPassed: boolean; pendingValidations: Promise<boolean>[] | undefined }
-  ): void {
-    const result = this.validateField(name);
-    if (result === true) return;
-    if (result === false) {
-      state.syncValidationPassed = false; // eslint-disable-line no-param-reassign -- Mutation is needed here
-      return;
+  #resolveGroupedValidation(
+    data: { pass: boolean; validatedRadiogroups: Set<string> },
+    options: ValidateFieldsOptions | undefined
+  ): boolean {
+    if (data.pass) return true;
+
+    // Focus the first invalid field (if requested)
+    if (options?.focus) {
+      const controls = (this.#form as HTMLFormElement).elements;
+
+      for (let i = 0; i < controls.length; i++) {
+        const field = controls[i] as FormField;
+        if (fieldNotValidatable(field)) continue;
+        const { name } = field;
+
+        // Avoid looping over the same `radiogroup` more than once
+        if (data.validatedRadiogroups.has(name)) i += (controls.namedItem(name) as RadioNodeList).length - 1;
+
+        if (getErrorOwningControl(field).getAttribute(attrs["aria-invalid"]) === String(true)) {
+          this.#callAttentionTo(field);
+          break;
+        }
+      }
     }
 
-    if (state.pendingValidations) state.pendingValidations.push(result);
-    else state.pendingValidations = [result]; // eslint-disable-line no-param-reassign -- Mutation is needed here
+    return false;
   }
 
-  validateField(name: string): boolean | Promise<boolean> {
+  validateField(name: string, options?: ValidateFieldOptions): boolean | Promise<boolean> {
     const field = this.#getTargetField(name);
     if (!field) return false; // TODO: should we give a warning that the field doesn't exist? Same for other methods.
 
@@ -282,14 +318,14 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     if (constraint) {
       const error = this.#errorMessagesByFieldName.get(name)?.[constraint];
 
-      if (typeof error === "object") return this.#resolveValidation(field, error);
-      return this.#resolveValidation(field, error || field.validationMessage);
+      if (typeof error === "object") return this.#resolveValidation(field, error, options);
+      return this.#resolveValidation(field, error || field.validationMessage, options);
     }
 
     // User-driven Validation (MUST BE DONE LAST)
-    const errorOrPromise = this.#errorMessagesByFieldName.get(name)?.validate?.(field);
-    if (errorOrPromise instanceof Promise) return errorOrPromise.then((e) => this.#resolveValidation(field, e));
-    return this.#resolveValidation(field, errorOrPromise);
+    const errOrPromise = this.#errorMessagesByFieldName.get(name)?.validate?.(field);
+    if (errOrPromise instanceof Promise) return errOrPromise.then((e) => this.#resolveValidation(field, e, options));
+    return this.#resolveValidation(field, errOrPromise, options);
   }
 
   /**
@@ -298,10 +334,11 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
    *
    * @param field The `field` for which the validation was run
    * @param error The error to apply to the `field`, if any
+   * @param options The options that were used for the field's validation
    *
    * @returns `true` if the field passed validation (indicated by a falsy `error` value) and `false` otherwise.
    */
-  #resolveValidation(field: FormField, error: ErrorDetails<M> | void): boolean {
+  #resolveValidation(field: FormField, error: ErrorDetails<M> | void, opts: ValidateFieldOptions | undefined): boolean {
     if (!error) {
       this.clearFieldError(field.name);
       return true;
@@ -309,7 +346,25 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
 
     if (typeof error === "object") this.setFieldError(field.name, error.message, error.render);
     else this.setFieldError(field.name, error);
+
+    if (opts?.focus) this.#callAttentionTo(field);
     return false;
+  }
+
+  /**
+   * **Internal** helper (shared). Focuses the specified `field` and scrolls it (or its owning `radiogroup`) into view
+   * so that its error message is visible.
+   */
+  #callAttentionTo(field: FormField): void {
+    const errorOwner = getErrorOwningControl(field);
+    if (!errorOwner.hasAttribute(attrs["aria-describedby"])) {
+      field.reportValidity();
+      return;
+    }
+
+    // Note: Scrolling is done FIRST to avoid bad UX in browsers that don't support `preventScroll`
+    this.#scrollTo(errorOwner);
+    field.focus({ preventScroll: true }); // TODO: Add `focusVisible: true` when it's supported by Browsers / TypeScript
   }
 
   setFieldError(name: string, message: ErrorMessage<string> | ErrorMessage<M>, render?: boolean): void {
@@ -319,13 +374,9 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     const error = messageIsErrorFunction(message) ? message(field) : message;
     if (!error) return;
 
-    // TODO: Should we rename this variable to something else like `errorOwner`?
-    const radiogroupOrField = field.type === "radio" ? field.closest(radiogroupSelector) : field;
-    // TODO: Maybe we should give devs a warning on this instead of failing silently. SAME FOR `clearFieldError`.
-    if (!radiogroupOrField) return; // Bail out if a `radio` button does not have a containing `radiogroup`
-
-    radiogroupOrField.setAttribute(attrs["aria-invalid"], String(true));
-    const errorElement = document.getElementById(radiogroupOrField.getAttribute(attrs["aria-describedby"]) as string);
+    const errorOwner = getErrorOwningControl(field);
+    errorOwner.setAttribute(attrs["aria-invalid"], String(true));
+    const errorElement = document.getElementById(errorOwner.getAttribute(attrs["aria-describedby"]) as string);
 
     // Raw HTML Variant
     if (render) {
@@ -353,11 +404,9 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     const field = this.#getTargetField(name);
     if (!field) return;
 
-    const radiogroupOrField = field.type === "radio" ? field.closest(radiogroupSelector) : field;
-    if (!radiogroupOrField) return; // Bail out if a `radio` button does not have a containing `radiogroup`
-
-    radiogroupOrField.setAttribute(attrs["aria-invalid"], String(false));
-    const errorElement = document.getElementById(radiogroupOrField.getAttribute(attrs["aria-describedby"]) as string);
+    const errorOwner = getErrorOwningControl(field);
+    errorOwner.setAttribute(attrs["aria-invalid"], String(false));
+    const errorElement = document.getElementById(errorOwner.getAttribute(attrs["aria-describedby"]) as string);
 
     if (errorElement) errorElement.textContent = "";
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Support Web Components without Method
@@ -369,7 +418,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     this.#errorMessagesByFieldName.set(name, errorMessages);
   }
 
-  /** **Internal** helper. Returns the correct form field to use for a validation or error-handling action. */
+  /** **Internal** helper (shared). Returns the correct form field to use for a validation or error-handling action. */
   #getTargetField(name: string): FormField | null {
     assertFormExists(this.#form);
     const field = this.#form.elements.namedItem(name) as FormField | RadioNodeList | null;
@@ -377,11 +426,24 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
   }
 };
 
+export default FormValidityObserver;
+
 /* -------------------- Utility Functions -------------------- */
+/** The default scrolling function used for {@link FormValidityObserverOptions.scroller} */
+export function defaultScroller(fieldOrRadiogroup: FormField): void {
+  fieldOrRadiogroup.scrollIntoView({ behavior: "smooth" });
+}
+
 /** The default render function for {@link FormValidityObserverOptions.renderer} */
 export function defaultErrorRenderer(errorContainer: HTMLElement, error: string): void {
   if ("setHTML" in errorContainer && typeof errorContainer.setHTML === "function") errorContainer.setHTML(error);
   else errorContainer.innerHTML = error; // eslint-disable-line no-param-reassign -- Required to update the DOM
+}
+
+function fieldNotValidatable(field: FormField): field is HTMLOutputElement | HTMLObjectElement | HTMLFieldSetElement {
+  if (!field.name || field instanceof HTMLOutputElement || field instanceof HTMLObjectElement) return true;
+  if (field instanceof HTMLFieldSetElement) return true; // See: https://github.com/whatwg/html/issues/6870
+  return false;
 }
 
 /**
@@ -413,13 +475,23 @@ function getBrokenConstraint(validity: ValidityState): keyof Omit<ValidationErro
   return undefined;
 }
 
+/**
+ * Retrieves the form control that owns a `field`'s error message. If the `field` is a radio button,
+ * the error owner is the `radiogroup` to which that `field` belongs. Otherwise, the error owner is
+ * the `field` itself.
+ */
+function getErrorOwningControl(field: FormField): FormField {
+  const fieldOrRadiogroup = field.type === "radio" ? field.closest<HTMLFieldSetElement>(radiogroupSelector) : field;
+  if (fieldOrRadiogroup) return fieldOrRadiogroup;
+
+  throw new Error("Validated radio buttons must be placed inside a `<fieldset>` with role `radiogroup`");
+}
+
 /* -------------------- Local Assertion Utilities -------------------- */
 function assertFormExists(form: unknown): asserts form is HTMLFormElement {
   if (form instanceof HTMLFormElement) return;
   throw new Error("This action cannot be performed on a form field before its owning form is `observe`d.");
 }
-
-export default FormValidityObserver;
 
 /*
  * TODO: Make a `FUTURE_DOCS` note about how to handle events that fire directly on the element only,

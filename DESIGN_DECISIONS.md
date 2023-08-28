@@ -125,3 +125,34 @@ Those two things considered, we've reverted `register` to a simple method that u
 We're mainly making this note so that the history of this document is not confusing. What was previously referred to as the `register` method is now the `configure` method as of today.
 
 We believe that this new name makes much more sense because this method isn't actually _registering_ the field with anything. Instead, it's registering _error messages_ for a given field. But because of existing libraries like `React Hook Form` and `Final Form`, some developers may get confused and think that `FormValidityObserver.register()` is actually necessary to ensure that our library works properly. Thus, we changed the name to something more easily understood: `configure`. One could say that the method configures the error messages for the specified field. But one can also say that the method is configuring the field itself with the provided error message details. So `configure` seems to work well here.
+
+## 2023-08-20
+
+### Deprecate the `FormValidityObserver.validateFields(names: string[])` Overload
+
+Originally, when we were first thinking through the designs of the `FormValidityObserver`, the `validateFields(names)` overload was a _convenience_ function. At the time, we were already intending to have `validateFields` loop over all of the _"registered"_ (now `configured`) field names. So we figured, "Why not let the developers loop over a _subgroup_ of those fields"?
+
+Well... Things have changed. And the biggest change on this front is that the `FormValidityObserver` no longer requires a field to be `configured` for it to participate in validation. Supporting new features -- such as focusing the first field that fails validation in a form -- has made it more difficult to support validating all of a form's fields (1st overload) _and_ validating a specific set of named fields (2nd overload) simultaneously. Given that we don't want this additional complexity in the `FormValidityObsever`, given that the `validateFields(names)` overload isn't likely to be used often, and given that the overload can be written rather easily in userland, we are now deprecating `validateFields(names)` to make our own codebase more maintainable. Here's the justifification:
+
+In a situation where a developer would run
+
+```js
+formValidityObserver.validateFields(["first-field", "second-field"]);
+```
+
+they could just as easily run
+
+```js
+["first-field", "second-field"].forEach((name) => formValidityObserver.validateField(name, options));
+```
+
+Admittedly, the latter option is _slightly_ more verbose than the former option. However, both options can be written easily in 1 line. And the latter option is technically more _explicit_ (because any reader of the code immediately knows _exactly_ what's happening).
+
+Since the developer knows which combinations of fields include asynchronous validators, they can easily handle the `Promise`-based version as well:
+
+```js
+const names = ["first-field", "second-field"];
+await Promise.allSettled(names.map((name) => formValidityObserver.validateField(name, options)));
+```
+
+Again, this is more explicit, and it's very simple. So we don't think that dropping support for the `validateFields(names)` overload will actually be disadvantageous for anyone. We feel comfortable dropping support for the overload in light of this.

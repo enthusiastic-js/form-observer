@@ -325,4 +325,130 @@ If you read _[Why Doesn't `FormValidityObserver.configure` Require a `form` to B
 
 The reason for this decision is user experience (for the end users interacting with a web app's form). If a web server doesn't use a JS framework and it only serves raw, static HTML and JavaScript files individually, then there is no way for the core `FormValidityObserver` to guarantee that the rendered form fields have the correct attributes during the initial page load. The observer could use `field.setAttribute` to apply the correct attributes _after_ the initial page load. But such a solution is not reliable for users who fail to download the necessary JS files.
 
-In order to ensure the best user experience by helping out those who have JS disabled or who are randomly unable to download JS, a developer would have to manually set the proper attributes for the form fields in the HTML file anyway. If the developer does this, then `configure` doesn't need to do it. (And the developer most definitely _should_ do this for their users. That way, the users at least get _some_ helpful native browser validation if they don't have any access to JS. With this approach, the server will also receive less invalid requests from forms.) So, the [_intentional_] assumption is that the developer _will_ shoot for the better user experience -- implying that the _core_ `FormValidityObserver`'s `configure` method doesn't have to set any attributes. Hopefully this isn't too bothersome; the goal is to encourage more user-friendly web apps. But for the JS Framework developers out there, we've got you covered. &rpar;
+In order to ensure the best user experience by helping out those who have JS disabled or who are randomly unable to download JS, a developer would have to manually set the proper attributes for the form fields in the HTML file anyway. If the developer does this, then `configure` doesn't need to do it. (And the developer most definitely _should_ do this for their users. That way, the users at least get _some_ helpful native browser validation if they don't have any access to JS. With this approach, the server will also receive less invalid requests from forms.) So, the [_intentional_] assumption is that the developer _will_ shoot for the better user experience -- implying that the _core_ `FormValidityObserver`'s `configure` method doesn't have to set any attributes. Hopefully this isn't too bothersome; the goal is to encourage more user-friendly web apps. But for the JS Framework developers out there, we've got you covered. :&rpar;
+
+### Why Doesn't the `FormValidityObserver` Dispatch `invalid` Events When an Accessible Error Gets Displayed?
+
+Originally, in our [TODOS](./TODO.md), we were hoping to add support for the [`invalid`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/invalid_event) event. Since the native [`checkValidity()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/checkValidity) and [`reportValidity()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/reportValidity) methods dispatch `invalid` event(s) when a field (or an entire `form`) fails validation, wouldn't it make sense to do the same thing in our `validateField()` and `validateFields()` methods? Well, it _would_ make sense -- especially considering the fact that we want `validateField` and `validateFields` to act as lossless enhancements of the native `checkValidity`/`reportValidity` methods. However, we've ultimately decided to forego this feature for two primary reasons.
+
+**First**, the `invalid` event is not something that's used very often -- practically speaking. In fact, very few web developers even know about this event's existence (at least as of today, from my experience). If the event isn't something that developers use often, is it something that they would even want this library to support? It doesn't really make sense to go through the effort of supporting a feature that no one really cares about.
+
+**Second**, it seems just about impossible to find a [practical] way to dispatch `invalid` events _consistently_ between _native_ form error handling and _accessible_ form error handling. The former reason, on its own, is not sufficient for us to forego supporting the `invalid` event. But when combined with this reason, the former reason has much more weight. Really, what makes consistency most difficult is probably the fact that there's no way to _prevent_ `checkValidity`/`reportValidity` from dispatching `invalid` event(s). Here are the approaches that I considered (and rejected):
+
+#### Dispatch an `invalid` Event Whenever a Field Fails Validation
+
+This logic would go into the `validateField` method. Whenever a field fails validation, we could [dispatch](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/dispatchEvent) an `invalid` event ourselves. (If the developer was using native form errors, we could let `checkValidity`/`reportValidity` dispatch the event for us.) If the developer is _only_ using `validateField`, then this solution works out great. However, things get problematic when we get to the `validateFields` method, which validates all of the fields at once.
+
+Consider what happens when `validateFields` gets called with the `{ focus: true }` option. All of the fields get validated at once, so an `invalid` event is dispatched for every single field that fails validation. At first, this sounds great. But for developers relying on _native_ form errors, the `validateFields` method will have to call `form.reportValidity()` to _focus_ the first field in the form that failed validation. (Alternatively, we could loop through the elements to find the first field that failed validation, and then call `field.reportValidity()`.) When we do that, _duplicate_ `invalid` event(s) get dispatched by the browser. And this is where things go horribly wrong. The whole point of events is to allow developers to reliably respond to what's happening in a web document. If events got triggered redundantly as a result of poorly structured code, it would be an awful developer experience.
+
+#### What about Dispatching an `invalid` Event Only When the Developer Requests It?
+
+The next logical conclusion is to resolve this problem by allowing the _developer_ to determine when the `invalid` event gets dispatched. Maybe we could add something like `{ notify?: boolean }` to the `validateField` options. When `notify` is `true`, an `invalid` event could be dispatched. Otherwise, we would refuse to dispatch the `invalid` event.
+
+This sounds promising at a first glance. If we consider the `validateFields` scenario mentioned earlier, we could avoid dispatching `invalid` events until _after_ all of the fields have already been validated. (This would be done with `form.checkValidity`/`form.reportValidity`.) However, this approach still has problems...
+
+For one thing, the options API is a little misleading for developers relying on the native form errors. `reportValidity` will _always_ dispatch an `invalid` event. This means that even if a developer uses `{ focus: true, notify: false }` as the options for `validateField`, an `invalid` event will still get dispatched anyway. This is a potentially confusing developer experience.
+
+Someone could say, "Then explain in the documentation that when `focus` is `true`, the `notify` option will be coerced to `true`. And update the TypeScript overloads for `validateField`/`validateFields` accordingly." That's a valid argument. And it's one that I literally only considered after I started writing this section of the documentation. (It's really helpful to get your thoughts out somewhere where you can see them.) But it's worth asking... Would this add more confusion or cognitive overhead for developers seeking to use our library? Perhaps not... Perhaps taking this approach is worthwhile for the small few who want to listen for the `invalid` event. But... even if it's wortwhile to take this approach, there's still yet _another_ problem with this approach.
+
+You see, if the `validateFields` method waits until _after_ every single field has finished validation before it tries to dispatch `invalid` events, that actually increases complexity in its own way. For developers relying on _native_ form errors, there are no problems at all. Just call `form.checkValidity()` or `form.reportValidity()` (depending on the `focus` and `notify` options) after every field is validated. Doing things this way means that _all_ `invalid` events will be properly dispatched _without_ duplication. (And as an added bonus, the events which get dispatched will be [`trusted`](https://developer.mozilla.org/en-US/docs/Web/API/Event/isTrusted).)
+
+However, things won't go over as smoothly for developers who _render_ accessible error messages to the DOM. The `checkValidity()` and `reportValidity()` methods rely on the `ValidityState` object to determine whether or not a field is invalid (and thus whether or not an `invalid` event should be dispatched). But the `ValidityState` object is not updated when error messages are rendered to the DOM using the `FormValidityObserver`'s `renderer`. More specifically, `setCustomValidity` is not called in this scenario, which means that the field's `ValidityState.customError` value is not set to `true`. (This is because the `ValidityState` is not practically needed to communicate helpful error messages to the end user in this situation.) This means that (in this scenario) we can't rely on `checkValidity` to automatically dispatch `invalid` events for all of the fields that failed validation during a call to `validateFields()`. We would have to run another _full_ loop on _all_ of the form fields and dispatch an `invalid` event for each field having `[aria-invalid="true"]`. To me, that just seems like unnecessary overhead.
+
+As I think about this more, I realize that it might be helpful to update the `ValidityState` object whenever an error message is rendered to the DOM with the `FormValidityObserver`'s `renderer` function. If I did that, then we _would_ be able to rely on `checkValidity` to dispatch `invalid` events during calls to `validateFields()`. (And the dispatched events would be trusted!) However, practically speaking, it still doesn't necessarily make sense to me to do this either. No one who's using accessible error messages will need to rely on a field's `validationMessage` property (to my knowledge). And since the field would already have `[aria-invalid="true"]`, the developer could technically use that as the source of truth instead of `field.validity.valid`.
+
+In any case, after all this writing, we found a solution that _could_ work for a consistent developer experience. I will **not** be supporting it right now because of the unnecessary overhead. But in the future, if developers truly want it, I can support dispatching the `invalid` event in this way:
+
+1. Add an option (e.g., `notify`) to `validateField` that allows developers (and the `validateFields` method) to refuse to dispatch an `invalid` event when a field fails validation.
+2. To avoid confusion, add a TS overload that _requires_ the `notify` option to be `true` (or omitted) when `focus` is `true`. Also update the documentation to reflect this requirement.
+3. Update the `setFieldError` method to update a field's `validationMessage` when an error is rendered to the DOM with the `renderer` function. (It will probably be sufficient and accurate to use `innerText` instead of `textContent` in these scenarios. However, this will trigger a reflow. So performance is traded for accuracy here. I guess we could also bite the bullet and go with `textContent`.)
+
+**NOTE**: THERE IS ONE LAST CAVEAT IF WE GO WITH THIS "GLORIOUS" APPROACH! Unfortunatley, radio button groups always seem to be the oddball when it comes to form field validation. Apparently, if a `required` radio button group has `ValidityState.valueMissing === true`, then _all_ of the individual radio buttons will have `invalid` events dispatched on them when the owning form is validated. We can't prevent this from happening because it's native browser behavior. We'll just have to notify developers of this caveat in the documentation (if we support this feature).
+
+### Why Doesn't the Default `FormValidityObserver` Scroller Function Scroll Field Labels into View?
+
+The `FormValidityObserver` makes no assumptions about the developer's UI. Although uncommon, it's possible that some developers may be using multiple labels for their fields. Other developers may place the label _within_ the field until it is focused (like Material UI). In cases like these (and more), we cannot reliably scroll an invalid field into view in a way that guarantees the _full_ visibility of _both_ the field and its label(s).
+
+Simply calling `fieldOrRadiogroup.scrollIntoView()` is the best shot we have at bringing the entire field into view (ignoring its label). Outside of that, we let developers decide how they want to scroll their fields into view in their forms; and we give small examples in the documentation of convenient ways that developers can scroll their fields _and_ labels into view if needed.
+
+### Why Are You Looping over the Form Fields a **2nd Time** in `FormValidityObserver.validateFields()` When the Form Fails Validation and the `focus` Option is `true`?
+
+In the world of native JavaScript, `form.reportValidity()` will focus the first field _in the DOM_ that fails validation. Because the `FormValidityObserver` seeks to _enhance_ what browsers already provide, the `FormValidityObserver.validateFields()` method does the same thing when the `focus` option is true. That is, if a field fails validation when `validateFields` is called _and_ the user has set the `focus` option to `true`, the observer will look for the _first_ field in the DOM that failed validation and focus it. Otherwise, this logic is skipped entirely.
+
+It was very unappealing to me (and perhaps to you as well) that `validateFields` loops through the form's controls a _second time_ when these conditions are met. However, there isn't really any other alternative if the desire is to replicate how the browser's `form.reportValidity()` method naturally behaves. Here are some alternatives I considered, and why they don't work:
+
+#### Using `form.querySelector` Instead
+
+Well... There's a problem with that. Theoretically, I could run `form.querySelector("[aria-invalid='true']")` to find the first invalid field in the `form`. But this approach doesn't take into account any fields associated with the `form` via the [form](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#form) attribute. To support those use cases (and thus match how the browser behaves), I would instead have to reach for `document.querySelector`; and the selector would be a bit complex.
+
+```ts
+const firstInvalidField =
+  document.querySelector(`[form="${this.#form.id}"][aria-invalid="${true}"]`) ??
+  this.#form.querySelector(`[aria-invalid="${true}"]:is(:not([form]), [form="${this.#form.id}"])`);
+```
+
+Note that I can't restrict the selector to a specific kind of `HTMLElement` since this library seeks to support Web Components. Since I don't know how many forms will be present on the page when the library used, I have to be very careful to make sure that I don't pick up fields that belong to unrelated forms. First, when I search for fields outside _or_ inside the observed form, I need to make sure that I'm _only_ getting the fields that belong to the correct form (denoted by the `form` attribute). Second, when I search for fields that _don't_ have a `form` attribute, I have to restrict my search to fields that live _inside_ the observed form. Best case scenario, the _entire document_ is only searched once for the invalid field. Worst case scenario, the entire document is searched _twice_ for the invalid field. (Yes, twice. `element.querySelector` still [searches the entire document](https://developer.mozilla.org/en-US/docs/Web/API/Element/querySelector#return_value).)
+
+I have two problems with this approach.
+
+1. This approach is not as suitable for refactors (compared to the looping approach). If I later decide that I don't want to use an attribute to determine if a field is invalid (for instance, perhaps I want to use `field.validity.valid` instead), I can't use the query selector approach anymore.
+2. It seems like a lot of work to make the browser search the _entire document_ up to 2 times for an invalid field. `form.elements` already gives me access to all of the possible form controls, and this list will _always_ be smaller than the total number of elements in the DOM. Intelligently searching the list in a loop seems simpler and potentially more performant.
+
+The looping approach adds more lines of code compared to this approach; but to me, it still seems better (all things considered).
+
+#### Using `Array.from(form.elements).find()` Instead
+
+This one was really tempting... But I don't think it's practical. I've intentionally avoided using `Array.from(form.elements)` in this entire library because of the implications that it has on memory. Yes, you can argue that most forms won't have that many fields (just like I will do very soon). But still, it's hard for me to reach for `Array.from()` in light of this when I can very easily loop over `form.elements` with more or less the same amount of effort.
+
+But there's another thing to consider here: radio buttons. When looping over `form.elements`, you end up iterating over _every_ radio button that belongs to a single `radiogroup`. Since a `radiogroup` really only needs to be validated once as a whole, this can end up being wasteful -- especially if a `radiogroup` has a lot of radio buttons. When using array methods like `forEach` and `find`, there's no (clean) way to skip ahead in the loop. With regular `for` loops, there's a simple way to do this, and it can be done without calling additional methods (like `splice`).
+
+I know hyper optimization is a problem, and it's one that I'm trying to avoid in this codebase. However, I also don't want to carelessly/pointlessly do things that end up wasting my end users' memory. So for now, I'm sticking to plain old `for` loops for the aforementioned reasons.
+
+#### Keeping a Local Reference to the First Field That Fails Validation during the 1st Loop
+
+This idea seems great on the surface, but it's unfortunately a bit naive. Consider the following scenario: Imagine that a user is on a medium-sized (or larger) signup form that requires them to provide a unique, valid email.
+
+```html
+<form id="signup-form">
+  <label for="email">Email</label>
+  <input id="email" name="email" type="email" required />
+
+  <!-- A lot of other fields -->
+
+  <input id="consent" name="consent" type="checkbox" required />
+  <label for="consent">Do you consent to terms that you don't care to read?</label>
+  <button type="submit">Submit</button>
+</form>
+```
+
+```js
+const observer = new FormValidityObserver("blur");
+observer.configure("email", {
+  validate(field) {
+    return new Promise((resolve) => {
+      api.emailExists(field.value).then((bool) => resolve(bool ? "Sorry, this email is taken." : undefined));
+    });
+  },
+});
+
+const form = document.getElementById("signup-form");
+form.addEventListener("submit", handleSubmit);
+
+async function handleSubmit(event) {
+  event.preventDefault();
+  const fieldsAreValid = await observer.validateFields({ true });
+  if (fieldsAreValid) api.submitFormData(new FormData(event.currentTarget));
+}
+```
+
+In this scenario, the user has finished filling out _almost_ all of the fields; they accidentally skipped a field near the bottom of the form that they didn't notice was required. They _also_ unknowingly provided an email address that was already taken. If we wrote `validateFields` to keep a local reference to the first field that failed validation _chronologically_, then the user would get scrolled to the field near the bottom of the form -- _not_ the `email` field at the top of the form. Why? Because the missing field near the bottom of the form _synchronously_ fails validation before the `email` field at the top of the form _asynchronously_ fails validation. This results in a very confusing user experience.
+
+The field that gets focused after `validateFields` resolves cannot simply be the first field that fails validation chronologically. Rather, it has to be the first field _in the DOM_ that's marked as invalid. And since the `FormValidityObserver` is designed to work dynamically with synchronous validation, asynchronous validation, and conditionally-asynchronous validation, the only _reliable_ way to accomplish this goal is to wait until _after_ the first loop through the form controls has completed _and_ all pending promises (if any) have settled. Thus, a second iteration is inevitable -- largely due to `validateFields` seeking to support `Promise`s.
+
+On the bright side, however, this 2nd loop will never be executed if all the fields pass validation _or_ if the user doesn't set the `focus` option to `true`. Moreover, the 2nd loop will immediately exit after it locates the first invalid field. So things aren't really all too bad.
+
+#### But in the End... Performance Probably Isn't a Big Concern Here
+
+I'm anticipating that most forms on a given page won't have an obscenely large number of fields. Any form that is incredibly large is likely a bad User Experience that needs to be simplified or divided into steps. Thus, from a practical point of view, a second loop through the form fields during the _occasional_ occurrence where a user supplies invalid data is not really a big concern. I think the current solution works well for the goal I'm trying to achieve for my users.
+
+If I discover that the second loop is a _legitimate_ concern for performance, I will look into an alternative.

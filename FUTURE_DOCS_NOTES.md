@@ -459,7 +459,7 @@ Unlike several of the other form validation libraries out there, the `FormValidi
 
 Custom Elements do not expose their [`ValidityState`](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/validity) by default. Because the `FormValidityObserver` relies on the `ValidityState` of form fields to perform proper validation, your Custom Element will need to expose its `ValidityState` like so:
 
-```ts
+```js
 class CustomField extends HTMLElement {
   static formAssociated = true;
   #internals;
@@ -480,6 +480,36 @@ customElements.define("custom-field", CustomField);
 
 The `FormValidityObserver` _requires_ the `ValidityState` of Custom Elements to be exposed via the `validity` property because this is consistent with the behavior of native form controls. This is already a best practice if you're writing Custom Elements that others will be using since it creates a more intuitive developer experience. It is recommended to keep the `ElementInternals` private and to use a getter (_without_ a setter) for the `validity` property to prevent unwanted mutations from the outside.
 
+If you are using the native form error bubbles to display error messages to users (or if you anticipate that the consumers of your Web Component will do the same), then you will also need to expose the `reportValidity()` method of your component in a similar manner.
+
+```js
+class CustomField extends HTMLElement {
+  static formAssociated = true;
+  #internals;
+
+  constructor() {
+    super();
+    this.#internals = this.attachInternals();
+    // Other Setup ...
+  }
+
+  get validity() {
+    return this.#internals.validity;
+  }
+
+  /**
+   * Returns `true` if the element has no validity problems; otherwise, returns `false`.
+   * Fires an `invalid` event at the element, and (if the event isn't canceled) reports the problem to the user.
+   * @returns {boolean}
+   */
+  reportValidity() {
+    return this.#internals.reportValidity();
+  }
+}
+
+customElements.define("custom-field", CustomField);
+```
+
 Optionally, you can also expose the `validationMessage` and `willValidate` properties of your Custom Element. (These should also be exposed as getters without setters.) In addition to helping the end users of your Web Component, exposing the `validationMessage` property will enable the `FormValidityObserver` to show default error messages for your component whenever it fails validation. (This means that by default you won't have to use `FormValidityObserver.configure` on any instances of your Custom Element.)
 
 #### (Optionally) Expose a `setCustomValidity` Method
@@ -490,7 +520,7 @@ Technically speaking, a robust Custom Element can manage all of its `ValiditySta
 
 That said, if you're writing Web Components that others will be using, then it's a best practice to expose a `setCustomValidity` method. This is because it's impossible to predict all the ways in which other developers will use your Custom Element. A `setCustomValidity` method that mimics the behavior of native form controls will be more intuitive for your end users and satisfy whatever custom error handling needs they may have.
 
-```ts
+```js
 class CustomField extends HTMLElement {
   static formAssociated = true;
   #internals;
