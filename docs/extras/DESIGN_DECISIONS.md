@@ -1,6 +1,6 @@
 # Design Decisions
 
-If you've already read my [`Development Notes`](./DEVELOPMENT_NOTES.md), then you'd probably guess that this file serves a similar purpose. And indeed, this file serves the exact same purpose as `Development Notes`, but it was split out from that file so that I could give special attention to key design decisions that I've made over time.
+If you've already read my [`Development Notes`](./development-notes.md), then you'd probably guess that this file serves a similar purpose. And indeed, this file serves the exact same purpose as `Development Notes`, but it was split out from that file so that I could give special attention to key design decisions that I've made over time.
 
 "Why am I using this implementation now? Was there a better one in the past, or is the current one better?" These sorts of questions get asked when returning to a codebase after spending an extended period of time away from it. And I want to have answers to these kinds of questions when I return to my code. (This also gives me confidence that _hopefully_ I know what I'm doing, and that I can move forward with confidence that my current approach to the project at least makes _some_ sense.)
 
