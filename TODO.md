@@ -1,5 +1,9 @@
 # TODO
 
+## Documentation
+
+- [ ] In the interest of time, we're probably going to have to do the bare minimum when it comes to the documentation. Make the API clear, give some helpful examples, etc. After we've release the first draft of the project, we can start thinking about how to "perfect" the docs. But for now, don't get too paranoid about the wording.
+
 ## `FormValidityObserver`
 
 - [ ] Add docs at some point on why we _don't_ allow structuring form data as nested objects like `React Hook Form`, `Conform`, etc.
@@ -16,6 +20,7 @@
 - [ ] The `aria-describedby` attribute technically supports multiple IDs at one time. Should we add a `data-describedby` (or `data-errormessage`) attribute for cases like these? We would need to enforce that the `data-errormessage` value is a substring of the `aria-describedby` value in this case (so that the error message is still _accessible_). However, it's hard to say how realistic this scenario would be. Anyone attempting to do this would also have to deal with the fact that the various descriptions would get joined together into a "single unit"... So they'd have to be mindful of the order of their `aria-describedby` ids anyway. This might be worth tackling, but it doesn't seem urgent; so we're delaying it.
 - [ ] Up to this point, we've been defining the `FormField` type as any `HTMLElement` that will _naturally_ appear in a [form's list of elements](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/elements). However, this definition isn't fully accurate anymore given that we're now trying to be cognizant of Web Components. We need to figure out a new definition that works. There are several possible approaches to this problem... Perhaps we could support a custom `interface` that extends `HTMLElement` and supports/exposes all necessary properties/methods -- including those from `ElementInternals`. But how simple/complex is that? Is this something that we should delegate to userland? We need to think more on this.
 - [ ] It's a little bothersome to us that in the `validateFields()` method, `getErrorOwningControl` technically has to be called twice when scrolling an invalid field into view. It's not the end of the world, but it doesn't feel like a clean solution either. This might be another reason to migrate towards checking `field.validity.valid` instead of `field.getAttribute("aria-invalid") === String(true)`. (This would require passing `errorElement.innerText`/`errorElement.textContent` to `setCustomValidity` whenever we use the `renderer` function to render error messages to the DOM.)
+- [ ] Where reasonable, support legacy APIs of JS Frameworks -- such as React Class Components.
 
 ### `FormValidityObserver` Optimizations
 
