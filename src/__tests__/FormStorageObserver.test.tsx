@@ -2,7 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom/extend-expect";
 import { faker } from "@faker-js/faker";
-import type { EventType, ListenerOptions, FormField } from "../types";
+import type { EventType, FormField } from "../types";
 import * as Assertions from "../utils/assertions";
 import FormObserver from "../FormObserver";
 import FormStorageObserver from "../FormStorageObserver";
@@ -27,19 +27,32 @@ describe("Form Storage Observer (Class)", () => {
     expect(new FormStorageObserver(types[0])).toEqual(expect.any(FormObserver));
   });
 
-  it("Supplies the event listener options that it receives to its data storage event handler", () => {
-    const eventListenerOpts: Exclude<ListenerOptions, undefined> = { passive: false, once: true };
-    const formStorageObserver = new FormStorageObserver(types, { eventListenerOpts });
+  it("Determines the event phase for the data storage event handler from the `options` (defaults to bubbling)", () => {
+    /* ---------- Setup ---------- */
+    const formStorageObserverCapture = new FormStorageObserver(types[0], { useEventCapturing: true });
+    const formStorageObserverBubble = new FormStorageObserver(types[0]);
     const form = document.createElement("form");
 
     const addEventListener = jest.spyOn(form.ownerDocument, "addEventListener");
     const removeEventListener = jest.spyOn(form.ownerDocument, "removeEventListener");
 
-    formStorageObserver.observe(form);
-    expect(addEventListener).toHaveBeenCalledWith(expect.anything(), expect.anything(), eventListenerOpts);
+    const captureOptions = expect.objectContaining({ capture: true });
+    const bubbleOptions = expect.objectContaining({ capture: undefined });
 
-    formStorageObserver.unobserve(form);
-    expect(removeEventListener).toHaveBeenCalledWith(expect.anything(), expect.anything(), eventListenerOpts);
+    /* ---------- Run Assertions ---------- */
+    // Test `observe`
+    formStorageObserverCapture.observe(form);
+    expect(addEventListener).toHaveBeenNthCalledWith(1, expect.anything(), expect.anything(), captureOptions);
+
+    formStorageObserverBubble.observe(form);
+    expect(addEventListener).toHaveBeenNthCalledWith(2, expect.anything(), expect.anything(), bubbleOptions);
+
+    // Test `unobserve`
+    formStorageObserverCapture.unobserve(form);
+    expect(removeEventListener).toHaveBeenNthCalledWith(1, expect.anything(), expect.anything(), captureOptions);
+
+    formStorageObserverBubble.unobserve(form);
+    expect(removeEventListener).toHaveBeenNthCalledWith(2, expect.anything(), expect.anything(), bubbleOptions);
   });
 
   describe("observe (Method)", () => {
@@ -54,24 +67,30 @@ describe("Form Storage Observer (Class)", () => {
       expect(formStorageObserver.observe).not.toBe(FormObserver.prototype.observe);
     });
 
-    it("Automatically loads a `form`'s data from `localStorage` IF `manual` mode is turned off (default)", () => {
+    it("Automatically loads a `form`'s data from `localStorage` IF the `automate` option says so (default)", () => {
       const form = document.createElement("form");
-      const formStorageObserver = new FormStorageObserver(types);
-      const manualFormStorageObserver = new FormStorageObserver(types, { manual: true });
       jest.spyOn(FormStorageObserver, "load");
 
-      // Even though the form is newly observed, no data is loaded in "Manual Mode".
-      manualFormStorageObserver.observe(form);
-      expect(FormStorageObserver.load).not.toHaveBeenCalled();
+      // No data is loaded when `automate` is `deletion` or `neither`
+      (["deletion", "neither"] as const).forEach((automate) => {
+        const formStorageObserver = new FormStorageObserver(types, { automate });
+        formStorageObserver.observe(form);
+        expect(FormStorageObserver.load).not.toHaveBeenCalled();
+      });
 
-      // Data is automatically loaded for newly observed forms when "Manual Mode" is off
-      formStorageObserver.observe(form);
-      expect(FormStorageObserver.load).toHaveBeenNthCalledWith(1, form);
+      // Data is automatically loaded for newly observed forms by default, or when `automate` is `loading` or `both`
+      ([undefined, "loading", "both"] as const).forEach((automate, i) => {
+        const formStorageObserver = new FormStorageObserver(types, { automate });
+        formStorageObserver.observe(form);
+
+        expect(FormStorageObserver.load).toHaveBeenCalledTimes(i + 1);
+        expect(FormStorageObserver.load).toHaveBeenNthCalledWith(i + 1, form);
+      });
     });
 
     it("Does nothing with a `form` that is already being observed", () => {
       const form = document.createElement("form");
-      const formStorageObserver = new FormStorageObserver(types, { manual: false });
+      const formStorageObserver = new FormStorageObserver(types, { automate: "both" });
       jest.spyOn(FormStorageObserver, "load");
 
       // Newly observe the form
@@ -114,26 +133,33 @@ describe("Form Storage Observer (Class)", () => {
       expect(formStorageObserver.unobserve).not.toBe(FormObserver.prototype.unobserve);
     });
 
-    it("Automatically clears a `form`'s data from `localStorage` IF `manual` mode is turned off (default)", () => {
+    it("Automatically clears a `form`'s data from `localStorage` IF the `automate` option says so", () => {
       const form = document.createElement("form");
-      const formStorageObserver = new FormStorageObserver(types);
-      const manualFormStorageObserver = new FormStorageObserver(types, { manual: true });
       jest.spyOn(FormStorageObserver, "clear");
 
-      // Even though the form is newly unobserved, no data is cleared in "Manual Mode".
-      manualFormStorageObserver.observe(form);
-      manualFormStorageObserver.unobserve(form);
-      expect(FormStorageObserver.clear).not.toHaveBeenCalled();
+      // No data is cleared by default, or when `automate` is `loading` or `neither`
+      ([undefined, "loading", "neither"] as const).forEach((automate) => {
+        const formStorageObserver = new FormStorageObserver(types, { automate });
+        formStorageObserver.observe(form);
+        formStorageObserver.unobserve(form);
 
-      // Data is automatically cleared for newly unobserved forms when "Manual Mode" is off
-      formStorageObserver.observe(form);
-      formStorageObserver.unobserve(form);
-      expect(FormStorageObserver.clear).toHaveBeenNthCalledWith(1, form);
+        expect(FormStorageObserver.clear).not.toHaveBeenCalled();
+      });
+
+      // Data is automatically cleared for newly unobserved forms when `automate` is `deletion` or `both`
+      (["deletion", "both"] as const).forEach((automate, i) => {
+        const formStorageObserver = new FormStorageObserver(types, { automate });
+        formStorageObserver.observe(form);
+        formStorageObserver.unobserve(form);
+
+        expect(FormStorageObserver.clear).toHaveBeenCalledTimes(i + 1);
+        expect(FormStorageObserver.clear).toHaveBeenNthCalledWith(i + 1, form);
+      });
     });
 
     it("Does nothing with a `form` that isn't currently being observed", () => {
       const form = document.createElement("form");
-      const formStorageObserver = new FormStorageObserver(types, { manual: false });
+      const formStorageObserver = new FormStorageObserver(types, { automate: "both" });
       jest.spyOn(FormStorageObserver, "clear");
 
       // No errors are thrown, and no attempts are made to clear data from `localStorage`
@@ -678,7 +704,7 @@ describe("Form Storage Observer (Class)", () => {
 
       it("Stops saving a `form`'s data to `localStorage` when said `form` is unobserved", async () => {
         /* -------------------- Setup -------------------- */
-        const formStorageObserver = new FormStorageObserver(types[0], { manual: true });
+        const formStorageObserver = new FormStorageObserver(types[0], { automate: "neither" });
         const firstTestValue = "Korega ... Test ... Da";
         const secondTestValue = "NANIIIIIIIIII";
         expect(firstTestValue).not.toBe(fields.input.default);
@@ -1259,19 +1285,19 @@ describe("Form Storage Observer (Class)", () => {
   // Single Type
   new FormStorageObserver(event1);
   new FormStorageObserver(event1, {});
-  new FormStorageObserver(event1, { manual: true });
-  new FormStorageObserver(event1, { eventListenerOpts: true });
+  new FormStorageObserver(event1, { automate: "loading" });
+  new FormStorageObserver(event1, { useEventCapturing: true });
 
   // Multiple Types
   new FormStorageObserver([event1, event2]);
   new FormStorageObserver([event1, event2], {});
-  new FormStorageObserver([event1, event2], { manual: undefined });
-  new FormStorageObserver([event1, event2], { eventListenerOpts: undefined });
+  new FormStorageObserver([event1, event2], { automate: undefined });
+  new FormStorageObserver([event1, event2], { useEventCapturing: undefined });
 
   new FormStorageObserver([event1, event2] as const);
   new FormStorageObserver([event1, event2] as const, {});
-  new FormStorageObserver([event1, event2] as const, { manual: false });
-  new FormStorageObserver([event1, event2] as const, { eventListenerOpts: { passive: false, once: true } });
+  new FormStorageObserver([event1, event2] as const, { automate: "deletion" });
+  new FormStorageObserver([event1, event2] as const, { useEventCapturing: false });
 })();
 /* eslint-enable no-unreachable */
 /* eslint-enable no-new */

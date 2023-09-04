@@ -1,6 +1,6 @@
 # Form Observer Guides
 
-Here you'll fine helpful tips on how to use the `FormObserver` effectively in various situations. We hope that you find these guides useful! Here are the currently discussed topics:
+Here you'll find helpful tips on how to use the `FormObserver` effectively in various situations. We hope that you find these guides useful! Here are the currently discussed topics:
 
 - [Usage with JavaScript Frameworks](#usage-with-javascript-frameworks)
 - [Usage with Web Components](#usage-with-web-components)

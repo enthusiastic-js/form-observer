@@ -49,7 +49,7 @@ The `FormObserver` tries to make itself as approachable as possible by mimicking
 
 You might be helped by thinking of the `FormObserver` as a fancy tool for creating form-related event listeners, as that's really all it is. Working with this model is helpful when you want to do more complex tasks like [`localStorage` management](../form-storage-observer/README.md) and [form field validation](../form-validity-observer/README.md).
 
-### Constructor: `FormObserver()`
+### Constructor: `FormObserver(types, listeners, options)`
 
 The `FormObserver()` constructor creates a new observer and configures it with the event listeners that you pass in. These listeners are used for every `HTMLFormElement` that the instance observes. There are 3 ways to construct a `FormObserver`.
 
@@ -180,7 +180,7 @@ field.click(); // Does nothing, the form is no longer being observed
 
 ### Method: `FormObserver.disconnect(): void`
 
-Stops the observer from listening for any events emitted from **all** form fields. This is effectively the same as calling [`FormObserver.unobserve()`](#method-formobserverunobserveform-htmlformelement-boolean) on all form elements that the observer was previously watching. The benefit of using `disconnect()` is that it provides a quick and easy way to stop watching the forms in your application without requiring you to provide references to those forms.
+Stops the observer from listening for any events emitted from **all** form fields. This is effectively the same as calling [`FormObserver.unobserve()`](#method-formobserverunobserveform-htmlformelement-boolean) on all form elements that the observer was previously watching. The benefit of using `disconnect()` is that it provides a quick and easy way to stop watching all forms in your application without requiring you to provide references to those forms.
 
 ```ts
 const listener = (event) => console.log(`${event.target.name} was \`click\`ed!`);

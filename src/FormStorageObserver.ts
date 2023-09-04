@@ -1,6 +1,6 @@
 import FormObserver from "./FormObserver";
 import { assertElementIsForm } from "./utils/assertions";
-import type { OneOrMany, EventType, FormFieldEvent, ListenerOptions, FormField } from "./types";
+import type { OneOrMany, EventType, FormFieldEvent, FormField } from "./types";
 
 /*
  * NOTE: Watch GitHub Issue for Static Methods on Interfaces: https://github.com/microsoft/TypeScript/issues/33892.
@@ -34,42 +34,36 @@ interface FormStorageObserverConstructor {
 }
 
 interface FormStorageObserverOptions {
-  /*
-   * TODO: Our brief test with React makes this approach to automation seem a little rigid. Perhaps we should
-   * expose more options? Maybe we can change the `manual` property to `automate`, which accepts 1 of 4
-   * possible strings: `neither`, `setup`, `teardown`, and `both`. We'd have to update the JSDoc too, of course.
-   * But this approach seems much more flexible according to user's needs.
-   */
   /**
-   * Determines whether or not the observer will automatically load/clear the form data stored in `localStorage`.
-   * If `false`, the observer will automatically load any relevant data from `localStorage` when a
-   * form is observed, and it will automatically clear any relevant data from `localStorage` when the
-   * form is unobserved.
-   *
-   * Defaults to `false`.
+   * Indicates whether or not the observer should automate the loading/removal of a form's `localStorage` data.
+   * - `loading` (Default): A form's data will automatically be loaded from `localStorage` when it is observed.
+   * - `deletion`: A form's data will automatically be removed from `localStorage` when it is unobserved.
+   * - `both`: Behaves as if `loading` and `deletion` were specified simultaneously.
+   * - `neither`: The observer will not automate any data loading or data removal.
    */
-  manual?: boolean;
+  automate?: "loading" | "deletion" | "both" | "neither";
 
   /**
-   * The `addEventListener` options to use for the observer's event listener.
-   * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
+   * Indicates that the observer's event listener should be called during the event capturing phase
+   * instead of the event bubbling phase. Defaults to `false`.
+   * @see {@link https://www.w3.org/TR/DOM-Level-3-Events/#event-flow DOM Event Flow}
    */
-  eventListenerOpts?: ListenerOptions;
+  useEventCapturing?: boolean;
 }
 
 const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneOrMany<EventType>>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Necessary due to a restriction in TS
   extends FormObserver<any>
 {
-  readonly #manual?: boolean;
-  constructor(types: T, { manual, eventListenerOpts }: FormStorageObserverOptions = {}) {
-    super(types, eventListener, eventListenerOpts);
-    this.#manual = manual;
+  readonly #automate: Required<FormStorageObserverOptions>["automate"];
+  constructor(types: T, { automate, useEventCapturing }: FormStorageObserverOptions = {}) {
+    super(types, eventListener, { passive: true, capture: useEventCapturing });
+    this.#automate = automate ?? "loading";
   }
 
   observe(form: HTMLFormElement): boolean {
     const newlyObserved = super.observe(form);
-    if (newlyObserved && !this.#manual) FormStorageObserver.load(form);
+    if (newlyObserved && (this.#automate === "loading" || this.#automate === "both")) FormStorageObserver.load(form);
     return newlyObserved;
   }
 
@@ -144,7 +138,10 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
 
   unobserve(form: HTMLFormElement): boolean {
     const newlyUnobserved = super.unobserve(form);
-    if (newlyUnobserved && !this.#manual) FormStorageObserver.clear(form);
+    if (newlyUnobserved && (this.#automate === "deletion" || this.#automate === "both")) {
+      FormStorageObserver.clear(form);
+    }
+
     return newlyUnobserved;
   }
 
