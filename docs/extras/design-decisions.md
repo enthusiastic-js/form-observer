@@ -69,7 +69,7 @@ Although it is likely less common, similar concerns could also be brought up for
 
 It probably isn't _that_ bad to loop over the values of the `errorMessages` object passed to the `register` method in order to perform what we called "attribute-constraint reconciliation". But still... for a feature that no one asked for -- and probably that no one really cares for -- it's a net loss in performance... with no real benefit. (Technically speaking, our previous approach was also not all-encompassing anyway. We won't dive into that though.)
 
-Those two things considered, we've reverted `register` to a simple method that updates the `FormValidityObserver`'s local store of field-associated error messages. Generally speaking, attribute-constraint reconciliation won't be a concern for anyone using a JS Framework. Developers who aren't using JS frameworks can make sure that they aren't registering unused error messages on their own. We don't need to aggressively handle this for them.
+Those two things considered, we've reverted `register` to a simple method that updates the `FormValidityObserver`'s local store of field-associated error messages. Generally speaking, attribute-constraint reconciliation won't be a concern for anyone using a JS framework. Developers who aren't using JS frameworks can make sure that they aren't registering unused error messages on their own. We don't need to aggressively handle this for them.
 
 ## 2023-03-08
 

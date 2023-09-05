@@ -34,7 +34,7 @@ observer.observe(form);
 
 ## Features and Benefits
 
-- **Framework Agnostic**: You can easily use this tool in a pure-JS application or in the JS Framework of your choice.
+- **Framework Agnostic**: You can easily use this tool in a pure-JS application or in the JS framework of your choice.
 - [**Web Component Support**](https://developer.mozilla.org/en-US/docs/Web/API/Web_components): Because the `Form Observer` is written with pure JS, it works with Web Components out of the box.
 - **No Dependencies**: The `Form Observer` packs _a lot_ of power into a _tiny_ bundle to give your users the best experience.
 - **Performant**: The `Form Observer` leverages [event delegation](https://gomakethings.com/why-is-javascript-event-delegation-better-than-attaching-events-to-each-element/) to minimize memory usage, and it easily integrates into any JS framework _without_ requiring state -- giving your app a significant boost in speed.

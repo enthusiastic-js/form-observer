@@ -81,7 +81,7 @@ describe("Form Validity Observer (Class)", () => {
     // Keep things clean between each test by automatically restoring anything we may have spied on
     jest.restoreAllMocks();
 
-    // Reset anything that we've rendered to the DOM. (Without a JS Framework implementation, we must do this manually.)
+    // Reset anything that we've rendered to the DOM. (Without a JS framework implementation, we must do this manually.)
     document.body.textContent = "";
   });
 
