@@ -6,7 +6,6 @@
 
 ## `FormStorageObserver`
 
-- [ ] Update documentation to mention which form controls do not have their data stored (e.g., sensitive fields and non-form-fields).
 - [ ] Convert tests AWAY FROM REACT to pure JavaScript
 
 ## `FormValidityObserver`

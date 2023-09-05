@@ -133,6 +133,8 @@ Instructs the observer to save a form's data to `localStorage` whenever a user i
 
 All data saved to `localStorage` is [scoped](#localstorage-data-scoping) by form `name` and field `name` to prevent data clashing. For this reason, you _must_ give a valid `name` to every field that you want to participate in form data storage. **If a field does not have a `name`, then its data _will not_ be saved to `localStorage`.** (It is also recommended to give a `name` to every form element that the `FormStorageObserver` observes, but this is not required.)
 
+> Note: Sensitive fields (i.e., `<input type="password" />`, `<input type="file" />`, and `<input type="hidden" />`) and form controls that lack legitimate form values (i.e., `<fieldset>`, `<output>`, and `<object>`) are **ignored** by the `FormStorageObserver`.
+
 If the provided form element was not being watched before `observe()` was called, the method will run any necessary setup logic and return `true`. (This setup logic includes loading `localStorage` data into all the form's fields if the observer's `automate` option is `loading` or `both`.) Otherwise, the method does nothing and returns `false`.
 
 **Example**
