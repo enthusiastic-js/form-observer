@@ -835,6 +835,29 @@ describe("Form Storage Observer (Class)", () => {
         });
       });
 
+      // Note: This test is for the `HTMLFormElement`-only Overload
+      it("Does not load a radiogroup's `localStorage` data redundantly (Performance Test)", () => {
+        // Setup
+        const name = "radio";
+
+        render(
+          <form aria-label="Test Form">
+            {testOptions.map((o) => (
+              <input key={o} aria-label={`radio-${o}`} name={name} type="radio" value={o} />
+            ))}
+          </form>
+        );
+
+        const form = screen.getByRole<HTMLFormElement>("form");
+        expect(screen.getAllByLabelText(/radio-\d{1}/, { selector: "input[type='radio']" }).length).toBeGreaterThan(2);
+        jest.spyOn(FormStorageObserver, "load");
+
+        // Verify that `FormStorageObserver.load` is only called ONCE for radio button groups
+        FormStorageObserver.load(form);
+        expect(FormStorageObserver.load).toHaveBeenCalledTimes(2);
+        expect(FormStorageObserver.load).toHaveBeenNthCalledWith(2, form, name);
+      });
+
       it("Skips fields without `name`s when loading data from `localStorage`", async () => {
         const values = { good: "This should be loadable", bad: "You can't load me, buddy" } as const;
 

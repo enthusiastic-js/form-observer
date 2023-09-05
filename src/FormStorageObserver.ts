@@ -74,8 +74,21 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
 
     /* -------------------- 1st Overload -------------------- */
     if (name == null) {
+      const loadedRadiogroups = new Set<string>();
+
       for (let i = 0; i < form.elements.length; i++) {
         const field = form.elements[i] as FormField;
+
+        // Avoid loading the same `radiogroup` more than once
+        if (loadedRadiogroups.has(field.name)) {
+          const radiogroup = form.elements.namedItem(field.name) as RadioNodeList;
+          i += radiogroup.length - 2; // Skip all remaining radio buttons
+          continue;
+        }
+
+        // Keep track of radio button groups that have loaded their `localStorage` data
+        if (field.type === "radio") loadedRadiogroups.add(field.name);
+
         if (field.name) FormStorageObserver.load(form, field.name);
       }
 
@@ -155,6 +168,7 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
 
     // 1st Overload
     for (let i = 0; i < form.elements.length; i++) {
+      // Note: We're assuming that this operation is fast enough not to warrant skipping duplicate radio buttons
       const field = form.elements[i] as FormField;
       if (field.name) localStorage.removeItem(getFieldKey(form.name, field.name));
     }
