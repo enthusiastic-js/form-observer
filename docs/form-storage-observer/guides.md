@@ -2,8 +2,211 @@
 
 Here you'll find helpful tips on how to use the `FormStorageObserver` effectively in various situations. We hope that you find these guides useful! Here are the currently discussed topics:
 
+- [Usage with JavaScript Frameworks](#usage-with-javascript-frameworks)
 - [Clearing `localStorage` Data for Conditionally-Displayed Fields](#clearing-localstorage-data-for-conditionally-displayed-fields)
 - [Pitfall: Be Careful Not to Mismatch the `id`s and `name`s of Unrelated Fields](#pitfall-be-careful-not-to-mismatch-the-ids-and-names-of-unrelated-fields)
+
+## Usage with JavaScript Frameworks
+
+Just like the [`MutationObserver`](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver) and the [`IntersectionObserver`](https://developer.mozilla.org/en-US/docs/Web/API/IntersectionObserver), the `FormStorageObserver` can be setup easily in any JS framework without a framework-specific wrapper/helper. You can setup the `FormStorageObserver` in the same way that you would setup "any other observer". Here are some examples:
+
+### [Svelte](https://svelte.dev/)
+
+```svelte
+<form name="example" bind:this={form} on:submit={handleSubmit}>
+  <!-- Other Form Controls -->
+</form>
+
+<script>
+import { onMount } from "svelte";
+import { FormStorageObserver } from "@form-observer/core";
+
+let form;
+onMount(() => {
+  const observer = new FormStorageObserver("change");
+  observer.observe(form);
+  return () => observer.disconnect();
+});
+
+function handleSubmit(event) {
+  event.preventDefault();
+
+  // Clear `localStorage` data after form submission if the data is no longer needed
+  FormStorageObserver.clear(event.currentTarget);
+}
+</script>
+```
+
+### [React](https://react.dev/) (with TypeScript)
+
+#### Using Functional Components
+
+```tsx
+import { useEffect, useRef } from "react";
+import { FormStorageObserver } from "@form-observer/core";
+
+export default function MyComponent() {
+  const form = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    const observer = new FormStorageObserver("change");
+    observer.observe(form.current as HTMLFormElement);
+    return () => observer.disconnect();
+  });
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>): void {
+    event.preventDefault();
+
+    // Clear `localStorage` data after form submission if the data is no longer needed
+    FormStorageObserver.clear(event.currentTarget);
+  }
+
+  return (
+    <form ref={form} name="example" onSubmit={handleSubmit}>
+      {/* Other Form Controls */}
+    </form>
+  );
+}
+```
+
+#### Using Class Components
+
+```tsx
+import { Component, createRef } from "react";
+import { FormStorageObserver } from "@form-observer/core";
+
+export default class MyComponent extends Component {
+  #form = createRef<HTMLFormElement>();
+  #observer = new FormObserver("change");
+
+  componentDidMount() {
+    this.#observer.observe(this.#form.current as HTMLFormElement);
+  }
+
+  componentWillUnmount() {
+    this.#observer.disconnect();
+  }
+
+  #handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+
+    // Clear `localStorage` data after form submission if the data is no longer needed
+    FormStorageObserver.clear(event.currentTarget);
+  };
+
+  render() {
+    return (
+      <form ref={this.#form} name="example" onSubmit={this.#handleSubmit}>
+        {/* Other Form Controls */}
+      </form>
+    );
+  }
+}
+```
+
+### [Vue](https://vuejs.org/)
+
+#### Using `<script setup>` Shorthand
+
+```vue
+<template>
+  <form ref="form" name="example" @submit="handleSubmit">
+    <!-- Other Form Controls -->
+  </form>
+</template>
+
+<script setup>
+import { ref, onMounted, onUnmounted } from "vue";
+import { FormStorageObserver } from "@form-observer/core";
+
+const form = ref(null);
+const observer = new FormStorageObserver("change");
+onMounted(() => observer.observe(form.value));
+onUnmounted(() => observer.disconnect());
+
+function handleSubmit(event) {
+  event.preventDefault();
+
+  // Clear `localStorage` data after form submission if the data is no longer needed
+  FormStorageObserver.clear(event.currentTarget);
+}
+</script>
+```
+
+#### Using Regular `<script>` Tag
+
+```vue
+<template>
+  <form ref="form" name="example" @submit="handleSubmit">
+    <!-- Other Form Controls -->
+  </form>
+</template>
+
+<script>
+import { defineComponent, ref, onMounted, onUnmounted } from "vue";
+import { FormStorageObserver } from "@form-observer/core";
+
+export default defineComponent({
+  setup() {
+    const form = ref(null);
+    const observer = new FormStorageObserver("change");
+    onMounted(() => observer.observe(form.value));
+    onUnmounted(() => observer.disconnect());
+
+    function handleSubmit(event) {
+      event.preventDefault();
+
+      // Clear `localStorage` data after form submission if the data is no longer needed
+      FormStorageObserver.clear(event.currentTarget);
+    }
+
+    return { form, handleSubmit };
+  },
+});
+</script>
+```
+
+### [Solid](https://www.solidjs.com/)
+
+```tsx
+import { createEffect } from "solid-js";
+import { FormStorageObserver } from "@form-observer/core";
+
+export default function MyComponent() {
+  let form;
+
+  // Note: If you like, you may use `onMount` and `onCleanup` instead.
+  createEffect(() => {
+    const observer = new FormStorageObserver("change");
+    observer.observe(form);
+    return () => observer.disconnect();
+  });
+
+  function handleSubmit(event) {
+    event.preventDefault();
+
+    // Clear `localStorage` data after form submission if the data is no longer needed
+    FormStorageObserver.clear(event.currentTarget);
+  }
+
+  return (
+    <form ref={form} name="example" onSubmit={handleSubmit}>
+      {/* Other Form Controls */}
+    </form>
+  );
+}
+```
+
+### Where's My JavaScript Framework?
+
+As you know, JS frameworks are always being created at an incredibly rapid pace; so we can't provide an example for _every_ framework that's out there. However, the process for getting the `FormStorageObserver` working in your preferred framework is pretty straightforward:
+
+1. Obtain a reference to the `HTMLFormElement` that you want to observe.
+2. Call `FormStorageObserver.observe(form)` when the reference to your form element becomes available (typically during the component's "mounting phase").
+3. When necessary, load the form's data from `localStorage`. By default, the `FormStorageObserver` does this automatically whenever it observes a form.
+4. When your component unmounts, call `FormStorageObserver.disconnect()` (or `FormStorageObserver.unobserve(form)`) to cleanup the listeners that are no longer being used.
+5. Remember to clean up the form data that was saved to `localStorage` when it is no longer needed. You can do this manually with `FormStorageObserver.clear()`, or you can setup the observer to do it automatically by setting the `automate` option to `deletion` or `both`.
+
+This is the approach being taken in the examples above. These steps and the code examples above should give you everything you need to get started.
 
 ## Clearing `localStorage` Data for Conditionally-Displayed Fields
 

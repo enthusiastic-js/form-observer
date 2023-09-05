@@ -61,7 +61,7 @@ When passing a string as the `types` argument for the `FormObserver` constructor
 
 **Example**
 
-```ts
+```js
 const observer1 = new FormObserver("input", (event) => console.log(`Input Data: ${event.data}`));
 const observer2 = new FormObserver(
   "focus",
@@ -85,7 +85,7 @@ When `types` is an array, you are still allowed to pass a single event `listener
 
 **Example**
 
-```ts
+```js
 // Remember: `options` are optional
 const listener = (e) => console.log(`Event of type ${e.type} occurred on ${e.target.tagName}`);
 const observer = new FormObserver(["input", "focusin"], listener, { capture: false, passive: true });
@@ -105,7 +105,7 @@ The event listener `options` argument is still optional when using this overload
 
 **Example**
 
-```ts
+```js
 // Remember: `options` are optional
 const observer = new FormObserver(
   ["input", "focus"],
@@ -135,7 +135,7 @@ If the provided form element was not being watched before `observe()` was called
 
 **Example**
 
-```ts
+```js
 const listener = (event) => console.log(`${event.target.name} was \`click\`ed!`);
 const observer = new FormObserver("click", listener);
 
@@ -163,7 +163,7 @@ If the provided form element was being watched before `unobserve()` was called, 
 
 Note: The event listeners that were registered by calling [`FormObserver.observe()`](#method-formobserverobserveform-htmlformelement-boolean) won't be unregistered until the observer is no longer watching any form elements.
 
-```ts
+```js
 const listener = (event) => console.log(`${event.target.name} was \`click\`ed!`);
 const observer = new FormObserver("click", listener);
 const form = document.getElementById("my-form");
@@ -182,7 +182,7 @@ field.click(); // Does nothing, the form is no longer being observed
 
 Stops the observer from listening for any events emitted from **all** form fields. This is effectively the same as calling [`FormObserver.unobserve()`](#method-formobserverunobserveform-htmlformelement-boolean) on all form elements that the observer was previously watching. The benefit of using `disconnect()` is that it provides a quick and easy way to stop watching all forms in your application without requiring you to provide references to those forms.
 
-```ts
+```js
 const listener = (event) => console.log(`${event.target.name} was \`click\`ed!`);
 const observer = new FormObserver("click", listener);
 const form1 = document.getElementById("form-1");

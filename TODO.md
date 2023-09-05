@@ -7,8 +7,6 @@
 ## `FormStorageObserver`
 
 - [ ] Don't loop over radio button groups in a redundant fashion! (When you update the code accordingly, don't forget to update your claim to the Lines Of Code in the `FormStorageObserver`.)
-- [ ] Add code examples to the documentation.
-- [ ] In the `GUIDES`, add a `Usage with JavaScript Frameworks` section.
 
 ## `FormValidityObserver`
 

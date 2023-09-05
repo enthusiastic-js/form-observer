@@ -201,7 +201,7 @@ The [Shadow DOM](https://developer.mozilla.org/en-US/docs/Web/API/Web_components
 </shadow-form>
 ```
 
-```ts
+```js
 class ShadowInput extends HTMLElement {
   #shadow;
 
