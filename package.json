@@ -6,7 +6,7 @@
   "scripts": {
     "test": "jest --watch",
     "test:coverage": "jest --coverage",
-    "lint": "prettier --ignore-path .gitignore --check . && eslint --ignore-path .gitignore .",
+    "lint": "prettier --ignore-path .gitignore --check . && eslint --ignore-path .gitignore . && tsc --noEmit",
     "format": "prettier --ignore-path .gitignore --write ."
   },
   "devDependencies": {
