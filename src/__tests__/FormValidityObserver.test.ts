@@ -61,7 +61,7 @@ describe("Form Validity Observer (Class)", () => {
   /** Creates an HTMLElement with the provided properties. If no props are needed, prefer `document.createElement`. */
   function createElementWithProps<K extends keyof HTMLElementTagNameMap>(
     tagName: K,
-    properties: Partial<HTMLElementTagNameMap[K]>
+    properties: Partial<HTMLElementTagNameMap[K]>,
   ): HTMLElementTagNameMap[K] {
     const element = document.createElement(tagName);
     return Object.assign(element, properties);
@@ -169,7 +169,7 @@ describe("Form Validity Observer (Class)", () => {
         expect(() => formValidityObserver.observe(originalForm)).not.toThrow();
 
         expect(() => formValidityObserver.observe(document.createElement("form"))).toThrowErrorMatchingInlineSnapshot(
-          `"A single \`FormValidityObserver\` can only watch 1 form at a time."`
+          `"A single \`FormValidityObserver\` can only watch 1 form at a time."`,
         );
 
         formValidityObserver.unobserve(originalForm);
@@ -287,12 +287,12 @@ describe("Form Validity Observer (Class)", () => {
 
     /** The error message to `expect` when an invalid field error is used */
     const badMessageError = new TypeError(
-      "A field's error message must be a `string` when the `render` option is not `true`"
+      "A field's error message must be a `string` when the `render` option is not `true`",
     );
 
     /** The error message to `expect` when a radio button lacks a `fieldset[role="radiogroup"]` container */
     const badRadiogroupError = new Error(
-      "Validated radio buttons must be placed inside a `<fieldset>` with role `radiogroup`"
+      "Validated radio buttons must be placed inside a `<fieldset>` with role `radiogroup`",
     );
 
     /* -------------------- Assertion Helpers for Validation Methods -------------------- */
@@ -786,7 +786,7 @@ describe("Form Validity Observer (Class)", () => {
         const { form } = renderEmptyFields();
         formValidityObserver.observe(form);
         const newRadios = testOptions.map((value) =>
-          createElementWithProps("input", { name: fieldName, type: "radio", value })
+          createElementWithProps("input", { name: fieldName, type: "radio", value }),
         );
 
         // Test Radio Directly in `form`
@@ -1376,7 +1376,7 @@ describe("Form Validity Observer (Class)", () => {
           a.slice(i + 1).forEach((E) => {
             const getError = (error: typeof e) => (typeof error === "function" ? error(field) : error);
             expect(getError(e)).not.toBe(getError(E));
-          })
+          }),
         );
 
         /* ---------- Run Assertions ---------- */
@@ -1445,7 +1445,7 @@ describe("Form Validity Observer (Class)", () => {
         const error = "<div>Some people will render me correctly, and others won't.</div>";
         const { form, field } = renderField(
           createElementWithProps("input", { name: "field", type: "number", required: true, min: "1", max: "1336" }),
-          { accessible: true }
+          { accessible: true },
         );
 
         // Setup `FormValidityObserver`
@@ -1620,7 +1620,7 @@ describe("Form Validity Observer (Class)", () => {
         // Render Field
         const customError = "Don't leave me!";
         const { form, field } = renderField(
-          createElementWithProps("input", { name: "field", required: true, pattern: "\\d+" })
+          createElementWithProps("input", { name: "field", required: true, pattern: "\\d+" }),
         );
 
         // Setup `FormValidityObserver`
@@ -1724,7 +1724,7 @@ describe("Form Validity Observer (Class)", () => {
         #status: "pending" | "fulfilled" | "rejected" = "pending";
 
         constructor(
-          executor: (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: unknown) => void) => void
+          executor: (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: unknown) => void) => void,
         ) {
           super((resolve, reject) => {
             executor(
@@ -1737,7 +1737,7 @@ describe("Form Validity Observer (Class)", () => {
                 reject(reason);
                 this.#settled = true;
                 this.#status = "rejected";
-              }
+              },
             );
           });
         }

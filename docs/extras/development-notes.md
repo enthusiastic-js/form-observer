@@ -67,7 +67,7 @@ interface FormObserverConstructor {
   new <T extends ReadonlyArray<EventType>>(
     types: T,
     listeners: TypesToListeners<T>,
-    options?: OneOrMany<ListenerOptions>
+    options?: OneOrMany<ListenerOptions>,
   ): FormObserver;
 }
 ```
@@ -115,7 +115,7 @@ interface FormObserverConstructor {
   new <T extends ReadonlyArray<EventType>>(
     types: T,
     listeners: TypesToListeners<T>,
-    options?: OneOrMany<ListenerOptions>
+    options?: OneOrMany<ListenerOptions>,
   ): FormObserver;
 }
 ```
@@ -133,7 +133,7 @@ interface FormObserverConstructor {
   new <T extends ReadonlyArray<EventType>>(
     types: T,
     listeners: TypesToListeners<T>,
-    options?: OneOrMany<ListenerOptions>
+    options?: OneOrMany<ListenerOptions>,
   ): FormObserver;
 }
 ```

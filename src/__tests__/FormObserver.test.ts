@@ -139,19 +139,19 @@ describe("Form Observer (Class)", () => {
       it("Requires a valid configuration during instantiation", () => {
         // Define Errors
         const badEventTypes = new TypeError(
-          "You must provide a `string` or an `array` of strings for the event `types`."
+          "You must provide a `string` or an `array` of strings for the event `types`.",
         );
 
         const badListenerForSingleEventType = new TypeError(
-          "The `listener` must be a `function` when `types` is a `string`."
+          "The `listener` must be a `function` when `types` is a `string`.",
         );
 
         const badListenersForEventTypesArray = new TypeError(
-          "The `listeners` must be a `function` or an `array` of functions when `types` is an `array`."
+          "The `listeners` must be a `function` or an `array` of functions when `types` is an `array`.",
         );
 
         const typesListenersMismatch = new TypeError(
-          "The `listeners` array must have the same length as the `types` array."
+          "The `listeners` array must have the same length as the `types` array.",
         );
 
         // Run Error Checks

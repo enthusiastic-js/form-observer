@@ -44,7 +44,7 @@ interface FormValidityObserverConstructor {
    */
   new <T extends OneOrMany<EventType>, M = string>(
     types: T,
-    options?: FormValidityObserverOptions<M>
+    options?: FormValidityObserverOptions<M>,
   ): FormValidityObserver<M>;
 }
 
@@ -277,7 +277,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
    */
   #resolveGroupedValidation(
     data: { pass: boolean; validatedRadiogroups: Set<string> },
-    options: ValidateFieldsOptions | undefined
+    options: ValidateFieldsOptions | undefined,
   ): boolean {
     if (data.pass) return true;
 

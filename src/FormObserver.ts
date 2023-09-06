@@ -25,7 +25,7 @@ interface FormObserverConstructor {
   new <T extends ReadonlyArray<EventType>>(
     types: T,
     listener: FormFieldListener<T[number]>,
-    options?: ListenerOptions
+    options?: ListenerOptions,
   ): FormObserver;
 
   /**
@@ -51,7 +51,7 @@ interface FormObserverConstructor {
   new <T extends ReadonlyArray<EventType>>(
     types: T,
     listeners: TypesToListeners<T>,
-    options?: OneOrMany<ListenerOptions>
+    options?: OneOrMany<ListenerOptions>,
   ): FormObserver;
 }
 
@@ -190,7 +190,7 @@ function assertValidListenerForSingleEventType(listener: unknown): asserts liste
 
 function assertValidListenersForMultipleEventTypes(
   types: ReadonlyArray<EventType>,
-  listeners: unknown
+  listeners: unknown,
 ): asserts listeners is OneOrMany<FormFieldListener<EventType>> {
   if (!(listeners instanceof Array)) {
     if (typeof listeners === "function") return;

@@ -1228,7 +1228,7 @@ describe("Form Storage Observer (Class)", () => {
           /* -------------------- Setup -------------------- */
           // Store a value in `localStorage` for each `form` field. (The value type doesn't matter here.)
           fieldNames.forEach((fieldName) => {
-            const value = faker.datatype.string();
+            const value = faker.string.sample();
             localStorage.setItem(getFieldKey(form.name, fieldName), JSON.stringify(value));
           });
 
@@ -1256,7 +1256,7 @@ describe("Form Storage Observer (Class)", () => {
           fieldNames.forEach((fieldName) => {
             /* -------------------- Setup -------------------- */
             // Store a value in `localStorage` for the specified `form` field. (The value type doesn't matter here.)
-            const value = faker.datatype.string();
+            const value = faker.string.sample();
             localStorage.setItem(getFieldKey(form.name, fieldName), JSON.stringify(value));
             expect(localStorage.getItem(getFieldKey(form.name, fieldName))).not.toBe(null);
 

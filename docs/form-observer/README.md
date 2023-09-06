@@ -66,7 +66,7 @@ const observer1 = new FormObserver("input", (event) => console.log(`Input Data: 
 const observer2 = new FormObserver(
   "focus",
   (e) => console.log(`Element ${e.target.tagName} stole the show from ${e.relatedTarget?.tagName ?? "no one"}!`),
-  true
+  true,
 );
 
 const form = document.getElementById("my-form");
@@ -113,7 +113,7 @@ const observer = new FormObserver(
     (inputEvent) => console.log("A user provided input to one of your form controls"),
     (focusEvent) => console.log("A user has their eye on one of your form controls <_<"),
   ],
-  [undefined, { capture: true }]
+  [undefined, { capture: true }],
 );
 
 const form = document.getElementById("my-form");
