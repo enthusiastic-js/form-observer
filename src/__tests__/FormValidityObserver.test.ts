@@ -1,7 +1,8 @@
 /* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expect*"] }] */
+/* eslint-disable testing-library/no-node-access -- We need node access for these tests */
 import { screen } from "@testing-library/dom";
 import userEvent from "@testing-library/user-event";
-import "@testing-library/jest-dom/extend-expect";
+import "@testing-library/jest-dom";
 import type { EventType, ListenerOptions, FormField } from "../types";
 import FormObserver from "../FormObserver";
 import FormValidityObserver from "../FormValidityObserver";

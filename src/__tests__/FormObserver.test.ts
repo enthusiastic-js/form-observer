@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/dom";
 import userEvent from "@testing-library/user-event";
-import "@testing-library/jest-dom/extend-expect";
+import "@testing-library/jest-dom";
 import type { EventType, ListenerOptions, TypesToListeners } from "../types";
 import * as Assertions from "../utils/assertions";
 import FormObserver from "../FormObserver";

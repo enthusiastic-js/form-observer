@@ -1,6 +1,6 @@
 import { screen, within } from "@testing-library/dom";
 import userEvent from "@testing-library/user-event";
-import "@testing-library/jest-dom/extend-expect";
+import "@testing-library/jest-dom";
 import { faker } from "@faker-js/faker";
 import type { EventType, FormField } from "../types";
 import * as Assertions from "../utils/assertions";
@@ -263,15 +263,15 @@ describe("Form Storage Observer (Class)", () => {
               <input ${labelAndName(fields.input.name)} type="text" value="${fields.input.default}" />
               <textarea ${labelAndName(fields.textarea.name)}>${fields.textarea.default}</textarea>
               <input ${labelAndName(fields.checkbox.name)} type="checkbox" ${
-            (fields.checkbox.default as boolean) ? "checked " : ""
-          }/>
+                (fields.checkbox.default as boolean) ? "checked " : ""
+              }/>
 
               ${testOptions
                 .map(
                   (o) =>
                     `<input name="${fields.radio.name}" aria-label="${
                       fields.radio.name
-                    }-${o}" type="radio" value="${o}" ${o === fields.radio.default ? "checked " : ""}/>`
+                    }-${o}" type="radio" value="${o}" ${o === fields.radio.default ? "checked " : ""}/>`,
                 )
                 .join("")}
 
@@ -285,12 +285,12 @@ describe("Form Storage Observer (Class)", () => {
                 ${testOptions
                   .map(
                     (o) =>
-                      `<option${fields.multiselect.default.includes(o as "2" | "3") ? " selected" : ""}>${o}</option>`
+                      `<option${fields.multiselect.default.includes(o as "2" | "3") ? " selected" : ""}>${o}</option>`,
                   )
                   .join("")}
               </select>
             </form>
-          `
+          `,
         )} 
       `;
 
@@ -405,19 +405,19 @@ describe("Form Storage Observer (Class)", () => {
         const inputP = within(primaryForm).getByRole("textbox", { name: fields.input.name });
         await userEvent.type(inputP, `${values.primary.input}{Tab}`);
         expect(localStorage.getItem(getFieldKey(primaryForm.name, fields.input.name))).toBe(
-          JSON.stringify(values.primary.input)
+          JSON.stringify(values.primary.input),
         );
 
         const textareaP = within(primaryForm).getByRole("textbox", { name: fields.textarea.name });
         await userEvent.type(textareaP, `${values.primary.textarea}{Tab}`);
         expect(localStorage.getItem(getFieldKey(primaryForm.name, fields.textarea.name))).toBe(
-          JSON.stringify(values.primary.textarea)
+          JSON.stringify(values.primary.textarea),
         );
 
         const checkboxP = within(primaryForm).getByRole("checkbox");
         await userEvent.click(checkboxP);
         expect(localStorage.getItem(getFieldKey(primaryForm.name, fields.checkbox.name))).toBe(
-          JSON.stringify(values.primary.checkbox)
+          JSON.stringify(values.primary.checkbox),
         );
 
         const radioP = within(primaryForm).getByRole("radio", {
@@ -425,13 +425,13 @@ describe("Form Storage Observer (Class)", () => {
         });
         await userEvent.click(radioP);
         expect(localStorage.getItem(getFieldKey(primaryForm.name, fields.radio.name))).toBe(
-          JSON.stringify(values.primary.radio)
+          JSON.stringify(values.primary.radio),
         );
 
         const selectP = within(primaryForm).getByRole("combobox");
         await userEvent.selectOptions(selectP, values.primary.select);
         expect(localStorage.getItem(getFieldKey(primaryForm.name, fields.select.name))).toBe(
-          JSON.stringify(values.primary.select)
+          JSON.stringify(values.primary.select),
         );
 
         const multiselectP = within(primaryForm).getByRole<HTMLSelectElement>("listbox");
@@ -441,35 +441,35 @@ describe("Form Storage Observer (Class)", () => {
         await userEvent.deselectOptions(multiselectP, unselectedOptionsP);
         await userEvent.selectOptions(multiselectP, values.primary.multiselect);
         expect(localStorage.getItem(getFieldKey(primaryForm.name, fields.multiselect.name))).toBe(
-          JSON.stringify(values.primary.multiselect)
+          JSON.stringify(values.primary.multiselect),
         );
 
         /* -------------------- Test Secondary Scoped Form + Storage Data Comparisons -------------------- */
         const inputS = within(secondaryForm).getByRole("textbox", { name: fields.input.name });
         await userEvent.type(inputS, `${values.secondary.input}{Tab}`);
         expect(localStorage.getItem(getFieldKey(secondaryForm.name, fields.input.name))).toBe(
-          JSON.stringify(values.secondary.input)
+          JSON.stringify(values.secondary.input),
         );
         expect(localStorage.getItem(getFieldKey(secondaryForm.name, fields.input.name))).not.toBe(
-          localStorage.getItem(getFieldKey(primaryForm.name, fields.input.name))
+          localStorage.getItem(getFieldKey(primaryForm.name, fields.input.name)),
         );
 
         const textareaS = within(secondaryForm).getByRole("textbox", { name: fields.textarea.name });
         await userEvent.type(textareaS, `${values.secondary.textarea}{Tab}`);
         expect(localStorage.getItem(getFieldKey(secondaryForm.name, fields.textarea.name))).toBe(
-          JSON.stringify(values.secondary.textarea)
+          JSON.stringify(values.secondary.textarea),
         );
         expect(localStorage.getItem(getFieldKey(secondaryForm.name, fields.textarea.name))).not.toBe(
-          localStorage.getItem(getFieldKey(primaryForm.name, fields.textarea.name))
+          localStorage.getItem(getFieldKey(primaryForm.name, fields.textarea.name)),
         );
 
         const checkboxS = within(secondaryForm).getByRole("checkbox");
         await userEvent.dblClick(checkboxS);
         expect(localStorage.getItem(getFieldKey(secondaryForm.name, fields.checkbox.name))).toBe(
-          JSON.stringify(values.secondary.checkbox)
+          JSON.stringify(values.secondary.checkbox),
         );
         expect(localStorage.getItem(getFieldKey(secondaryForm.name, fields.checkbox.name))).not.toBe(
-          localStorage.getItem(getFieldKey(primaryForm.name, fields.checkbox.name))
+          localStorage.getItem(getFieldKey(primaryForm.name, fields.checkbox.name)),
         );
 
         const radioS = within(secondaryForm).getByRole("radio", {
@@ -477,19 +477,19 @@ describe("Form Storage Observer (Class)", () => {
         });
         await userEvent.click(radioS);
         expect(localStorage.getItem(getFieldKey(secondaryForm.name, fields.radio.name))).toBe(
-          JSON.stringify(values.secondary.radio)
+          JSON.stringify(values.secondary.radio),
         );
         expect(localStorage.getItem(getFieldKey(secondaryForm.name, fields.radio.name))).not.toBe(
-          localStorage.getItem(getFieldKey(primaryForm.name, fields.radio.name))
+          localStorage.getItem(getFieldKey(primaryForm.name, fields.radio.name)),
         );
 
         const selectS = within(secondaryForm).getByRole("combobox");
         await userEvent.selectOptions(selectS, values.secondary.select);
         expect(localStorage.getItem(getFieldKey(secondaryForm.name, fields.select.name))).toBe(
-          JSON.stringify(values.secondary.select)
+          JSON.stringify(values.secondary.select),
         );
         expect(localStorage.getItem(getFieldKey(secondaryForm.name, fields.select.name))).not.toBe(
-          localStorage.getItem(getFieldKey(primaryForm.name, fields.select.name))
+          localStorage.getItem(getFieldKey(primaryForm.name, fields.select.name)),
         );
 
         const multiselectS = within(secondaryForm).getByRole<HTMLSelectElement>("listbox");
@@ -499,15 +499,15 @@ describe("Form Storage Observer (Class)", () => {
         await userEvent.deselectOptions(multiselectS, unselectedOptionsS);
         await userEvent.selectOptions(multiselectS, values.secondary.multiselect);
         expect(localStorage.getItem(getFieldKey(secondaryForm.name, fields.multiselect.name))).toBe(
-          JSON.stringify(values.secondary.multiselect)
+          JSON.stringify(values.secondary.multiselect),
         );
         expect(localStorage.getItem(getFieldKey(secondaryForm.name, fields.multiselect.name))).not.toBe(
-          localStorage.getItem(getFieldKey(primaryForm.name, fields.multiselect.name))
+          localStorage.getItem(getFieldKey(primaryForm.name, fields.multiselect.name)),
         );
 
         // Doubly verify that we have distinct `localStorage` keys for each scoped form field
         expect(localStorage).toHaveLength(
-          Object.values(values.primary).length + Object.values(values.secondary).length
+          Object.values(values.primary).length + Object.values(values.secondary).length,
         );
       });
 
@@ -1143,10 +1143,10 @@ describe("Form Storage Observer (Class)", () => {
         /* -------------------- `HTMLFormElement` + `FieldName` Overload -------------------- */
         expect(() => FormStorageObserver.load(form, correct.name)).not.toThrow();
         expect(() => FormStorageObserver.load(form, missing.id)).toThrowErrorMatchingInlineSnapshot(
-          `"Expected to find a field with name "missing", but instead found a field with name "". Did you accidentally provide your field's \`id\` instead of your field's \`name\`?"`
+          `"Expected to find a field with name "missing", but instead found a field with name "". Did you accidentally provide your field's \`id\` instead of your field's \`name\`?"`,
         );
         expect(() => FormStorageObserver.load(form, mismatched.id)).toThrowErrorMatchingInlineSnapshot(
-          `"Expected to find a field with name "mismatched", but instead found a field with name "wrong-name". Did you accidentally provide your field's \`id\` instead of your field's \`name\`?"`
+          `"Expected to find a field with name "mismatched", but instead found a field with name "wrong-name". Did you accidentally provide your field's \`id\` instead of your field's \`name\`?"`,
         );
       });
 
