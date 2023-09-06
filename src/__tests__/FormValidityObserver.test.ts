@@ -1,5 +1,5 @@
 /* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expect*"] }] */
-/* eslint-disable testing-library/no-node-access -- We need node access for these tests */
+/* eslint-disable testing-library/no-node-access -- We need node access to make these tests more clear and reliable */
 import { screen } from "@testing-library/dom";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
