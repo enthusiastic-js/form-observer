@@ -4,10 +4,6 @@
 
 - [ ] In the interest of time, we're probably going to have to do the bare minimum when it comes to the documentation. Make the API clear, give some helpful examples, etc. After we've release the first draft of the project, we can start thinking about how to "perfect" the docs. But for now, don't get too paranoid about the wording.
 
-## `FormStorageObserver`
-
-- [ ] Convert tests AWAY FROM REACT to pure JavaScript
-
 ## `FormValidityObserver`
 
 - [ ] Add docs at some point on why we _don't_ allow structuring form data as nested objects like `React Hook Form`, `Conform`, etc.

@@ -127,7 +127,9 @@ describe("Form Observer (Class)", () => {
   beforeEach(() => {
     jest.clearAllMocks(); // For our global mock `listeners`
     jest.restoreAllMocks(); // For any `spies` on `document.*EventListener` or the Assertion Utilities
-    document.body.textContent = ""; // Reset anything we've manually rendered to the DOM
+
+    // Reset anything that we've rendered to the DOM. (Without a JS framework implementation, we must do this manually.)
+    document.body.textContent = "";
   });
 
   /* ---------------------------------------- Run Tests ---------------------------------------- */

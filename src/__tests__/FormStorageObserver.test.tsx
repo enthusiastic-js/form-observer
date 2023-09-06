@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/dom";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom/extend-expect";
 import { faker } from "@faker-js/faker";
@@ -20,8 +20,13 @@ describe("Form Storage Observer (Class)", () => {
     /* eslint-enable jest/no-standalone-expect */
   });
 
-  // Keep things clean between each test by automatically restoring anything we may have spied on
-  beforeEach(() => jest.restoreAllMocks());
+  beforeEach(() => {
+    // Keep things clean between each test by automatically restoring anything we may have spied on
+    jest.restoreAllMocks();
+
+    // Reset anything that we've rendered to the DOM. (Without a JS framework implementation, we must do this manually.)
+    document.body.textContent = "";
+  });
 
   it("Is a child of the base `FormObserver` class", () => {
     expect(new FormStorageObserver(types[0])).toEqual(expect.any(FormObserver));
@@ -248,43 +253,46 @@ describe("Form Storage Observer (Class)", () => {
      * @returns References to the `Primary Form`, `Secondary Form`, and `Unscoped Form`
      */
     function renderForms() {
-      /** Creates `name` and `aria-label` props based on the provided `name` argument */
-      const labelAndName = <T extends keyof TestFormData>(name: T) => ({ name, "aria-label": name });
+      /** Creates `name` and `aria-label` attributes based on the provided `name` argument */
+      const labelAndName = <T extends keyof TestFormData>(name: T) => `name="${name}" aria-label="${name}"`;
 
-      render(
-        <>
-          {Object.values(forms).map((formProps) => (
-            <form key={formProps["aria-label"]} {...formProps}>
-              <input {...labelAndName(fields.input.name)} type="text" defaultValue={fields.input.default} />
-              <textarea {...labelAndName(fields.textarea.name)} defaultValue={fields.textarea.default} />
-              <input {...labelAndName(fields.checkbox.name)} type="checkbox" defaultChecked={fields.checkbox.default} />
+      document.body.innerHTML = `
+        ${Object.values(forms).map(
+          (formAttrs) => `
+            <form ${"name" in formAttrs ? `name="${formAttrs.name}" ` : ""}aria-label="${formAttrs["aria-label"]}">
+              <input ${labelAndName(fields.input.name)} type="text" value="${fields.input.default}" />
+              <textarea ${labelAndName(fields.textarea.name)}>${fields.textarea.default}</textarea>
+              <input ${labelAndName(fields.checkbox.name)} type="checkbox" ${
+            (fields.checkbox.default as boolean) ? "checked " : ""
+          }/>
 
-              {testOptions.map((o) => (
-                <input
-                  key={o}
-                  name={fields.radio.name}
-                  aria-label={`${fields.radio.name}-${o}`}
-                  type="radio"
-                  value={o}
-                  defaultChecked={o === fields.radio.default}
-                />
-              ))}
+              ${testOptions
+                .map(
+                  (o) =>
+                    `<input name="${fields.radio.name}" aria-label="${
+                      fields.radio.name
+                    }-${o}" type="radio" value="${o}" ${o === fields.radio.default ? "checked " : ""}/>`
+                )
+                .join("")}
 
-              <select {...labelAndName(fields.select.name)} defaultValue={fields.select.default}>
-                {testOptions.map((o) => (
-                  <option key={o}>{o}</option>
-                ))}
+              <select ${labelAndName(fields.select.name)}>
+                ${testOptions
+                  .map((o) => `<option${o === fields.select.default ? " selected" : ""}>${o}</option>`)
+                  .join("")}
               </select>
 
-              <select {...labelAndName(fields.multiselect.name)} multiple defaultValue={fields.multiselect.default}>
-                {testOptions.map((o) => (
-                  <option key={o}>{o}</option>
-                ))}
+              <select ${labelAndName(fields.multiselect.name)} multiple>
+                ${testOptions
+                  .map(
+                    (o) =>
+                      `<option${fields.multiselect.default.includes(o as "2" | "3") ? " selected" : ""}>${o}</option>`
+                  )
+                  .join("")}
               </select>
             </form>
-          ))}
-        </>
-      );
+          `
+        )} 
+      `;
 
       // Verify setup conditions for all 3 forms
       screen.getAllByRole<HTMLFormElement>("form").forEach((form) => {
@@ -514,17 +522,15 @@ describe("Form Storage Observer (Class)", () => {
         expect(values.input1).not.toBe(values.input2);
         expect(unscopedKey).toBe(getFieldKey("", fields.input.name));
 
-        render(
-          <>
-            <form aria-label="First Test Form">
-              <input name={fields.input.name} type="text" aria-label={labels.input1} />
-            </form>
+        document.body.innerHTML = `
+          <form aria-label="First Test Form">
+            <input name="${fields.input.name}" type="text" aria-label="${labels.input1}" />
+          </form>
 
-            <form aria-label="Second Test Form">
-              <input name={fields.input.name} type="text" aria-label={labels.input2} />
-            </form>
-          </>
-        );
+          <form aria-label="Second Test Form">
+            <input name="${fields.input.name}" type="text" aria-label="${labels.input2}" />
+          </form>
+        `;
 
         screen.getAllByRole<HTMLFormElement>("form").forEach((form) => formStorageObserver.observe(form));
         const input1 = screen.getByRole<HTMLInputElement>("textbox", { name: labels.input1 });
@@ -572,12 +578,12 @@ describe("Form Storage Observer (Class)", () => {
         const values = { input1: "I am visible", input2: "You will look for Me, but you will not find Me" } as const;
         expect(values.input1).not.toBe(values.input2);
 
-        render(
+        document.body.innerHTML = `
           <form aria-label="Test Form">
-            <input name={fields.input.name} type="text" />
+            <input name="${fields.input.name}" type="text" />
             <input id="this-does-not-matter" type="text" />
           </form>
-        );
+        `;
 
         const form = screen.getByRole<HTMLFormElement>("form");
         const inputs = screen.getAllByRole<HTMLInputElement>("textbox");
@@ -604,21 +610,21 @@ describe("Form Storage Observer (Class)", () => {
         const values = { text: "text", password: "password", hidden: "hidden", file: "" } as const;
         Object.values(values).forEach((v, i, arr) => arr.slice(i + 1).forEach((V) => expect(v).not.toEqual(V)));
 
-        render(
+        document.body.innerHTML = `
           <form name="test-form" aria-label="Test Form">
-            <label htmlFor="text">Text</label>
-            <input id="text" name="text" type="text" defaultValue={values.text} />
+            <label for="text">Text</label>
+            <input id="text" name="text" type="text" value="${values.text}" />
 
-            <label htmlFor="password">Password</label>
-            <input id="password" name="password" type="password" defaultValue={values.password} />
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" value="${values.password}" />
 
             <div id="hidden-label">Hidden</div>
-            <input name="hidden" type="hidden" defaultValue={values.hidden} aria-labelledby="hidden-label" />
+            <input name="hidden" type="hidden" value="${values.hidden}" aria-labelledby="hidden-label" />
 
-            <label htmlFor="file">File</label>
-            <input id="file" name="file" type="file" defaultValue={values.file} />
+            <label for="file">File</label>
+            <input id="file" name="file" type="file" value="${values.file}" />
           </form>
-        );
+        `;
 
         const form = screen.getByRole<HTMLFormElement>("form");
         formStorageObserver.observe(form);
@@ -651,25 +657,21 @@ describe("Form Storage Observer (Class)", () => {
         const values = { button: "button", fieldset: "fieldset", output: "output", object: "object" } as const;
         Object.values(values).forEach((v, i, arr) => arr.slice(i + 1).forEach((V) => expect(v).not.toEqual(V)));
 
-        render(
+        document.body.innerHTML = `
           <form name="test-form" aria-label="Test Form">
-            <label htmlFor="button">Button</label>
-            <button id="button" name="button" type="button" value={values.button}>
-              Button Display
-            </button>
+            <label for="button">Button</label>
+            <button id="button" name="button" type="button" value="${values.button}">Button Display</button>
 
-            <label htmlFor="output">Output</label>
-            <output id="output" name="output">
-              {values.output}
-            </output>
+            <label for="output">Output</label>
+            <output id="output" name="output">${values.output}</output>
 
             <div id="fieldset-label">Fieldset</div>
-            <fieldset name="fieldset" aria-labelledby="fieldset-label" />
+            <fieldset name="fieldset" aria-labelledby="fieldset-label"></fieldset>
 
             <div id="object-label">Object</div>
-            <object name="object" aria-labelledby="object-label" />
+            <object name="object" aria-labelledby="object-label"></object>
           </form>
-        );
+        `;
 
         const form = screen.getByRole<HTMLFormElement>("form");
         formStorageObserver.observe(form);
@@ -840,13 +842,13 @@ describe("Form Storage Observer (Class)", () => {
         // Setup
         const name = "radio";
 
-        render(
+        document.body.innerHTML = `
           <form aria-label="Test Form">
-            {testOptions.map((o) => (
-              <input key={o} aria-label={`radio-${o}`} name={name} type="radio" value={o} />
-            ))}
+            ${testOptions
+              .map((o) => `<input aria-label="radio-${o}" name="${name}" type="radio" value="${o}" />`)
+              .join("")}
           </form>
-        );
+        `;
 
         const form = screen.getByRole<HTMLFormElement>("form");
         expect(screen.getAllByLabelText(/radio-\d{1}/, { selector: "input[type='radio']" }).length).toBeGreaterThan(2);
@@ -861,15 +863,15 @@ describe("Form Storage Observer (Class)", () => {
       it("Skips fields without `name`s when loading data from `localStorage`", async () => {
         const values = { good: "This should be loadable", bad: "You can't load me, buddy" } as const;
 
-        render(
+        document.body.innerHTML = `
           <form aria-label="Test Form">
-            <label htmlFor="good">Good</label>
+            <label for="good">Good</label>
             <input id="good" name="good" type="text" />
 
-            <label htmlFor="bad">Bad</label>
+            <label for="bad">Bad</label>
             <input id="bad" type="text" />
           </form>
-        );
+        `;
 
         const form = screen.getByRole<HTMLFormElement>("form");
         const input = screen.getByLabelText<HTMLInputElement>(/good/i, { selector: "input[name]" });
@@ -905,11 +907,11 @@ describe("Form Storage Observer (Class)", () => {
         const absentFieldName = faker.lorem.word();
         const absentFieldValue = faker.lorem.words();
 
-        render(
+        document.body.innerHTML = `
           <form aria-label="Test Form">
             <input name="exists" type="text" />
           </form>
-        );
+        `;
 
         const form = screen.getByRole<HTMLFormElement>("form");
         Array.from(form.elements).forEach((f) => expect(f).toHaveAttribute("name"));
@@ -928,15 +930,15 @@ describe("Form Storage Observer (Class)", () => {
       it("Skips properly scoped (named) `form` fields that don't have any data stored in `localStorage`", () => {
         const values = { filled: "My input field will be loaded in this test! :D" };
 
-        render(
+        document.body.innerHTML = `
           <form aria-label="Test Form">
-            <label htmlFor="filled">Filled</label>
+            <label for="filled">Filled</label>
             <input id="filled" name="filled" type="text" />
 
-            <label htmlFor="empty">Empty</label>
+            <label for="empty">Empty</label>
             <input id="empty" name="empty" type="text" />
           </form>
-        );
+        `;
 
         const form = screen.getByRole<HTMLFormElement>("form");
         const input = screen.getByLabelText<HTMLInputElement>(/filled/i);
@@ -970,21 +972,21 @@ describe("Form Storage Observer (Class)", () => {
         const values = { text: "text", password: "password", hidden: "hidden", file: "file" } as const;
         Object.values(values).forEach((v, i, arr) => arr.slice(i + 1).forEach((V) => expect(v).not.toEqual(V)));
 
-        render(
+        document.body.innerHTML = `
           <form name="test-form" aria-label="Test Form">
-            <label htmlFor="text">Text</label>
+            <label for="text">Text</label>
             <input id="text" name="text" type="text" />
 
-            <label htmlFor="password">Password</label>
+            <label for="password">Password</label>
             <input id="password" name="password" type="password" />
 
             <div id="hidden-label">Hidden</div>
             <input name="hidden" type="hidden" aria-labelledby="hidden-label" />
 
-            <label htmlFor="file">File</label>
+            <label for="file">File</label>
             <input id="file" name="file" type="file" />
           </form>
-        );
+        `;
 
         const form = screen.getByRole<HTMLFormElement>("form");
         Array.from(form.elements).forEach((f) => expect(f.getAttribute("name")).toBeTruthy());
@@ -1043,23 +1045,21 @@ describe("Form Storage Observer (Class)", () => {
         const values = { button: "button", fieldset: "fieldset", output: "output", object: "object" } as const;
         Object.values(values).forEach((v, i, arr) => arr.slice(i + 1).forEach((V) => expect(v).not.toEqual(V)));
 
-        render(
+        document.body.innerHTML = `
           <form name="test-form" aria-label="Test Form">
-            <label htmlFor="button">Button</label>
-            <button id="button" name="button" type="button">
-              Button Display
-            </button>
+            <label for="button">Button</label>
+            <button id="button" name="button" type="button">Button Display</button>
 
-            <label htmlFor="output">Output</label>
-            <output id="output" name="output" />
+            <label for="output">Output</label>
+            <output id="output" name="output"></output>
 
             <div id="fieldset-label">Fieldset</div>
-            <fieldset name="fieldset" aria-labelledby="fieldset-label" />
+            <fieldset name="fieldset" aria-labelledby="fieldset-label"></fieldset>
 
             <div id="object-label">Object</div>
-            <object name="object" aria-labelledby="object-label" />
+            <object name="object" aria-labelledby="object-label"></object>
           </form>
-        );
+        `;
 
         const form = screen.getByRole<HTMLFormElement>("form");
         Array.from(form.elements).forEach((f) => expect(f.getAttribute("name")).toBeTruthy());
@@ -1115,18 +1115,18 @@ describe("Form Storage Observer (Class)", () => {
       });
 
       it("Throws an error with a hint when it finds a field with a matching `id` instead of a matching `name`", () => {
-        render(
+        document.body.innerHTML = `
           <form aria-label="Test Form">
-            <label htmlFor="correct">Correct</label>
+            <label for="correct">Correct</label>
             <input id="correct" name="correct" type="text" />
 
-            <label htmlFor="missing">Missing</label>
+            <label for="missing">Missing</label>
             <input id="missing" type="text" />
 
-            <label htmlFor="mismatched">Mismatched</label>
+            <label for="mismatched">Mismatched</label>
             <input id="mismatched" name="wrong-name" type="text" />
           </form>
-        );
+        `;
 
         const form = screen.getByRole<HTMLFormElement>("form");
         const correct = screen.getByLabelText<HTMLInputElement>(/correct/i);
@@ -1161,16 +1161,14 @@ describe("Form Storage Observer (Class)", () => {
           const innerValues = testOptions.slice(1, -1);
           const outerValues = testOptions.filter((o) => !innerValues.includes(o));
 
-          render(
+          document.body.innerHTML = `
             <form aria-label="Test Form">
-              <label htmlFor="multiselect">Multiselect</label>
-              <select id="multiselect" name="multiselect" multiple defaultValue={outerValues}>
-                {testOptions.map((o) => (
-                  <option key={o}>{o}</option>
-                ))}
+              <label for="multiselect">Multiselect</label>
+              <select id="multiselect" name="multiselect" multiple>
+                ${testOptions.map((o) => `<option${outerValues.includes(o) ? " selected" : ""}>${o}</option>`).join("")}
               </select>
             </form>
-          );
+          `;
 
           const form = screen.getByRole<HTMLFormElement>("form");
           const multiselect = screen.getByLabelText<HTMLSelectElement>(/multiselect/i, { selector: "select" });
