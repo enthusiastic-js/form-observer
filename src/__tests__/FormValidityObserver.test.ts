@@ -3,7 +3,7 @@
 import { screen } from "@testing-library/dom";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
-import type { EventType, ListenerOptions, FormField } from "../types";
+import type { EventType, FormField } from "../types";
 import FormObserver from "../FormObserver";
 import FormValidityObserver from "../FormValidityObserver";
 
@@ -91,19 +91,32 @@ describe("Form Validity Observer (Class)", () => {
     expect(new FormValidityObserver(types[0])).toEqual(expect.any(FormObserver));
   });
 
-  it("Supplies the event listener options that it receives to its field validation event handler", () => {
-    const eventListenerOpts: Exclude<ListenerOptions, undefined> = { capture: true, once: undefined };
-    const formValidityObserver = new FormValidityObserver(types, { eventListenerOpts });
+  it("Determines the event phase for the validation event handler from the `options` (defaults to bubbling)", () => {
+    /* ---------- Setup ---------- */
+    const formValidityObserverCapture = new FormValidityObserver(types[0], { useEventCapturing: true });
+    const formValidityObserverBubble = new FormValidityObserver(types[0]);
     const form = document.createElement("form");
 
     const addEventListener = jest.spyOn(form.ownerDocument, "addEventListener");
     const removeEventListener = jest.spyOn(form.ownerDocument, "removeEventListener");
 
-    formValidityObserver.observe(form);
-    expect(addEventListener).toHaveBeenCalledWith(expect.anything(), expect.anything(), eventListenerOpts);
+    const captureOptions = expect.objectContaining({ capture: true });
+    const bubbleOptions = expect.objectContaining({ capture: undefined });
 
-    formValidityObserver.unobserve(form);
-    expect(removeEventListener).toHaveBeenCalledWith(expect.anything(), expect.anything(), eventListenerOpts);
+    /* ---------- Run Assertions ---------- */
+    // Test `observe`
+    formValidityObserverCapture.observe(form);
+    expect(addEventListener).toHaveBeenNthCalledWith(1, expect.anything(), expect.anything(), captureOptions);
+
+    formValidityObserverBubble.observe(form);
+    expect(addEventListener).toHaveBeenNthCalledWith(2, expect.anything(), expect.anything(), bubbleOptions);
+
+    // Test `unobserve`
+    formValidityObserverCapture.unobserve(form);
+    expect(removeEventListener).toHaveBeenNthCalledWith(1, expect.anything(), expect.anything(), captureOptions);
+
+    formValidityObserverBubble.unobserve(form);
+    expect(removeEventListener).toHaveBeenNthCalledWith(2, expect.anything(), expect.anything(), bubbleOptions);
   });
 
   describe("Overriden Core Methods", () => {
@@ -2527,18 +2540,18 @@ describe("Form Validity Observer (Class)", () => {
   new FormValidityObserver(event1);
   new FormValidityObserver(event1, {});
   new FormValidityObserver(event1, { scroller: () => undefined });
-  new FormValidityObserver(event1, { eventListenerOpts: true });
+  new FormValidityObserver(event1, { useEventCapturing: true });
 
   // Multiple Types
   new FormValidityObserver([event1, event2]);
   new FormValidityObserver([event1, event2], {});
   new FormValidityObserver([event1, event2], { scroller: undefined });
-  new FormValidityObserver([event1, event2], { eventListenerOpts: undefined });
+  new FormValidityObserver([event1, event2], { useEventCapturing: undefined });
 
   new FormValidityObserver([event1, event2] as const);
   new FormValidityObserver([event1, event2] as const, {});
   new FormValidityObserver([event1, event2] as const, { scroller: (f) => f.scrollIntoView() });
-  new FormValidityObserver([event1, event2] as const, { eventListenerOpts: { passive: false, once: true } });
+  new FormValidityObserver([event1, event2] as const, { useEventCapturing: false });
 
   /* -------------------- Renderer Type Tests --> `setFieldError` -------------------- */
   const name = "my-field";

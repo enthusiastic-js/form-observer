@@ -1,5 +1,5 @@
 import FormObserver from "./FormObserver";
-import type { OneOrMany, EventType, FormFieldEvent, ListenerOptions, FormField } from "./types";
+import type { OneOrMany, EventType, FormFieldEvent, FormField } from "./types";
 
 const radiogroupSelector = "fieldset[role='radiogroup']";
 const attrs = Object.freeze({ "aria-describedby": "aria-describedby", "aria-invalid": "aria-invalid" });
@@ -50,10 +50,11 @@ interface FormValidityObserverConstructor {
 
 interface FormValidityObserverOptions<M> {
   /**
-   * The `addEventListener` options to use for the observer's event listener.
-   * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
+   * Indicates that the observer's event listener should be called during the event capturing phase
+   * instead of the event bubbling phase. Defaults to `false`.
+   * @see {@link https://www.w3.org/TR/DOM-Level-3-Events/#event-flow DOM Event Flow}
    */
-  eventListenerOpts?: ListenerOptions;
+  useEventCapturing?: boolean;
 
   /**
    * The function used to scroll a `field` (or `radiogroup`) that has failed validation into view. Defaults
@@ -186,14 +187,14 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
   /** The {@link configure}d error messages for the various fields belonging to the observed `form` */
   #errorMessagesByFieldName: Map<string, ValidationErrors<M> | undefined> = new Map();
 
-  constructor(types: T, { eventListenerOpts, scroller, renderer }: FormValidityObserverOptions<M> = {}) {
+  constructor(types: T, { useEventCapturing, scroller, renderer }: FormValidityObserverOptions<M> = {}) {
     /** Event listener used to validate form fields in response to user interactions */
     const eventListener = (event: FormFieldEvent<EventType>): void => {
       const fieldName = event.target.name;
       if (fieldName) this.validateField(fieldName);
     };
 
-    super(types, eventListener, eventListenerOpts);
+    super(types, eventListener, { passive: true, capture: useEventCapturing });
     this.#scrollTo = scroller ?? defaultScroller;
     this.#renderError = renderer ?? (defaultErrorRenderer as Required<FormValidityObserverOptions<M>>["renderer"]);
   }
