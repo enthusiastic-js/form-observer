@@ -1,5 +1,7 @@
 # Form Validity Observer
 
+<!-- TODO: Revalidate ALL links. -->
+
 The `FormValidityObserver` is an [extension of the `FormObserver`](../form-observer/guides.md#extending-the-formobserver-with-specialized-logic) that automatically validates your fields _and_ displays [accessible](https://developer.mozilla.org/en-US/docs/Web/Accessibility) error messages for those fields as users interact with your forms. Additionally, it exposes methods that can be used to handle field/form validation and error display/removal manually.
 
 <p id="initial-code-example"><strong>Example</strong></p>
@@ -122,6 +124,29 @@ The `FormValidityObserver()` constructor creates a new observer and configures i
 
 **Example**
 
+```ts
+// Use default `scroller` and `renderer`
+const observerWithDefaults = new FormValidityObserver("input");
+
+// Use custom `scroller` and `renderer`
+const observer = new FormValidityObserver("focusout", {
+  // Scroll field into view WITH its label (if possible)
+  scroller(fieldOrRadiogroup) {
+    if ("labels" in fieldOrRadiogroup) {
+      const [label] = fieldOrRadiogroup.labels as NodeListOf<HTMLLabelElement>;
+      return label.scrollIntoView({ behavior: "smooth" });
+    }
+
+    fieldOrRadiogroup.scrollIntoView({ behavior: "smooth" });
+  },
+
+  // Error messages rendered to the DOM are expected to be in the form of `HTMLElement`s
+  renderer(errorContainer: HTMLElement, errorMessage: HTMLElement) {
+    errorContainer.replaceChildren(errorMessage);
+  },
+});
+```
+
 ### Method: `FormValidityObserver.observe(form: HTMLFormElement): boolean`
 
 Instructs the observer to validate any fields (belonging to the provided form) that a user interacts with, and registers the observer's validation functions with the provided form. Automatic field validation will only occur when a field belonging to the form emits an event matching one of the `types` that were specified during the observer's construction. Unlike the `FormObserver` and the `FormStorageObserver`, _the `FormValidityObserver` may only observe 1 form at a time_.
@@ -132,6 +157,16 @@ If the provided form element was not being watched before `observe()` was called
 
 **Example**
 
+```js
+const observer = new FormValidityObserver("input");
+const form = document.getElementById("my-form");
+
+observer.observe(form); // Returns `true`, sets up manual validation/error-handling methods
+observer.observe(form); // Returns `false`, does nothing
+
+form.elements[0].dispatchEvent(new InputEvent("input")); // Field gets validated
+```
+
 ### Method: `FormValidityObserver.unobserve(form: HTMLFormElement): boolean`
 
 Instructs the observer to stop watching a form for user interactions. The form's fields will no longer be validated when a user interacts with them, and the observer's manual validation functions will be disabled.
@@ -140,11 +175,34 @@ If the provided form element was being watched before `unobserve()` was called, 
 
 **Example**
 
+```js
+const observer = new FormValidityObserver("change");
+const form = document.getElementById("my-form");
+observer.unobserve(form); // Returns `false`, does nothing
+
+observer.observe(form);
+form.elements[0].dispatchEvent(new Event("change")); // Field gets validated
+
+observer.unobserve(form); // Returns `true`, disables manual validation/error-handling methods
+form.elements[1].dispatchEvent(new Event("change")); // Does nothing, the form is no longer being observed
+```
+
 ### Method: `FormValidityObserver.disconnect(): void`
 
 Behaves the same way as `unobserve`, except that 1&rpar; You do not need to provide the currently-observed `form` as an argument, and 2&rpar; the method does not return a value.
 
 **Example**
+
+```js
+const observer = new FormValidityObserver("focusout");
+const form = document.getElementById("my-form");
+
+observer.observe(form);
+observer.disconnect(); // `unobserve`s the currently-watched form
+
+observer.unobserve(form); // Returns `false` because the form was already `unobserve`d
+form1.elements[0].dispatchEvent(new FocusEvent("focusout")); // Does nothing
+```
 
 ### Method: `FormValidityObserver.configure(name: string, errorMessages: `[`ValidationErrors<M>`](./types.md#validationerrorsm)`): void`
 
@@ -211,8 +269,6 @@ Validates all of the observed form's fields, returning `true` if _all_ of the va
 
 When the `focus` option is `false`, you can consider `validateFields()` to be an enhanced version of `form.checkValidity()`. When the `focus` option is `true`, you can consider `validateFields()` to be an enhanced version of [`form.reportValidity()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/reportValidity).
 
-**Example**
-
 ### Method: `FormValidityObserver.validateField(name: string, options?: ValidateFieldOptions): boolean | Promise<boolean>`
 
 Validates the form field with the specified `name`, returning `true` if the field passes validation and `false` otherwise. The `boolean` that `validateField()` returns will be wrapped in a [`Promise`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) if the field's [`validate` constraint](./types.md#validationerrorsm) runs asynchronously. This promise will `resolve` after the asynchronous validation function `resolves`. Unlike the [`validateFields()`](#method-formvalidityobservervalidatefieldsoptions-validatefieldsoptions-boolean--promiseboolean) method, this promise will also `reject` if the asynchronous validation function `rejects`.
@@ -234,8 +290,6 @@ Validates the form field with the specified `name`, returning `true` if the fiel
 </dl>
 
 When the `focus` option is `false`, you can consider `validateField()` to be an enhanced version of [`field.checkValidity()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/checkValidity). When the `focus` option is `true`, you can consider `validateField()` to be an enhanced version of [`field.reportValidity()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/reportValidity).
-
-**Example**
 
 ### Method: `FormValidityObserver.setFieldError(name: string, message: `[`ErrorMessage<string>`](./types.md#errormessagem)`|`[`ErrorMessage<M>`](./types.md#errormessagem)`, render?: boolean): void`
 
@@ -269,6 +323,19 @@ Typically, you shouldn't need to call this method manually; but in rare situatio
 
 **Example**
 
+```js
+const observer = new FormValidityObserver("change"); // By default, the `renderer` renders strings as raw HTML
+const form = document.getElementById("my-form");
+observer.observe(form);
+
+// Regular `string` Error Messages
+observer.setFieldError("combobox", "There was a problem with this field...");
+
+// Special `rendered` Error Messages
+const htmlErrorString = `<ul><li>Field is missing a cool word.</li><li>Also we just don't like the value.</li></ul>`;
+observer.setFieldError("textbox", htmlErrorString, true);
+```
+
 ### Method: `FormValidityObserver.clearFieldError(name: string): void`
 
 Marks the form field with the specified `name` as valid (via the [`[aria-invalid="false"]`](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-invalid) attribute) and clears its error message.
@@ -281,8 +348,6 @@ Typically, you shouldn't need to call this method manually; but in rare situatio
   <dt><code>name</code></dt>
   <dd>The <code>name</code> of the form field whose error should be cleared.</dd>
 </dl>
-
-**Example**
 
 <!--
 TODO: Some `Gudies` that could be helpful (besides the norm):

@@ -35,7 +35,7 @@ const messageFunction = ((field: HTMLSelectElement) => {
 
 is only useful for a `renderer` function that supports it, such as this
 
-```js
+```ts
 const observer = new FormValidityObserver("input", {
   renderer(errorContainer: HTMLElement, errorMessage: StringOrElement) {
     if (errorMessage.type === "DOMElement") {
@@ -44,8 +44,8 @@ const observer = new FormValidityObserver("input", {
 
     // message is of type `DOMString`
     errorContainer.innerHTML = errorMessage.value;
-  }
-})
+  },
+});
 ```
 
 Note that each instance of the `FormValidityObserver` determines its `M` type from the `renderer` function that is passed to it during construction. This is the `M` type that will be used for the instance's methods.
