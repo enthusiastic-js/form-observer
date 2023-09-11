@@ -52,7 +52,7 @@ Note that each instance of the `FormValidityObserver` determines its `M` type fr
 
 ### Primary Uses
 
-- [`FormValidityObserver.setFieldError`](./README.md#method-formvalidityobserversetfielderrorname-string-message-errormessagestring--errormessagem-render-boolean-void)
+- [`FormValidityObserver.setFieldError`](./README.md#method-formvalidityobserversetfielderrorname-string-message-errormessagestringerrormessagem-render-boolean-void)
 - The [`ErrorDetails<M>`](#errordetailsm) type
 
 ## `ValidationErrors<M>`

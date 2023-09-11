@@ -21,7 +21,7 @@ An element that belongs to an `HTMLFormElement`. See the [HTMLFormElement.elemen
 
 - The [`scoller`](../form-validity-observer/README.md#form-validity-observer-options-scroller) option for the `FormValidityObserver`
 - The [`ErrorMessage`](../form-validity-observer/types.md#errormessagem) type defined by the `FormValidityObserver`.
-- The `validate` property of the `ValidationErrors` type.
+- The `validate` property of the [`ValidationErrors`](../form-validity-observer/types.md#validationerrorsm) type.
 
 ## `EventType`
 

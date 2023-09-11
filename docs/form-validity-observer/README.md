@@ -1,7 +1,5 @@
 # Form Validity Observer
 
-<!-- TODO: Revalidate ALL links. -->
-
 The `FormValidityObserver` is an [extension of the `FormObserver`](../form-observer/guides.md#extending-the-formobserver-with-specialized-logic) that automatically validates your fields _and_ displays [accessible](https://developer.mozilla.org/en-US/docs/Web/Accessibility) error messages for those fields as users interact with your forms. Additionally, it exposes methods that can be used to handle field/form validation and error display/removal manually.
 
 <p id="initial-code-example"><strong>Example</strong></p>
@@ -350,8 +348,9 @@ Typically, you shouldn't need to call this method manually; but in rare situatio
 </dl>
 
 <!--
-TODO: Some `Gudies` that could be helpful (besides the norm):
+TODO: Don't forget to add the `FUTURE_DOCS_NOTES` that are needed as well.
 
+TODO: Some `Gudies` that could be helpful (besides the norm):
 1) How to style form fields and their error messages.
 2) MAYBE something on how to work with accessible error messages?
 3) MAYBE something about `novalidate`?
