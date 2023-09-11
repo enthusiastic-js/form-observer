@@ -347,6 +347,12 @@ Typically, you shouldn't need to call this method manually; but in rare situatio
   <dd>The <code>name</code> of the form field whose error should be cleared.</dd>
 </dl>
 
+## What's Next?
+
+- Read our [guides](./guides.md) to find out how you can get the most out of the `FormValidityObserver`.
+- Using this tool in a JS framework? Check out the [integration guides](./integrations/) for ideas on how to reduce code duplication in your project.
+- If you're particularly curious, you can also visit the [development notes](../extras/development-notes.md) to learn how and why certain design decisions were made.
+
 <!--
 TODO: Don't forget to add the `FUTURE_DOCS_NOTES` that are needed as well.
 
