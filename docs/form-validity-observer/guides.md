@@ -4,6 +4,17 @@ Here you'll find helpful tips on how to use the `FormValidityObserver` effective
 
 - [Usage with Web Components](#usage-with-web-components)
 
+<!--
+TODO: Some `Guides` that could be helpful:
+
+1) How to style form fields and their error messages.
+2) MAYBE something on how to work with accessible error messages?
+3) MAYBE something about `novalidate`?
+4) MAYBE more help on scrolling labels into view?
+
+Extra: Should we include a `Philosphy` document/page?
+-->
+
 ## Usage with Web Components
 
 Unlike some of the other form validation libraries out there, the `FormValidityObserver` is compatible with native [Web Components](https://developer.mozilla.org/en-US/docs/Web/API/Web_components). In addition to the guidelines given in the [`FormObserver` documentation](../form-observer/guides.md#usage-with-web-components), there are a few things to keep in mind when using Custom Elements with the `FormValidityObserver`.
