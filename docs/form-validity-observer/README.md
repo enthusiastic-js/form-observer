@@ -347,6 +347,46 @@ Typically, you shouldn't need to call this method manually; but in rare situatio
   <dd>The <code>name</code> of the form field whose error should be cleared.</dd>
 </dl>
 
+## Restrictions
+
+All frontend tools for forms require you to adhere to certain guidelines in order for the tool to function correctly with your application. Our tool is no different. But instead of introducing you to several tool-specific props, components, or functions to accomplish this goal, we rely on what HTML provides out of the box wherever possible. We do this for two reasons:
+
+1. If you're writing _accessible_, _progressively enhanced_ forms, then you'll already be following the guidelines that we require without any additional effort.
+2. This approach results in developers writing less code.
+
+The idea here is to make form validation as quick and easy as possible for those who are already following good web standards, and to encourage good web standards for those who aren't yet leaning into all of the power and accessibility features of the modern web. Here are our 3 unique requirements:
+
+**1&rpar; Form fields that participate in validation _must_ have a `name` attribute.**
+
+<details>
+  <summary>Justification</summary>
+
+If your forms are [progressively enhanced](https://learn.svelte.dev/tutorial/progressive-enhancement), you will already be satisfying this requirement. Leveraging the `name` attribute enables users who lack access to JavaScript to use your forms. Moreover, the `name` attribute enables many well-known form-related tools to identify fields without causing friction with developers. Given these realities, this restriction seems reasonable to us.
+
+</details>
+
+**2&rpar; Only [valid form controls](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/elements) may participate in form field validation.**
+
+<details>
+  <summary>Justification</summary>
+
+Again, if your forms are progressively enhanced, you will already be satisfying this requirement. Using valid form controls is required to enable users who lack access to JavaScript to use your forms. It also enables form validation libraries like this one to leverage the [`ValidityState`](https://developer.mozilla.org/en-US/docs/Web/API/ValidityState) interface for form validation, which is great for simplicity and performance.
+
+If you're new to progressive enhancement, then don't worry. It's fairly easy to update your code to satisfy this requirement -- whether it's written with pure JS or with the help of a JS framework.
+
+(Note: For complex form controls, you can create a Web Component that [acts like a form control](./guides.md#usage-with-web-components). However, Web Components are not accessible to users who don't have JavaScript; so it is still recommended to have a fallback that functions with just HTML -- though it is not required.)
+
+</details>
+
+**3&rpar; A radio button group will only be validated if it is inside a [`fieldset`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/fieldset) element with the [`radiogroup`](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/radiogroup_role) role.**
+
+<details>
+  <summary>Justification</summary>
+
+If your forms provide [accessible radio button groups](https://www.w3.org/WAI/tutorials/forms/grouping/#radio-buttons) to your users, you will _likely_ already be satisfying this requirement. (At most, you will only need to add `role="radiogroup"` to a few `fieldset`s.) We believe this requirement improves accessibility for end users by distinguishing [`radiogroup`s](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/radiogroup_role) from general [`group`s](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/group_role). It also provides clear way for the `FormValidityObserver` to identify radio button groups _without_ sacrificing the developer experience. (If you want deeper insight into why we made this decision, see [_Why Are Radio Buttons Only Validated When They're inside a `fieldset` with Role `radiogroup`?_](../extras/development-notes.md#why-are-radio-buttons-only-validated-when-theyre-inside-a-fieldset-with-role-radiogroup-formvalidityobserver).)
+
+</details>
+
 ## What's Next?
 
 - Read our [guides](./guides.md) to find out how you can get the most out of the `FormValidityObserver`.
