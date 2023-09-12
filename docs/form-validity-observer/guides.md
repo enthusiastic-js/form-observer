@@ -2,6 +2,7 @@
 
 Here you'll find helpful tips on how to use the `FormValidityObserver` effectively in various situations. We hope that you find these guides useful! Here are the currently discussed topics:
 
+- [Keeping Track of Visited/Dirty Fields](#keeping-track-of-visiteddirty-fields)
 - [Usage with Web Components](#usage-with-web-components)
 
 <!--
@@ -11,9 +12,65 @@ TODO: Some `Guides` that could be helpful:
 2) MAYBE something on how to work with accessible error messages?
 3) MAYBE something about `novalidate`?
 4) MAYBE more help on scrolling labels into view?
+5) Notes on how to handle fields that are toggled via CSS would probably be helpful. More than likely, a wrapping `fieldset` that could be `disabled` would be the "path of least resistance". `disabled` fields don't partake in field validation or form submission, and the `:disabled` CSS pseudo-class could be used to visually hide a group of elements from users whenever needed. That said, this approach requires JavaScript. Conditionally displayed fields are a bit more complicated for forms that want to support users lacking JS. But this is true regardless of whether or not someone uses our library.
 
 Extra: Should we include a `Philosphy` document/page?
 -->
+
+## Keeping Track of Visited/Dirty Fields
+
+In some situations, you might want to keep track of form fields that have been visited and/or edited by a user. Since the `FormValidityObserver` is solely concerned with the validity of form fields, it does not provide this functionality out of the box. However, it is fairly easy to use the base `FormObserver` to provide this functionality for you. An example is shown below. (Note: If there is enough interest, we are willing to consider supporting this use case in the future.)
+
+```js
+const observer = new FormObserver(
+  ["focusout", "change"],
+  [
+    /** Marks a field as "visited" when a user leaves it. */
+    (event) => event.target.setAttribute("data-visited", String(true)),
+
+    /** Sets the dirty state of a field when its value changes. */
+    (event) => {
+      const dirtyAttr = "data-dirty";
+      const field = event.target;
+
+      if (field instanceof HTMLInputElement) {
+        return field.setAttribute(
+          dirtyAttr,
+          field.type === "radio" || field.type === "checkbox"
+            ? String(field.checked !== field.defaultChecked)
+            : String(field.value !== field.defaultValue),
+        );
+      }
+
+      if (field instanceof HTMLTextAreaElement) {
+        return field.setAttribute(dirtyAttr, String(field.value !== field.defaultValue));
+      }
+
+      // Note: This approach requires you to explicitly set the `selected` attribute for your `option`s
+      if (field instanceof HTMLSelectElement) {
+        const dirtyValue = Array.from(field.options).some((o) => o.selected !== o.defaultSelected);
+        return field.setAttribute(dirtyAttr, String(dirtyValue));
+      }
+
+      // You can also add custom logic for any Web Components that act as form fields
+    },
+  ],
+);
+
+const form = document.getElementById("my-form");
+observer.observe(form);
+
+// Later, when some logic needs to know the visited/dirty fields
+fields = Array.from(form.elements);
+const visitedFields = fields.filter((f) => f.hasAttribute("data-visited"));
+const dirtyFields = fields.filter((f) => f.getAttribute("data-dirty") === String(true));
+
+// Run logic with visited/dirty fields ...
+```
+
+(The above implementation is an adaptation of [Edmund Hung's brilliant approach](https://github.com/edmundhung/conform/issues/131#issuecomment-1557892292).)
+
+To get an idea of how these event listeners would function, you can play around with them on the [MDN Playground](https://developer.mozilla.org/en-US/play?id=I15VQ64lWQShncvhr9JnLQQYWOoJQhpU1hHDLWKGF4D229TmIjON7qmRqK2mVceWNXsaP6jIjm%2FOjZ%2Bi). Feel free to alter this implementation to fit your needs.
 
 ## Usage with Web Components
 
