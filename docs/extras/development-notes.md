@@ -454,3 +454,23 @@ On the bright side, however, this 2nd loop will never be executed if all the fie
 I'm anticipating that most forms on a given page won't have an obscenely large number of fields. Any form that is incredibly large is likely (though not necessarily) a bad User Experience that needs to be simplified or divided into steps. Thus, from a practical point of view, running a second loop through the form fields in the _occasional_ event where a user submits invalid data is not really a big concern. I think the current solution works well for the goal I'm trying to achieve for my users.
 
 If I discover that the second loop _is_ a legitimate concern for performance, I will look into an alternative.
+
+### Why Does the `FormValidityObsever` Order the Error Messages Displayed to the User?
+
+The order in which the `FormValidityObserver` displays error messages to the user is what we believe is "most natural". First, the user has to provide a valid input (`badinput`/`required`). Then they need to add enough characters to make sure the input isn't too small (`minlength`/`min`), but they can't provide too many (`maxlength`/`max`). Once they've provided an input of the correct size, all they need to do is make sure that it's properly formatted (`size`/`step`/`pattern`). As for the custom `validate` function, it's run last because 1&rpar; The native errors should be easier for users to resolve, and 2&rpar; It's more performant in the long run.
+
+Note that the `FormValidityObserver` can only enforce the order in which error messages are displayed if all of the (anticipated) error messages for a field are `configure`d by the developer. This is because the `FormValidityObserver` falls back to the browser's error message when it doesn't see anything provided by the developer, and each browser has its own unique ordering scheme. (Hopefully this changes in the future.) In practice, this isn't a problem at all. It's just something to be mindful of for those who care about the ordering of their error messages.
+
+### Why Doesn't the `FormValidityObserver` Use State to Track Error Messages?
+
+Because the `FormValidityObserver` is intended to work both with pure JS _and_ with JS frameworks, it needs to be able to function without the concept of "state" that is found in various JS frameworks. We did think about exposing customizable getters and setters that would allow people to work with state in their framework of choice if they wanted to. However, in the end, we decided that this wouldn't be worthwhile.
+
+In practice, error state objects are only used to do two things: 1&rpar; render error messages to the DOM and 2&rpar; update a field's `aria-invalid` attribute. Since the `FormValidityObserver` takes care of these things automatically, the need for an error state object disappears, resulting in an increase in the application's performance and a decrease in the application's lines of code.
+
+Developers who still need to keep track of all erroneous fields can simply leverage the `form.elements` property:
+
+```js
+const fields = Array.from(form.elements);
+const invalidFields = fields.filter((f) => f.getAttribute("aria-invalid") === String(true));
+// or const invalidFields = fields.filter((f) => !f.validity.valid); if no error messages use the `renderer`
+```

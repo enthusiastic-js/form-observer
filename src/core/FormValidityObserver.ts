@@ -310,11 +310,6 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
 
     field.setCustomValidity(""); // Reset the custom error message in case a default browser error is displayed next.
 
-    /*
-     * TODO: The errors should be prioritized based on how the browser naturally prioritizes them.
-     * Edit: This is actually impossible because browsers are inconsistent with this. So we must warn users instead.
-     */
-
     const constraint = getBrokenConstraint(field.validity);
     if (constraint) {
       const error = this.#errorMessagesByFieldName.get(name)?.[constraint];
@@ -390,14 +385,10 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
       throw new TypeError("A field's error message must be a `string` when the `render` option is not `true`");
     }
 
-    /*
-     * TODO: Maybe explain why we do support BOTH accessible errors AND native browser errors SIMULTANEOUSLY
-     * (it's because the native browser behavior will automatically cause an experience like this one)
-     */
     // Raw String Variant
     if (errorElement) errorElement.textContent = error;
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Support Web Components without Method
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Support Web Components lacking Method
     field.setCustomValidity?.(error);
   }
 
@@ -410,7 +401,7 @@ const FormValidityObserver: FormValidityObserverConstructor = class<T extends On
     const errorElement = document.getElementById(errorOwner.getAttribute(attrs["aria-describedby"]) as string);
 
     if (errorElement) errorElement.textContent = "";
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Support Web Components without Method
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Support Web Components lacking Method
     field.setCustomValidity?.("");
   }
 
@@ -493,31 +484,3 @@ function assertFormExists(form: unknown): asserts form is HTMLFormElement {
   if (form instanceof HTMLFormElement) return;
   throw new Error("This action cannot be performed on a form field before its owning form is `observe`d.");
 }
-
-/*
- * TODO: Make a `FUTURE_DOCS` note about how to handle events that fire directly on the element only,
- * like the `invalid` event. In these situations, event delegation would only work if the _capture_
- * phase is leveraged instead of the bubbling phase
- */
-
-/*
- * TODO: Maybe somewhere in our notes we can comment on how `validateField` is like `field.reportValidity`
- * and `validateFields` is like `form.reportValidity` -- conceptually. This is helpful for framing how
- * we should go about designing the API. `form.reportValidity` can't capture everything on its own because
- * of the possibility of custom validation functions (especially considering the possibility of asynchronicity).
- * However, `validateFields` can supply everything that `form.reportValidity` would have otherwise tried to
- * do on its own -- validate each field, return a boolean, etc. ... The only thing we probably won't do is
- * support activating the browser's error popup with `*.reportValidity`. The user can do that on their own
- * if they wish... though we can revisit supporting this sometime in the future.
- *
- * WE SHOULD PROBABLY ADD THIS TO `DEVELOPTMENT_NOTES`
- *
- * On that note ... somewhere in our docs maybe we can do a side by side example.
- *  > "Typically, during a submit event, we would call `form.reportValidity`. However, this is limited because
- *     ... So instead, we use `observer.validateFields`, which means ... "
- *
- *  > "The `HTMLFormElement` doesn't keep track of error states... Why should we?"
- *  Or
- *  > "If the `HTMLFormElement` doesn't keep track of some abstract error state, do we really need to?
- *     after all, we just use the error state to render errors to the DOM don't, we? What we really need is ... "
- */
