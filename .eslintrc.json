@@ -49,7 +49,16 @@
 
     // Import
     "import/extensions": ["error", "ignorePackages", { "js": "always", "ts": "never", "d.ts": "never" }],
-    "import/no-unresolved": "off" // Let TypeScript handle import resolution
+    "import/no-unresolved": "off", // Let TypeScript handle import resolution
+    "import/no-extraneous-dependencies": [
+      "error",
+      {
+        "packageDir": ["./", "./packages/core"],
+        "devDependencies": ["**/*.test.ts"],
+        "optionalDependencies": false,
+        "bundledDependencies": false
+      }
+    ]
   },
   "overrides": [
     {
@@ -57,10 +66,7 @@
       "rules": {
         "no-await-in-loop": "off",
         "no-restricted-syntax": "off",
-        "prefer-promise-reject-errors": "off",
-
-        // Import
-        "import/no-extraneous-dependencies": ["error", { "devDependencies": true }]
+        "prefer-promise-reject-errors": "off"
       }
     }
   ]

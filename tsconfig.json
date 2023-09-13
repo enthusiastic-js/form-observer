@@ -1,4 +1,5 @@
 {
+  // TODO: Make compatible with NPM Workspaces
   "compilerOptions": {
     "target": "ES2020",
     "module": "NodeNext",
@@ -11,5 +12,5 @@
     "skipLibCheck": false
   },
   // TODO: Split Jest Config out from final production bundle
-  "include": ["src/**/*", "jest.config.ts"]
+  "include": ["packages/**/*", "jest.config.ts"]
 }
