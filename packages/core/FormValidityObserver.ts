@@ -4,14 +4,14 @@ import type { OneOrMany, EventType, FormFieldEvent, FormField } from "./types";
 const radiogroupSelector = "fieldset[role='radiogroup']";
 const attrs = Object.freeze({ "aria-describedby": "aria-describedby", "aria-invalid": "aria-invalid" });
 
-type ErrorMessage<M> = M | ((field: FormField) => M);
-type ErrorDetails<M> =
+export type ErrorMessage<M> = M | ((field: FormField) => M);
+export type ErrorDetails<M> =
   | ErrorMessage<string>
   | { render: true; message: ErrorMessage<M> }
   | { render?: false; message: ErrorMessage<string> };
 
 /** The errors to display to the user in the various situations where a field fails validation. */
-interface ValidationErrors<M> {
+export interface ValidationErrors<M> {
   // Standard HTML Attributes
   required?: ErrorDetails<M>;
   minlength?: ErrorDetails<M>;
@@ -48,7 +48,7 @@ interface FormValidityObserverConstructor {
   ): FormValidityObserver<M>;
 }
 
-interface FormValidityObserverOptions<M> {
+export interface FormValidityObserverOptions<M> {
   /**
    * Indicates that the observer's event listener should be called during the event capturing phase
    * instead of the event bubbling phase. Defaults to `false`.

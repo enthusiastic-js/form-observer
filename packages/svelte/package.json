@@ -1,0 +1,27 @@
+{
+  "name": "@form-observer/svelte",
+  "version": "0.0.1",
+  "description": "Convenience functions for the `@form-observer/core` package, designed for Svelte apps",
+  "peerDependencies": {
+    "@form-observer/core": "*"
+  },
+  "devDependencies": {
+    "svelte": "4.2.0"
+  },
+  "author": "Isaiah Thomason",
+  "license": "MIT",
+  "keywords": [
+    "form",
+    "observer",
+    "web",
+    "svelte"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enthusiastic-js/form-observer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/enthusiastic-js/form-observer/issues"
+  },
+  "homepage": "https://github.com/enthusiastic-js/form-observer#readme"
+}

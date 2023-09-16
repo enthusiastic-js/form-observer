@@ -3,6 +3,8 @@
 ## Documentation
 
 - [ ] In the interest of time, we're probably going to have to do the bare minimum when it comes to the documentation. Make the API clear, give some helpful examples, etc. After we've release the first draft of the project, we can start thinking about how to "perfect" the docs. But for now, don't get too paranoid about the wording.
+- [ ] **NOTE**: If we change the way that our project's types are exposed, we'll probably have to update the example that we give for [creating convenience functions for the `FormValidityObserver`](./docs/form-validity-observer/integrations/README.md#wheres-my-javascript-framework).
+- [ ] TODO: It looks like we don't actually support custom event types yet. (We do from a JS perspective, but not a TS perspective.) We should update our code to do that. Hopefully that should be quick/easy?
 
 ## `FormValidityObserver`
 
