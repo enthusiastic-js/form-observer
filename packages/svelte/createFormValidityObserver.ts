@@ -76,6 +76,7 @@ export default function createFormValidityObserver<T extends OneOrMany<EventType
       }
 
       // Value and Message
+      if (constraint === "required" && constraintValue.value === false) continue;
       props[constraint] = constraintValue.value;
       config[constraint] = constraintValue;
     }
@@ -88,7 +89,7 @@ export default function createFormValidityObserver<T extends OneOrMany<EventType
 }
 
 /* ---------------------------------------- Types ---------------------------------------- */
-interface SvelteFormValidityObserver<M = string> extends Omit<FormValidityObserver<M>, "configure"> {
+export interface SvelteFormValidityObserver<M = string> extends Omit<FormValidityObserver<M>, "configure"> {
   /**
    * An enhanced version of {@link FormValidityObserver.configure} for `Svelte`. In addition to configuring a field's
    * error messages, it generates the props that should be applied to the field based on the provided arguments.
@@ -118,7 +119,7 @@ interface SvelteFormValidityObserver<M = string> extends Omit<FormValidityObserv
   autoObserve: Action<HTMLFormElement>;
 }
 
-type SvelteFieldProps = Pick<
+export type SvelteFieldProps = Pick<
   HTMLInputAttributes,
   "name" | "required" | "minlength" | "min" | "maxlength" | "max" | "step" | "type" | "pattern"
 >;
@@ -127,7 +128,7 @@ type SvelteFieldProps = Pick<
  * An augmetation of {@link ValidationErrors} for `Svelte`. Represents the constraints that should be applied
  * to a form field, and the error messages that should be displayed when those constraints are broken.
  */
-interface SvelteValidationErrors<M> extends Pick<ValidationErrors<M>, "badinput" | "validate"> {
+export interface SvelteValidationErrors<M> extends Pick<ValidationErrors<M>, "badinput" | "validate"> {
   // Standard HTML Attributes
   required?: SvelteErrorDetails<M, HTMLInputAttributes["required"]> | ErrorMessage<string>;
   minlength?: SvelteErrorDetails<M, HTMLInputAttributes["minlength"]>;
@@ -140,7 +141,7 @@ interface SvelteValidationErrors<M> extends Pick<ValidationErrors<M>, "badinput"
 }
 
 /** An augmetation of {@link ErrorDetails} for `Svelte`. */
-type SvelteErrorDetails<M, V> =
+export type SvelteErrorDetails<M, V> =
   | V
   | { render: true; message: ErrorMessage<M>; value: V }
   | { render?: false; message: ErrorMessage<string>; value: V };

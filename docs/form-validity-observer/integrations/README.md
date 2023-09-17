@@ -434,6 +434,7 @@ export default function createFormValidityObserver<T extends OneOrMany<EventType
       }
 
       // Value and Message
+      if (constraint === "required" && errorMessages[constraint].value === false) continue;
       props[constraint] = errorMessages[constraint].value;
       config[constraint] = errorMessages[constraint];
     }
@@ -454,8 +455,8 @@ Here in `configure`, we're looping over each of the properties provided in the `
 
 1. If the constraint _value_ is `null` or `undefined`, then the constraint was omitted by the developer. There is nothing to add to the local error `config` or the returned constraint `props`. A `required` constraint with a value of `false` is treated as if it was `undefined`.
 2. If the _constraint_ is `badinput` or `validate`, it can be copied directly to the error `config`. There are no `props` to update here since `badinput` and `validate` are not valid HTML attributes.
-3. If the constraint _value_ is not an object, then we can assume that we have a raw constraint value. (For instance, we could have a raw `number` value for the `max` constraint.) The developer has indicated that they want to specify a field constraint without an error message; so only the constraint `props` are updated. <p>The exception to this rule is the `required` constraint. If the _constraint_ is `required` **and** the constraint _value_ is an `ErrorMessage<string>`, then we assign this value to the error `config` instead of the `props` object. In this scenario, the _value_ for the `required` constraint is implicitly `true` (even if the value is an empty string).</p>
-4. If the constraint _value_ is an object, then we can give the `value` property on this object to the `props` object. For simplicity, the error `config` can be given the entire constraint object in this scenario, even though it won't use the attached `value` property.
+3. If the constraint _value_ is not an object, then we can assume that we have a raw constraint value. (For instance, we could have a raw `number` value for the `max` constraint.) The developer has indicated that they want to specify a field constraint without a custom error message; so only the constraint `props` are updated. <p>The exception to this rule is the `required` constraint. If the _constraint_ is `required` **and** the constraint _value_ is an `ErrorMessage<string>`, then we assign this value to the error `config` instead of the `props` object. In this scenario, the _value_ for the `required` constraint is implicitly `true` (even if the value is an empty string).</p>
+4. If the constraint _value_ is an object, then we can give the `value` property on this object to the `props` object. For simplicity, the error `config` can be given the entire constraint object in this scenario, even though it won't use the attached `value` property. Notice also that here, yet again, a `required` constraint with a value of `false` is treated as if the constraint was `undefined`.
 
 After we finish looping over the properties in `errorMessages`, we configure the error messages for the field by calling the _core_ `FormValidityObserver.configure()` method with the error `config` object. Finally, we return any necessary form field `props`.
 
@@ -524,6 +525,7 @@ observer.configure = (name, errorMessages) => {
     }
 
     // Value and Message
+    if (constraint === "required" && constraintValue.value === false) continue;
     props[constraint] = constraintValue.value;
     config[constraint] = constraintValue;
   }

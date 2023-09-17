@@ -54,4 +54,4 @@
 
 ## Testing
 
-- Consider migrating away from `React Testing Library` in all `@form-observer/core` tests. Keyword: **consider**. It might be more work than it's worth, but it would technically embody the idea that the core package should work with pure JS.
+- [ ] Figure out how to test Svelte components with Jest. (It's surprisingly harder than it ought to be.)

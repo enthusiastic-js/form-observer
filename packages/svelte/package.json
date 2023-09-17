@@ -6,7 +6,10 @@
     "@form-observer/core": "*"
   },
   "devDependencies": {
-    "svelte": "4.2.0"
+    "@testing-library/svelte": "^4.0.3",
+    "svelte": "4.2.0",
+    "svelte-jester": "^3.0.0",
+    "svelte-preprocess": "^5.0.4"
   },
   "author": "Isaiah Thomason",
   "license": "MIT",

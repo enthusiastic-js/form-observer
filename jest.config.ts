@@ -1,7 +1,7 @@
 import type { Config } from "@jest/types";
 
 const jestConfig: Config.InitialOptions = {
-  collectCoverageFrom: ["<rootDir>/src/**/*.ts"],
+  collectCoverageFrom: ["<rootDir>/packages/**/*.ts"],
   coverageThreshold: {
     global: {
       statements: 100,
@@ -14,6 +14,7 @@ const jestConfig: Config.InitialOptions = {
   testMatch: ["<rootDir>/**/__tests__/**/*.test.ts?(x)"],
   transform: {
     "\\.tsx?$": "ts-jest",
+    "\\.svelte$": ["svelte-jester", { preprocess: true }],
   },
   watchPlugins: ["jest-watch-typeahead/filename", "jest-watch-typeahead/testname"],
 };
