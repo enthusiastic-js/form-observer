@@ -2,6 +2,7 @@
 
 Here you'll find helpful tips on how to use the `FormValidityObserver` effectively in various situations. We hope that you find these guides useful! Here are the currently discussed topics:
 
+- [Enabling/Disabling Accessible Error Messages](#enabling-accessible-error-messages-during-form-submissions)
 - [Keeping Track of Visited/Dirty Fields](#keeping-track-of-visiteddirty-fields)
 - [Usage with Web Components](#usage-with-web-components)
 
@@ -10,12 +11,68 @@ TODO: Some `Guides` that could be helpful:
 
 1) How to style form fields and their error messages.
 2) MAYBE something on how to work with accessible error messages?
-3) MAYBE something about `novalidate`?
-4) MAYBE more help on scrolling labels into view?
-5) Notes on how to handle fields that are toggled via CSS would probably be helpful. More than likely, a wrapping `fieldset` that could be `disabled` would be the "path of least resistance". `disabled` fields don't partake in field validation or form submission, and the `:disabled` CSS pseudo-class could be used to visually hide a group of elements from users whenever needed. That said, this approach requires JavaScript. Conditionally displayed fields are a bit more complicated for forms that want to support users lacking JS. But this is true regardless of whether or not someone uses our library.
+3) MAYBE more help on scrolling labels into view?
+4) Notes on how to handle fields that are toggled via CSS would probably be helpful. More than likely, a wrapping `fieldset` that could be `disabled` would be the "path of least resistance". `disabled` fields don't partake in field validation or form submission, and the `:disabled` CSS pseudo-class could be used to visually hide a group of elements from users whenever needed. That said, this approach requires JavaScript. Conditionally displayed fields are a bit more complicated for forms that want to support users lacking JS. But this is true regardless of whether or not someone uses our library.
 
 Extra: Should we include a `Philosphy` document/page?
 -->
+
+## Enabling Accessible Error Messages during Form Submissions
+
+By default, the browser will not allow a form to be submitted if _any_ of its fields are invalid (assuming the fields are not `disabled`). If a user attempts to submit a form with invalid fields, the browser will block the submission and display an error message instead. This message will briefly appear in a bubble before disappearing, and the message only appears over one field at a time; so the user experience isn't the best.
+
+You can override the browser's behavior by applying the [`novalidate`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#novalidate) property to the form element.
+
+```html
+<form novalidate>
+  <!-- Fields -->
+</form>
+```
+
+This allows us to register a `submit` handler that gets called even when the form's fields are invalid. From the handler, we can run our own validation logic for displaying error messages.
+
+```js
+const form = document.querySelector("form");
+form.addEventListener("submit", handleSubmit);
+
+function handleSubmit(event) {
+  event.preventDefault();
+  const formValid = observer.validateFields({ focus: true });
+  if (!formValid) return;
+
+  // Run submission logic if fields are valid...
+}
+```
+
+An alternative to setting the form's `novalidate` attribute in your markup is setting it in your JavaScript.
+
+```js
+form.noValidate = true;
+// or form.setAttribute("novalidate", "");
+```
+
+(See the [`form.noValidate`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement#htmlformelement.novalidate) property and the and the [`Element.setAttribute`](https://developer.mozilla.org/en-US/docs/Web/API/Element/setAttribute) method for reference.)
+
+We recommend setting the `novalidate` attribute of your forms in JavaScript instead of in your markup. This enables progressive enhancement for your forms. If for any reason [a user lacks access to JavaScript](https://www.kryogenix.org/code/browser/everyonehasjs.html) when they visit your app, they will still be able to experience the browser's native form validation as long as the `novalidate` property is _not_ set in your server-rendered HTML.
+
+```html
+<form>
+  <!-- Fields -->
+</form>
+```
+
+```js
+const form = document.querySelector("form");
+form.noValidate = true; // Run only when JS is loaded
+// Other validation setup ...
+```
+
+Concerning users who don't have JavaScript, the benefit of this approach is two-fold:
+
+1. **The user experience is better.** Users will be able to learn what fields they need to fix thanks to the browser's native error messages. And if their network connection is weak, they'll be able to gain this information _without_ making additional requests to your server.
+2. **The load on your server is lighter.** The browser will automatically block form submissions for invalid fields. This reduces the number of requests that your server has to handle.
+
+You gain these benefits while maintaining the better, more accessible user experience for users who have JS enabled. But if you're determined to apply the `novalidate` attribute in your HTML, then it's recommended to make sure that your server is able to render accessible error messages for your fields whenever the user submits an invalid form. In that case, the error messages will likely look better and be more accessible to your users (if they're done well). But the downside is that users with weaker connections will have a harder time, and your server will experience a little more communication. Ultimately, it's a set of trade-offs; so it's up to you to determine whether to set `novalidate` in your HTML or in your JS.
 
 ## Keeping Track of Visited/Dirty Fields
 
