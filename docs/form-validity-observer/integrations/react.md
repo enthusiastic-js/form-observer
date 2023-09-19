@@ -30,7 +30,7 @@ The following methods on the `ReactFormValidityObserver` are the exact same as t
 - [`disconnect()`](../README.md#method-formvalidityobserverdisconnect-void)
 - [`validateFields(options)`](../README.md#method-formvalidityobservervalidatefieldsoptions-validatefieldsoptions-boolean--promiseboolean)
 - [`validateField(name, options)`](../README.md#method-formvalidityobservervalidatefieldname-string-options-validatefieldoptions-boolean--promiseboolean)
-- [`setFieldError(name, message, render)`](../readme#method-formvalidityobserversetfielderrorname-string-message-errormessagestringerrormessagem-render-boolean-void)
+- [`setFieldError(name, message, render)`](../README.md#method-formvalidityobserversetfielderrorname-string-message-errormessagestringerrormessagem-render-boolean-void)
 - [`clearFieldError(name)`](../README.md#method-formvalidityobserverclearfielderrorname-string-void)
 
 #### Function: `autoObserve(): (formRef: HTMLFormElement) => void`
