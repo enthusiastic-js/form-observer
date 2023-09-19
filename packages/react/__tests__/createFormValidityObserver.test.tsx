@@ -36,7 +36,7 @@ describe("Create Form Validity Observer (Function)", () => {
     boundMethods.forEach((method) => {
       expect(FormValidityObserver.prototype[method].bind).toHaveBeenCalledTimes(1);
       expect(FormValidityObserver.prototype[method].bind).toHaveBeenCalledWith(observer);
-      expect(FormValidityObserver.prototype[method].bind.mock.results[0].value).toBe(observer[method]);
+      expect(FormValidityObserver.prototype[method].bind).toHaveReturnedWith(observer[method]);
     });
   });
 
@@ -49,7 +49,7 @@ describe("Create Form Validity Observer (Function)", () => {
     const observer = createFormValidityObserver(types);
     expect(FormValidityObserver.prototype[configure].bind).toHaveBeenCalledTimes(1);
     expect(FormValidityObserver.prototype[configure].bind).toHaveBeenCalledWith(observer);
-    expect(FormValidityObserver.prototype[configure].bind.mock.results[0].value).not.toBe(observer[configure]);
+    expect(FormValidityObserver.prototype[configure].bind).not.toHaveReturnedWith(observer[configure]);
   });
 
   describe("Returned Interface", () => {
