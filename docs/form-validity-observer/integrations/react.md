@@ -86,7 +86,7 @@ function MyForm() {
 
   return (
     <form ref={autoObserve()}>
-      {/* Note: Accessible <labels> and error container were omitted from this example. */}
+      {/* Note: Accessible <label>s and error containers were omitted from this example. */}
       <input {...configure("username", { validate: validateNewUsername })} />
       <input name="password" type="password" />
       <input {...configure("confirm-password", { validate: validateConfirmPassword })} />
@@ -124,7 +124,7 @@ function MyForm() {
 
   return (
     <form ref={autoObserve()}>
-      {/* Note: Accessible <labels> and error container were omitted from this example. */}
+      {/* Note: Accessible <label>s and error containers were omitted from this example. */}
       <input {...configure("name", { required: { value: true, message: requiredField, render: true } })} />
       <input {...configure("email", { type: { value: "email", message: "Email is invalid", render: false } })} />
       <input
@@ -147,7 +147,7 @@ function MyForm() {
 
   return (
     <form ref={autoObserve()}>
-      {/* Note: Accessible <labels> and error container were omitted from this example. */}
+      {/* Note: Accessible <label>s and error containers were omitted from this example. */}
       <input {...configure("first-name", { required: requiredField })} />
       <input {...configure("last-name", { required: "Don't ignore me..." })} />
       <input {...configure("email", { required: { value: true, message: requiredField } })} />
@@ -170,7 +170,7 @@ function MyForm() {
 
   return (
     <form use:autoObserve>
-      {/* Note: Accessible <labels> and error container were omitted from this example. */}
+      {/* Note: Accessible <label>s and error containers were omitted from this example. */}
       <input {...configure("email-1", { required: requiredField, type: "email" })} />
       <input {...configure("email-2", { required: requiredField })} type="email" />
       <input name="email-3" type="email" required />
@@ -206,19 +206,11 @@ There are two ways to go about this. The first is to do all 3 steps manually. Th
 
 ```tsx
 import { Component, createRef } from "react";
-import type { RefObject } from "react";
 import { createFormValidityObserver } from "@form-observer/react";
-import type { ReactFormValidityObserver } from "@form-observer/react";
 
 class MyForm extends Component {
-  #form: RefObject<HTMLFormElement>;
-  #observer: ReactFormValidityObserver;
-
-  constructor(props) {
-    super(props);
-    this.#form = createRef();
-    this.#observer = createFormValidityObserver("focusout");
-  }
+  readonly #form = createRef<HTMLFormElement>();
+  readonly #observer = createFormValidityObserver("focusout");
 
   componentDidMount() {
     this.#observer.observe(this.#form.current as HTMLFormElement);
@@ -242,17 +234,12 @@ class MyForm extends Component {
 
 The second approach is to automate the observer's setup and cleanup with [`autoObserve`](#function-autoobserve-formref-htmlformelement--void):
 
-```jsx
+```tsx
+import { Component } from "react";
 import { createFormValidityObserver } from "@form-observer/react";
-import type { ReactFormValidityObserver } from "@form-observer/react";
 
 class MyForm extends Component {
-  #observer: ReactFormValidityObserver;
-
-  constructor(props) {
-    super(props);
-    this.#observer = createFormValidityObserver("focusout");
-  }
+  readonly #observer = createFormValidityObserver("focusout");
 
   render() {
     const { autoObserve, configure } = this.#observer;
@@ -267,3 +254,5 @@ class MyForm extends Component {
 ```
 
 This simplified approach enables you to avoid using (or cluttering) the `componentDidMount` and `componentWillUnmount` methods of your class components, resulting in fewer lines of code.
+
+For those concerned about memoization, note that as long as the observer is created only once (i.e., during the component's construction only), memoization is not a concern for class components.

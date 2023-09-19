@@ -60,7 +60,7 @@ The following properties on the `SvelteValidationErrors` type _accept the exact 
 
 ```svelte
 <form use:autoObserve>
-  <!-- Note: Accessible <labels> and error container were omitted from this example. -->
+  <!-- Note: Accessible <label>s and error containers were omitted from this example. -->
   <input {...configure("username", { validate: validateNewUsername })} />
   <input name="password" type="password" />
   <input {...configure("confirm-password", { validate: validateConfirmPassword })} />
@@ -105,7 +105,7 @@ The rules are as follows:
 
 ```svelte
 <form use:autoObserve>
-  <!-- Note: Accessible <labels> and error container were omitted from this example. -->
+  <!-- Note: Accessible <label>s and error containers were omitted from this example. -->
   <input {...configure("name", { required: { value: true, message: requiredField, render: true } })} />
   <input {...configure("email", { type: { value: "email", message: "Email is invalid", render: false } })} />
   <input {...configure("comment", { maxlength: { value: 80, message: "Comment must be 80 characters or less" } })} />
@@ -124,7 +124,7 @@ The rules are as follows:
 
 ```svelte
 <form use:autoObserve>
-  <!-- Note: Accessible <labels> and error container were omitted from this example. -->
+  <!-- Note: Accessible <label>s and error containers were omitted from this example. -->
   <input {...configure("first-name", { required: requiredField })} />
   <input {...configure("last-name", { required: "Don't ignore me..."})} />
   <input {...configure("email", { required: { value: true, message: requiredField } })} />
@@ -145,7 +145,7 @@ This syntax only exists for convenience. You are free to use the regular HTML at
 
 ```svelte
 <form use:autoObserve>
-  <!-- Note: Accessible <labels> and error container were omitted from this example. -->
+  <!-- Note: Accessible <label>s and error containers were omitted from this example. -->
   <input {...configure("email-1", { required: requiredField, type: "email" })} />
   <input {...configure("email-2", { required: requiredField, })} type="email" />
   <input name="email-3" type="email" required />
