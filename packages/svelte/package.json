@@ -17,6 +17,7 @@
     "form",
     "observer",
     "web",
+    "validation",
     "svelte"
   ],
   "repository": {

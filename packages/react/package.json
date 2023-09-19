@@ -1,10 +1,14 @@
 {
-  "name": "@form-observer/core",
+  "name": "@form-observer/react",
   "version": "0.0.1",
-  "description": "A simple utility for reacting to events from a form's fields",
-  "main": "build/index.js",
+  "description": "Convenience functions for the `@form-observer/core` package, designed for React apps",
+  "peerDependencies": {
+    "@form-observer/core": "*",
+    "react": ">=16.8.0"
+  },
   "devDependencies": {
-    "@testing-library/dom": "^9.3.1"
+    "@testing-library/react": "^14.0.0",
+    "@types/react": "^18.2.22"
   },
   "author": "Isaiah Thomason",
   "license": "MIT",
@@ -12,7 +16,8 @@
     "form",
     "observer",
     "web",
-    "validation"
+    "validation",
+    "react"
   ],
   "repository": {
     "type": "git",

@@ -6,6 +6,7 @@
     "moduleResolution": "NodeNext",
     "strict": true,
     "outDir": "build",
+    "jsx": "react-jsx",
     "declaration": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,

@@ -53,9 +53,9 @@
     "import/no-extraneous-dependencies": [
       "error",
       {
-        "packageDir": ["./", "./packages/core", "./packages/svelte"],
+        "packageDir": ["./", "./packages/core", "./packages/svelte", "./packages/react"],
         "peerDependencies": true,
-        "devDependencies": ["**/*.test.ts"],
+        "devDependencies": ["**/*.test.{ts,tsx}"],
         "optionalDependencies": false,
         "bundledDependencies": false
       }
