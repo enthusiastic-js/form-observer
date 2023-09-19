@@ -126,10 +126,14 @@ export interface ReactFormValidityObserver<M = string> extends Omit<FormValidity
   configure(name: string, errorMessages: ReactValidationErrors<M>): ReactFieldProps;
 
   /**
-   * React `ref` callback used to automatically setup and cleanup a form's observer.
+   * Creates a React `ref` callback used to automatically setup and cleanup a form's observer.
    *
    * **Note**: If you use this `ref`, you should **not** call `observe`, `unobserve`, or `disconnect` directly.
    *
+   * @example
+   * <form ref={autoObserve()}>
+   *   <input name="first-name" type="textbox" required />
+   * </form>
    */
   autoObserve(): (formRef: HTMLFormElement) => void;
 }

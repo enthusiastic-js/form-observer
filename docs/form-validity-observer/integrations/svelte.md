@@ -108,7 +108,7 @@ The rules are as follows:
   <!-- Note: Accessible <labels> and error container were omitted from this example. -->
   <input {...configure("name", { required: { value: true, message: requiredField, render: true } })} />
   <input {...configure("email", { type: { value: "email", message: "Email is invalid", render: false } })} />
-  <input {...configure("comment" { maxlength: { value: 80, message: "Comment must be 80 characters or less" } })} />
+  <input {...configure("comment", { maxlength: { value: 80, message: "Comment must be 80 characters or less" } })} />
 </form>
 
 <script lang="ts">
