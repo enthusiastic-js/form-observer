@@ -185,7 +185,23 @@ The return type of `configure` is simply an object containing the props that sho
 
 ## Custom Hook: `useFormValidityObserver(types, options)`
 
-A custom React Hook that creates an enhanced version of the `FormValidityObserver` and [memoizes](https://react.dev/reference/react/useMemo) its value. The purpose of this memoization is two-fold:
+A custom React Hook that creates an enhanced version of the `FormValidityObserver` and [memoizes](https://react.dev/reference/react/useMemo) its value.
+
+```tsx
+import { useFormValidityObserver } from "@form-observer/react";
+
+function MyForm() {
+  const { autoObserve, configure } = useFormValidityObserver("focusout");
+
+  return (
+    <form ref={autoObserve()}>
+      <input {...configure("first-name", { required: "We need to know who you are!" })} />
+    </form>
+  );
+}
+```
+
+The purpose of the memoization is two-fold:
 
 1. When the component employing `useFormValidityObserver` re-renders (whether due to state changes or prop updates), the memoization prevents the observer from being re-created/reset. (This is likely not a practical concern if `configure` is only used inside your component's returned JSX.)
 2. When the outputs of `useFormValidityObserver` are passed to a child component, the memoization prevents unnecessary re-renders in React that are caused by reference inequalities between similar objects. Similarly, this memoization will also prevent hooks that have dependencies on these outputs from unnecessarily re-running.
@@ -255,4 +271,4 @@ class MyForm extends Component {
 
 This simplified approach enables you to avoid using (or cluttering) the `componentDidMount` and `componentWillUnmount` methods of your class components, resulting in fewer lines of code.
 
-For those concerned about memoization, note that as long as the observer is created only once (i.e., during the component's construction only), memoization is not a concern for class components.
+For those concerned about memoization, note that as long as the observer is created only once (i.e., during the class's construction only), memoization is not a concern for class components.
