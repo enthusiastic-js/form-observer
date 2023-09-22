@@ -6,7 +6,7 @@ If I'm being honest, I can tend to fall into this trap as well. So I'm holding u
 
 Below are some of the people I wanted to acknowledge (listed in ascending order for the impact that I believe they had). This list is _non-exhaustive_. I unfortunately cannot list _every single contributor_, as the list would be far too long. And there are definitely indirect contributors who I don't even know. Nonetheless, I've tried to point out the people who -- as far as I know -- have played an especially important role in this accomplishment.
 
-<ol reversed>
+<ul>
   <li>
     <p>All of the maintainers of the dependencies in this project. I want to give special appreciation to...</p>
     <ul>
@@ -87,7 +87,7 @@ Below are some of the people I wanted to acknowledge (listed in ascending order 
       Sometimes I think I may have spent a bit too much of my free time working on this. I know You're fine with me completing it, but maybe I should've spaced out my work more? I don't think my time distribution was perfect, though I tried. Even still... I hope You will accept this.
     </p>
   </li>
-</ol>
+</ul>
 
 If the last and most important item of thanks in that list seemed odd to anyone, please understand... As a Christian, I'm very uncomfortable with the idea of giving bountiful thanks to several people while keeping the God who created everything out of the picture. Whether you're religious or not, surely you can understand how that would be unfair and improper. I wanted to express appreciation for those who contributed to the completion of this project, and I can't do that without acknowledging God.
 
