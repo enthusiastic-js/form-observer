@@ -1,5 +1,5 @@
-import FormObserver from "./FormObserver";
-import type { OneOrMany, EventType, FormFieldEvent, FormField } from "./types";
+import FormObserver from "./FormObserver.js";
+import type { OneOrMany, EventType, FormFieldEvent, FormField } from "./types.d.ts";
 
 const radiogroupSelector = "fieldset[role='radiogroup']";
 const attrs = Object.freeze({ "aria-describedby": "aria-describedby", "aria-invalid": "aria-invalid" });

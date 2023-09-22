@@ -1,5 +1,6 @@
 {
   "name": "@form-observer/svelte",
+  "type": "module",
   "version": "0.0.1",
   "description": "Convenience functions for the `@form-observer/core` package, designed for Svelte apps",
   "peerDependencies": {
@@ -7,9 +8,7 @@
   },
   "devDependencies": {
     "@testing-library/svelte": "^4.0.3",
-    "svelte": "4.2.0",
-    "svelte-jester": "^3.0.0",
-    "svelte-preprocess": "^5.0.4"
+    "svelte": "4.2.0"
   },
   "author": "Isaiah Thomason",
   "license": "MIT",

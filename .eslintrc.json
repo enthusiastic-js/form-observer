@@ -1,4 +1,5 @@
 {
+  // TODO: Change Jest Rules to Vitest where possible
   "env": { "browser": true, "node": true, "jest": true },
   "extends": [
     "airbnb-base",
@@ -48,14 +49,14 @@
     "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
 
     // Import
-    "import/extensions": ["error", "ignorePackages", { "js": "always", "ts": "never", "d.ts": "never" }],
+    "import/extensions": "off", // TypeScript drives which extensions are required (due to `moduleResolution: NodeNext`)
     "import/no-unresolved": "off", // Let TypeScript handle import resolution
     "import/no-extraneous-dependencies": [
       "error",
       {
         "packageDir": ["./", "./packages/core", "./packages/svelte", "./packages/react"],
         "peerDependencies": true,
-        "devDependencies": ["**/*.test.{ts,tsx}"],
+        "devDependencies": ["./vitest.*", "**/*.test.{ts,tsx}"],
         "optionalDependencies": false,
         "bundledDependencies": false
       }

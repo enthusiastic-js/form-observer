@@ -1,16 +1,17 @@
+import { vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom";
-import FormValidityObserver from "@form-observer/core/FormValidityObserver";
-import type { EventType, FormField } from "@form-observer/core/types";
-import createFormValidityObserver from "../createFormValidityObserver";
-import type { ReactValidationErrors, ReactFieldProps } from "../createFormValidityObserver";
+import FormValidityObserver from "@form-observer/core/FormValidityObserver.js";
+import type { EventType, FormField } from "@form-observer/core/types.d.ts";
+import createFormValidityObserver from "../createFormValidityObserver.js";
+import type { ReactValidationErrors, ReactFieldProps } from "../createFormValidityObserver.js";
 
 describe("Create Form Validity Observer (Function)", () => {
   const types = Object.freeze(["input", "focusout"] as const) satisfies ReadonlyArray<EventType>;
 
   // Keep things clean between each test by automatically restoring anything we may have spied on
-  beforeEach(jest.restoreAllMocks);
+  beforeEach(vi.restoreAllMocks);
 
   it("Generates a `FormValidityObserver` (enhanced)", () => {
     expect(createFormValidityObserver(types)).toEqual(expect.any(FormValidityObserver));
@@ -28,7 +29,7 @@ describe("Create Form Validity Observer (Function)", () => {
     expect(boundMethods.length).toBe(new Set(boundMethods).size);
 
     // Spy on the `bound` methods
-    boundMethods.forEach((method) => jest.spyOn(FormValidityObserver.prototype[method], "bind"));
+    boundMethods.forEach((method) => vi.spyOn(FormValidityObserver.prototype[method], "bind"));
 
     /* ---------- Run Assertions ---------- */
     const observer = createFormValidityObserver(types);
@@ -43,7 +44,7 @@ describe("Create Form Validity Observer (Function)", () => {
   it("DOES NOT expose the `FormValidityObserver`'s ORIGINAL `configure` method", () => {
     /** The name of the {@link FormValidityObserver.configure} method */
     const configure = "configure";
-    jest.spyOn(FormValidityObserver.prototype[configure], "bind");
+    vi.spyOn(FormValidityObserver.prototype[configure], "bind");
 
     // Run Assertions
     const observer = createFormValidityObserver(types);
@@ -57,8 +58,8 @@ describe("Create Form Validity Observer (Function)", () => {
       it("Automatically sets up the `FormValidityObserver` (onMount) and cleans it up (onUnmount)", async () => {
         /* ---------- Setup ---------- */
         const message = "Only numbers are allowed!";
-        jest.spyOn(FormValidityObserver.prototype, "observe");
-        jest.spyOn(FormValidityObserver.prototype, "unobserve");
+        vi.spyOn(FormValidityObserver.prototype, "observe");
+        vi.spyOn(FormValidityObserver.prototype, "unobserve");
         const { autoObserve, configure } = createFormValidityObserver("input");
 
         /* ---------- Assertions ---------- */
@@ -106,7 +107,7 @@ describe("Create Form Validity Observer (Function)", () => {
       type ConstraintValues = { [K in ConstraintKeys]: Exclude<ReactValidationErrors<string>[K], undefined | null> };
 
       it("ONLY configures the error messages for the custom validation properties", () => {
-        jest.spyOn(FormValidityObserver.prototype, "configure");
+        vi.spyOn(FormValidityObserver.prototype, "configure");
         const observer = createFormValidityObserver(types[0]);
 
         const errorMessages: Pick<ConstraintValues, "badinput" | "validate"> = {
@@ -119,7 +120,7 @@ describe("Create Form Validity Observer (Function)", () => {
       });
 
       it("ONLY configures the props for the HTML attributes when the value-only variant is used", () => {
-        jest.spyOn(FormValidityObserver.prototype, "configure");
+        vi.spyOn(FormValidityObserver.prototype, "configure");
         const observer = createFormValidityObserver(types[0]);
 
         const errorMessages: Omit<ConstraintValues, "badinput" | "validate"> = {
@@ -139,7 +140,7 @@ describe("Create Form Validity Observer (Function)", () => {
       });
 
       it("Configures the prop AND the error for the `required` constraint when its value is an error message", () => {
-        jest.spyOn(FormValidityObserver.prototype, "configure");
+        vi.spyOn(FormValidityObserver.prototype, "configure");
         const observer = createFormValidityObserver(types[0]);
 
         // Regular Error Message
@@ -154,7 +155,7 @@ describe("Create Form Validity Observer (Function)", () => {
       });
 
       it("Configures the props AND the error messages for the HTML attributes when the object variant is used", () => {
-        jest.spyOn(FormValidityObserver.prototype, "configure");
+        vi.spyOn(FormValidityObserver.prototype, "configure");
         const observer = createFormValidityObserver(types[0]);
 
         const errorMessages: Omit<ConstraintValues, "badinput" | "validate"> = {
@@ -176,7 +177,7 @@ describe("Create Form Validity Observer (Function)", () => {
       });
 
       it("DOES NOT configure any props OR error messages when `undefined` is used", () => {
-        jest.spyOn(FormValidityObserver.prototype, "configure");
+        vi.spyOn(FormValidityObserver.prototype, "configure");
         const observer = createFormValidityObserver(types[0]);
 
         // Undefined Configurations
@@ -198,7 +199,7 @@ describe("Create Form Validity Observer (Function)", () => {
       });
 
       it("DOES NOT configure the prop OR the error for the `required` constraint when its value is `false`", () => {
-        jest.spyOn(FormValidityObserver.prototype, "configure");
+        vi.spyOn(FormValidityObserver.prototype, "configure");
         const observer = createFormValidityObserver(types[0]);
 
         // `required = false` via Value-Only Variant
@@ -211,7 +212,7 @@ describe("Create Form Validity Observer (Function)", () => {
       });
 
       it("Always returns the `name` prop for the field", () => {
-        jest.spyOn(FormValidityObserver.prototype, "configure");
+        vi.spyOn(FormValidityObserver.prototype, "configure");
         const observer = createFormValidityObserver(types[0]);
 
         expect(observer.configure(name, {})).toStrictEqual({ name });

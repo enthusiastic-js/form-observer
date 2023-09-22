@@ -1,6 +1,6 @@
-import FormObserver from "./FormObserver";
-import { assertElementIsForm } from "./utils/assertions";
-import type { OneOrMany, EventType, FormFieldEvent, FormField } from "./types";
+import FormObserver from "./FormObserver.js";
+import { assertElementIsForm } from "./utils/assertions.js";
+import type { OneOrMany, EventType, FormFieldEvent, FormField } from "./types.d.ts";
 
 /*
  * NOTE: Watch GitHub Issue for Static Methods on Interfaces: https://github.com/microsoft/TypeScript/issues/33892.

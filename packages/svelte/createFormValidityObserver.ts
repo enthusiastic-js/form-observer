@@ -1,10 +1,10 @@
-import type { EventType, OneOrMany } from "@form-observer/core/types";
-import FormValidityObserver from "@form-observer/core/FormValidityObserver";
+import type { EventType, OneOrMany } from "@form-observer/core/types.d.ts";
+import FormValidityObserver from "@form-observer/core/FormValidityObserver.js";
 import type {
   ErrorMessage,
   ValidationErrors,
   FormValidityObserverOptions,
-} from "@form-observer/core/FormValidityObserver";
+} from "@form-observer/core/FormValidityObserver.js";
 import type { Action } from "svelte/action";
 import type { HTMLInputAttributes } from "svelte/elements";
 

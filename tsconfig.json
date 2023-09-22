@@ -12,6 +12,6 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": false
   },
-  // TODO: Split Jest Config out from final production bundle
-  "include": ["packages/**/*", "jest.config.ts"]
+  // TODO: Split Vitest Config out from final production bundle
+  "include": ["packages/**/*", "vitest.config.ts"]
 }

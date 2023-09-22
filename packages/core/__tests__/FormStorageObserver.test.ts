@@ -1,11 +1,12 @@
+import { vi } from "vitest";
 import { screen, within } from "@testing-library/dom";
-import userEvent from "@testing-library/user-event";
+import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import { faker } from "@faker-js/faker";
-import type { EventType, FormField } from "../types";
-import * as Assertions from "../utils/assertions";
-import FormObserver from "../FormObserver";
-import FormStorageObserver from "../FormStorageObserver";
+import type { EventType, FormField } from "../types.d.ts";
+import * as Assertions from "../utils/assertions.js";
+import FormObserver from "../FormObserver.js";
+import FormStorageObserver from "../FormStorageObserver.js";
 
 describe("Form Storage Observer (Class)", () => {
   // Form Storage Observer Constants
@@ -22,7 +23,7 @@ describe("Form Storage Observer (Class)", () => {
 
   beforeEach(() => {
     // Keep things clean between each test by automatically restoring anything we may have spied on
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
 
     // Reset anything that we've rendered to the DOM. (Without a JS framework implementation, we must do this manually.)
     document.body.textContent = "";
@@ -38,8 +39,8 @@ describe("Form Storage Observer (Class)", () => {
     const formStorageObserverBubble = new FormStorageObserver(types[0]);
     const form = document.createElement("form");
 
-    const addEventListener = jest.spyOn(form.ownerDocument, "addEventListener");
-    const removeEventListener = jest.spyOn(form.ownerDocument, "removeEventListener");
+    const addEventListener = vi.spyOn(form.ownerDocument, "addEventListener");
+    const removeEventListener = vi.spyOn(form.ownerDocument, "removeEventListener");
 
     const captureOptions = expect.objectContaining({ capture: true });
     const bubbleOptions = expect.objectContaining({ capture: undefined });
@@ -63,7 +64,7 @@ describe("Form Storage Observer (Class)", () => {
   describe("observe (Method)", () => {
     it("Extends the functionality of `FormObserver.observe`", () => {
       const form = document.createElement("form");
-      jest.spyOn(FormObserver.prototype, "observe");
+      vi.spyOn(FormObserver.prototype, "observe");
       const formStorageObserver = new FormStorageObserver(types);
 
       // Confirm that the method is an extension, not a direct copy
@@ -74,7 +75,7 @@ describe("Form Storage Observer (Class)", () => {
 
     it("Automatically loads a `form`'s data from `localStorage` IF the `automate` option says so (default)", () => {
       const form = document.createElement("form");
-      jest.spyOn(FormStorageObserver, "load");
+      vi.spyOn(FormStorageObserver, "load");
 
       // No data is loaded when `automate` is `deletion` or `neither`
       (["deletion", "neither"] as const).forEach((automate) => {
@@ -96,7 +97,7 @@ describe("Form Storage Observer (Class)", () => {
     it("Does nothing with a `form` that is already being observed", () => {
       const form = document.createElement("form");
       const formStorageObserver = new FormStorageObserver(types, { automate: "both" });
-      jest.spyOn(FormStorageObserver, "load");
+      vi.spyOn(FormStorageObserver, "load");
 
       // Newly observe the form
       formStorageObserver.observe(form);
@@ -129,7 +130,7 @@ describe("Form Storage Observer (Class)", () => {
   describe("unobserve (Method)", () => {
     it("Extends the functionality of `FormObserver.unobserve`", () => {
       const form = document.createElement("form");
-      jest.spyOn(FormObserver.prototype, "unobserve");
+      vi.spyOn(FormObserver.prototype, "unobserve");
       const formStorageObserver = new FormStorageObserver(types);
 
       // Confirm that the method is an extension, not a direct copy
@@ -140,7 +141,7 @@ describe("Form Storage Observer (Class)", () => {
 
     it("Automatically clears a `form`'s data from `localStorage` IF the `automate` option says so", () => {
       const form = document.createElement("form");
-      jest.spyOn(FormStorageObserver, "clear");
+      vi.spyOn(FormStorageObserver, "clear");
 
       // No data is cleared by default, or when `automate` is `loading` or `neither`
       ([undefined, "loading", "neither"] as const).forEach((automate) => {
@@ -165,7 +166,7 @@ describe("Form Storage Observer (Class)", () => {
     it("Does nothing with a `form` that isn't currently being observed", () => {
       const form = document.createElement("form");
       const formStorageObserver = new FormStorageObserver(types, { automate: "both" });
-      jest.spyOn(FormStorageObserver, "clear");
+      vi.spyOn(FormStorageObserver, "clear");
 
       // No errors are thrown, and no attempts are made to clear data from `localStorage`
       expect(() => formStorageObserver.unobserve(form)).not.toThrow();
@@ -201,7 +202,7 @@ describe("Form Storage Observer (Class)", () => {
 
   describe("disconnect (Method)", () => {
     it("Solely leverages its parent's implementation", () => {
-      jest.spyOn(FormObserver.prototype, "disconnect");
+      vi.spyOn(FormObserver.prototype, "disconnect");
       const formStorageObserver = new FormStorageObserver(types);
       expect(formStorageObserver.disconnect).toBe(FormObserver.prototype.disconnect);
     });
@@ -741,7 +742,7 @@ describe("Form Storage Observer (Class)", () => {
 
       it("Only operates on `form`s", () => {
         const div = document.createElement("div") as HTMLElement;
-        jest.spyOn(Assertions, "assertElementIsForm");
+        vi.spyOn(Assertions, "assertElementIsForm");
 
         // Element-only Overload (Failure)
         expect(() => FormStorageObserver.load(div as HTMLFormElement)).toThrow();
@@ -852,7 +853,7 @@ describe("Form Storage Observer (Class)", () => {
 
         const form = screen.getByRole<HTMLFormElement>("form");
         expect(screen.getAllByLabelText(/radio-\d{1}/, { selector: "input[type='radio']" }).length).toBeGreaterThan(2);
-        jest.spyOn(FormStorageObserver, "load");
+        vi.spyOn(FormStorageObserver, "load");
 
         // Verify that `FormStorageObserver.load` is only called ONCE for radio button groups
         FormStorageObserver.load(form);
@@ -1142,12 +1143,8 @@ describe("Form Storage Observer (Class)", () => {
 
         /* -------------------- `HTMLFormElement` + `FieldName` Overload -------------------- */
         expect(() => FormStorageObserver.load(form, correct.name)).not.toThrow();
-        expect(() => FormStorageObserver.load(form, missing.id)).toThrowErrorMatchingInlineSnapshot(
-          `"Expected to find a field with name "missing", but instead found a field with name "". Did you accidentally provide your field's \`id\` instead of your field's \`name\`?"`,
-        );
-        expect(() => FormStorageObserver.load(form, mismatched.id)).toThrowErrorMatchingInlineSnapshot(
-          `"Expected to find a field with name "mismatched", but instead found a field with name "wrong-name". Did you accidentally provide your field's \`id\` instead of your field's \`name\`?"`,
-        );
+        expect(() => FormStorageObserver.load(form, missing.id)).toThrowErrorMatchingInlineSnapshot('"Expected to find a field with name \\"missing\\", but instead found a field with name \\"\\". Did you accidentally provide your field\'s `id` instead of your field\'s `name`?"');
+        expect(() => FormStorageObserver.load(form, mismatched.id)).toThrowErrorMatchingInlineSnapshot('"Expected to find a field with name \\"mismatched\\", but instead found a field with name \\"wrong-name\\". Did you accidentally provide your field\'s `id` instead of your field\'s `name`?"');
       });
 
       describe("Resolved Bugs", () => {
@@ -1202,7 +1199,7 @@ describe("Form Storage Observer (Class)", () => {
     describe("clear (Static Method)", () => {
       it("Only operates on `form`s", () => {
         const div = document.createElement("div") as HTMLElement;
-        jest.spyOn(Assertions, "assertElementIsForm");
+        vi.spyOn(Assertions, "assertElementIsForm");
 
         // Element-only Overload (Failure)
         expect(() => FormStorageObserver.clear(div as HTMLFormElement)).toThrow();

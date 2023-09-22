@@ -1,11 +1,13 @@
 /* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expect*"] }] */
 /* eslint-disable testing-library/no-node-access -- We need node access to make these tests more clear and reliable */
+import { vi } from "vitest";
+import type { Mock } from "vitest";
 import { screen } from "@testing-library/dom";
-import userEvent from "@testing-library/user-event";
+import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom";
-import type { EventType, FormField } from "../types";
-import FormObserver from "../FormObserver";
-import FormValidityObserver from "../FormValidityObserver";
+import type { EventType, FormField } from "../types.d.ts";
+import FormObserver from "../FormObserver.js";
+import FormValidityObserver from "../FormValidityObserver.js";
 
 /*
  * NOTE: You may find that some of these tests are a little redundant in the assertions that they run. For
@@ -80,7 +82,7 @@ describe("Form Validity Observer (Class)", () => {
 
   beforeEach(() => {
     // Keep things clean between each test by automatically restoring anything we may have spied on
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
 
     // Reset anything that we've rendered to the DOM. (Without a JS framework implementation, we must do this manually.)
     document.body.textContent = "";
@@ -97,8 +99,8 @@ describe("Form Validity Observer (Class)", () => {
     const formValidityObserverBubble = new FormValidityObserver(types[0]);
     const form = document.createElement("form");
 
-    const addEventListener = jest.spyOn(form.ownerDocument, "addEventListener");
-    const removeEventListener = jest.spyOn(form.ownerDocument, "removeEventListener");
+    const addEventListener = vi.spyOn(form.ownerDocument, "addEventListener");
+    const removeEventListener = vi.spyOn(form.ownerDocument, "removeEventListener");
 
     const captureOptions = expect.objectContaining({ capture: true });
     const bubbleOptions = expect.objectContaining({ capture: undefined });
@@ -147,7 +149,7 @@ describe("Form Validity Observer (Class)", () => {
     describe("observe (Method)", () => {
       it("Extends the functionality of `FormObserver.observe`", () => {
         const form = document.createElement("form");
-        jest.spyOn(FormObserver.prototype, "observe");
+        vi.spyOn(FormObserver.prototype, "observe");
         const formValidityObserver = new FormValidityObserver(types);
 
         // Confirm that the method is an extension, not a direct copy
@@ -209,7 +211,7 @@ describe("Form Validity Observer (Class)", () => {
     describe("unobserve (Method)", () => {
       it("Extends the functionality of `FormObserver.unobserve`", () => {
         const form = document.createElement("form");
-        jest.spyOn(FormObserver.prototype, "unobserve");
+        vi.spyOn(FormObserver.prototype, "unobserve");
         const formValidityObserver = new FormValidityObserver(types);
 
         // Confirm that the method is an extension, not a direct copy
@@ -279,7 +281,7 @@ describe("Form Validity Observer (Class)", () => {
       it("`Unobserve`s the currently-observed `form`", () => {
         const form = document.createElement("form");
         const formValidityObserver = new FormValidityObserver(types);
-        jest.spyOn(formValidityObserver, "unobserve");
+        vi.spyOn(formValidityObserver, "unobserve");
 
         formValidityObserver.observe(form);
         formValidityObserver.disconnect();
@@ -288,7 +290,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Does nothing if no `form` is currently being observed", () => {
         const formValidityObserver = new FormValidityObserver(types);
-        jest.spyOn(formValidityObserver, "unobserve");
+        vi.spyOn(formValidityObserver, "unobserve");
 
         expect(() => formValidityObserver.disconnect()).not.toThrow();
         expect(formValidityObserver.unobserve).not.toHaveBeenCalled();
@@ -511,7 +513,7 @@ describe("Form Validity Observer (Class)", () => {
       });
 
       it("Gives a field the error message returned the provided error function", () => {
-        const errorFunc = jest.fn((field: FormField) => `Element "${field.tagName}" of type "${field.type}" is bad!`);
+        const errorFunc = vi.fn((field: FormField) => `Element "${field.tagName}" of type "${field.type}" is bad!`);
         const formValidityObserver = new FormValidityObserver(types);
 
         // Render Form
@@ -626,7 +628,7 @@ describe("Form Validity Observer (Class)", () => {
       it("SECURELY renders error messages to the DOM as HTML whenever possible (default renderer)", () => {
         const errorFunc = (field: FormField) => `<div>Element "${field.tagName}" of type "${field.type}" is bad!</div>`;
         const formValidityObserver = new FormValidityObserver(types);
-        const setHTML = jest.fn(function setHTML(this: HTMLElement, htmlString: string) {
+        const setHTML = vi.fn(function setHTML(this: HTMLElement, htmlString: string) {
           this.innerHTML = htmlString;
         });
 
@@ -666,7 +668,7 @@ describe("Form Validity Observer (Class)", () => {
       it("Uses the configured `renderer` function to render ACCESSIBLE error messages to the DOM", async () => {
         const errorMessage = Infinity;
         const errorFunc = (field: FormField) => field.tagName.length;
-        const renderer = jest.fn((errorContainer: HTMLElement, error: number) => {
+        const renderer = vi.fn((errorContainer: HTMLElement, error: number) => {
           errorContainer.replaceChildren(`You can't count to ${error}???`);
         });
         const formValidityObserver = new FormValidityObserver(types, { renderer });
@@ -717,7 +719,7 @@ describe("Form Validity Observer (Class)", () => {
       it("Rejects non-`string` error messages when `render` is not `true`", async () => {
         const errorMessage = createElementWithProps("div", { textContent: "Bad markup, baby!" });
         const errorFunc = (field: FormField) => createElementWithProps("p", { textContent: `I have a ${field.type}` });
-        const renderer = jest.fn((errorContainer: HTMLElement, error: HTMLElement) => {
+        const renderer = vi.fn((errorContainer: HTMLElement, error: HTMLElement) => {
           errorContainer.replaceChildren(error);
         });
         const formValidityObserver = new FormValidityObserver(types, { renderer });
@@ -1067,7 +1069,7 @@ describe("Form Validity Observer (Class)", () => {
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(form);
 
-        jest.spyOn(formValidityObserver, "setFieldError");
+        vi.spyOn(formValidityObserver, "setFieldError");
 
         // Run Assertions
         expect(formValidityObserver.validateField(field.name)).toBe(false);
@@ -1083,8 +1085,8 @@ describe("Form Validity Observer (Class)", () => {
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(form);
 
-        jest.spyOn(formValidityObserver, "setFieldError");
-        jest.spyOn(formValidityObserver, "clearFieldError");
+        vi.spyOn(formValidityObserver, "setFieldError");
+        vi.spyOn(formValidityObserver, "clearFieldError");
 
         // Failure (Value Missing)
         expect(formValidityObserver.validateField(field.name)).toBe(false);
@@ -1108,11 +1110,11 @@ describe("Form Validity Observer (Class)", () => {
         formValidityObserver.observe(form);
 
         // Setup Test Details
-        jest.spyOn(formValidityObserver, "setFieldError");
-        jest.spyOn(formValidityObserver, "clearFieldError");
+        vi.spyOn(formValidityObserver, "setFieldError");
+        vi.spyOn(formValidityObserver, "clearFieldError");
 
         const error = "This field is LAAAAAAME!!!";
-        const validate = jest.fn((f: HTMLInputElement) => (f.value === badValue ? error : undefined));
+        const validate = vi.fn((f: HTMLInputElement) => (f.value === badValue ? error : undefined));
         formValidityObserver.configure(field.name, { validate });
 
         // Failure (Custom Validation Failure)
@@ -1143,11 +1145,11 @@ describe("Form Validity Observer (Class)", () => {
         formValidityObserver.observe(form);
 
         // Setup Test Details
-        jest.spyOn(formValidityObserver, "setFieldError");
-        jest.spyOn(formValidityObserver, "clearFieldError");
+        vi.spyOn(formValidityObserver, "setFieldError");
+        vi.spyOn(formValidityObserver, "clearFieldError");
 
         const error = "You didn't fulfill your promise to me...";
-        const validate = jest.fn((f: HTMLInputElement) => {
+        const validate = vi.fn((f: HTMLInputElement) => {
           return new Promise<string | undefined>((resolve) => {
             setTimeout(() => resolve(f.value === badValue ? error : undefined), 500);
           });
@@ -1188,12 +1190,12 @@ describe("Form Validity Observer (Class)", () => {
         /* ---------- Setup ---------- */
         // Render Field
         const { form, field } = renderField(createElementWithProps("input", { name: "input" }));
-        jest.spyOn(field, "reportValidity");
-        field.scrollIntoView = jest.fn();
+        vi.spyOn(field, "reportValidity");
+        field.scrollIntoView = vi.fn();
 
         // Configure Observer
         const error = "You Failed :\\";
-        const validate = jest.fn().mockReturnValue(error);
+        const validate = vi.fn().mockReturnValue(error);
 
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(form);
@@ -1250,13 +1252,13 @@ describe("Form Validity Observer (Class)", () => {
         const firstRadio = fieldset.elements[0] as HTMLInputElement;
 
         [fieldset, firstRadio].forEach((f) => {
-          jest.spyOn(f, "reportValidity");
-          Object.assign(f, { scrollIntoView: jest.fn() });
+          vi.spyOn(f, "reportValidity");
+          Object.assign(f, { scrollIntoView: vi.fn() });
         });
 
         // Configure Observer
         const error = "We WILL NOT accept the RADIO BUTTON";
-        const validate = jest.fn().mockReturnValue(error);
+        const validate = vi.fn().mockReturnValue(error);
 
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(form);
@@ -1290,14 +1292,14 @@ describe("Form Validity Observer (Class)", () => {
 
         [input, fieldset].forEach(renderErrorContainerForField);
         [input, fieldset, firstRadio].forEach((f) => {
-          jest.spyOn(f, "reportValidity");
-          Object.assign(f, { scrollIntoView: jest.fn() });
+          vi.spyOn(f, "reportValidity");
+          Object.assign(f, { scrollIntoView: vi.fn() });
         });
 
         // Configure Observer
         const error = "Your scrolling isn't powerful enough, bro.";
-        const validate = jest.fn().mockReturnValue(error);
-        const scroller = jest.fn();
+        const validate = vi.fn().mockReturnValue(error);
+        const scroller = vi.fn();
 
         const formValidityObserver = new FormValidityObserver(types[0], { scroller });
         formValidityObserver.observe(form);
@@ -1337,8 +1339,8 @@ describe("Form Validity Observer (Class)", () => {
         /* ---------- Setup ---------- */
         const { form, field } = renderField(createElementWithProps("input", { name: "overriden", value: "RIP" }));
         const formValidityObserver = new FormValidityObserver(types[0]);
-        jest.spyOn(formValidityObserver, "setFieldError");
-        jest.spyOn(formValidityObserver, "clearFieldError");
+        vi.spyOn(formValidityObserver, "setFieldError");
+        vi.spyOn(formValidityObserver, "clearFieldError");
 
         // Override field's `ValidityState` for testing
         type OverridenValidity = { -readonly [K in keyof ValidityState]: ValidityState[K] };
@@ -1465,7 +1467,7 @@ describe("Form Validity Observer (Class)", () => {
         // Setup `FormValidityObserver`
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(form);
-        jest.spyOn(formValidityObserver, "setFieldError");
+        vi.spyOn(formValidityObserver, "setFieldError");
 
         const errorConfiguration: Parameters<(typeof formValidityObserver)["configure"]>[1] = {
           required: { message: error }, // Omitted `render` option
@@ -1515,9 +1517,9 @@ describe("Form Validity Observer (Class)", () => {
         // Setup `FormValidityObserver`
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(form);
-        jest.spyOn(formValidityObserver, "setFieldError");
+        vi.spyOn(formValidityObserver, "setFieldError");
 
-        const validate = jest.fn();
+        const validate = vi.fn();
         formValidityObserver.configure(field.name, { validate });
 
         // Test with `render` Option Omitted
@@ -1553,19 +1555,19 @@ describe("Form Validity Observer (Class)", () => {
         renderErrorContainerForField(field);
 
         // Setup `FormValidityObserver`
-        const renderer = jest.fn((errorContainer: HTMLElement, error: number) => {
+        const renderer = vi.fn((errorContainer: HTMLElement, error: number) => {
           errorContainer.replaceChildren(`You can't count to ${error}???`);
         });
 
         const formValidityObserver = new FormValidityObserver(types, { renderer });
         formValidityObserver.observe(form);
-        jest.spyOn(formValidityObserver, "setFieldError");
+        vi.spyOn(formValidityObserver, "setFieldError");
 
         const errorStatic = Infinity;
         const errorFunc = (f: FormField) => f.tagName.length;
         formValidityObserver.configure(field.name, {
           required: { message: errorStatic, render: true },
-          validate: jest.fn().mockReturnValue({ message: errorFunc, render: true }),
+          validate: vi.fn().mockReturnValue({ message: errorFunc, render: true }),
         });
 
         /* ---------- Run Assertions ---------- */
@@ -1598,13 +1600,13 @@ describe("Form Validity Observer (Class)", () => {
         renderErrorContainerForField(field);
 
         // Setup `FormValidityObserver`
-        const renderer = jest.fn((errorContainer: HTMLElement, error: number) => {
+        const renderer = vi.fn((errorContainer: HTMLElement, error: number) => {
           errorContainer.replaceChildren(`You can't count to ${error}???`);
         });
 
         const formValidityObserver = new FormValidityObserver(types, { renderer });
         formValidityObserver.observe(form);
-        jest.spyOn(formValidityObserver, "setFieldError");
+        vi.spyOn(formValidityObserver, "setFieldError");
 
         const message = Infinity;
         formValidityObserver.configure(field.name, {
@@ -1665,8 +1667,8 @@ describe("Form Validity Observer (Class)", () => {
       it("Ignores fields that aren't associated with the observed `form`", () => {
         const fieldName = "orphan-field";
         const formValidityObserver = new FormValidityObserver(types);
-        jest.spyOn(formValidityObserver, "setFieldError");
-        jest.spyOn(formValidityObserver, "clearFieldError");
+        vi.spyOn(formValidityObserver, "setFieldError");
+        vi.spyOn(formValidityObserver, "clearFieldError");
 
         // Render Form
         const { form } = renderEmptyFields();
@@ -1699,8 +1701,8 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Ignores fields that don't have a `name`", () => {
         const formValidityObserver = new FormValidityObserver(types);
-        jest.spyOn(formValidityObserver, "setFieldError");
-        jest.spyOn(formValidityObserver, "clearFieldError");
+        vi.spyOn(formValidityObserver, "setFieldError");
+        vi.spyOn(formValidityObserver, "clearFieldError");
 
         // Render Form
         const { form } = renderEmptyFields();
@@ -1732,45 +1734,12 @@ describe("Form Validity Observer (Class)", () => {
     });
 
     describe("validateFields (Method)", () => {
-      /** An extension of the `Promise` class that reveals when and how the promise has `settled` (for testing). */
-      class ObservablePromise<T> extends Promise<T> {
-        #settled = false;
-        #status: "pending" | "fulfilled" | "rejected" = "pending";
-
-        constructor(
-          executor: (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: unknown) => void) => void,
-        ) {
-          super((resolve, reject) => {
-            executor(
-              (value) => {
-                resolve(value);
-                this.#settled = true;
-                this.#status = "fulfilled";
-              },
-              (reason) => {
-                reject(reason);
-                this.#settled = true;
-                this.#status = "rejected";
-              },
-            );
-          });
-        }
-
-        get settled() {
-          return this.#settled;
-        }
-
-        get status() {
-          return this.#status;
-        }
-      }
-
       it("Validates ALL of the observed form's (`named`) fields", () => {
         // Render Form
         const { form } = renderEmptyFields();
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(form);
-        jest.spyOn(formValidityObserver, "validateField");
+        vi.spyOn(formValidityObserver, "validateField");
 
         // Verify Required Test Conditions
         const formControls = Array.from(form.elements);
@@ -1843,18 +1812,18 @@ describe("Form Validity Observer (Class)", () => {
          * after the specifed amount of `time` (ms).
          */
         const createAsyncValidator = (time: number, error?: string) => () => {
-          return new ObservablePromise<string | undefined>((resolve) => {
+          return new Promise<string | undefined>((resolve) => {
             setTimeout(resolve, time, error);
           });
         };
 
         const names = { sync: "sync", async: "async", "async-mid": "async-mid", "async-long": "async-long" } as const;
         const validators = Object.freeze({
-          sync: jest.fn().mockReturnValue("Synchronous Failure!"),
-          async: jest.fn(createAsyncValidator(250)),
-          "async-mid": jest.fn(createAsyncValidator(500)),
-          "async-long": jest.fn(createAsyncValidator(1000, "")),
-        }) satisfies { [K in keyof typeof names]: jest.Mock };
+          sync: vi.fn().mockReturnValue("Synchronous Failure!"),
+          async: vi.fn(createAsyncValidator(250)),
+          "async-mid": vi.fn(createAsyncValidator(500)),
+          "async-long": vi.fn(createAsyncValidator(1000, "")),
+        }) satisfies { [K in keyof typeof names]: Mock };
 
         // Render Form
         document.body.innerHTML = `
@@ -1871,58 +1840,51 @@ describe("Form Validity Observer (Class)", () => {
         formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
         Object.entries(validators).forEach(([name, validate]) => formValidityObserver.configure(name, { validate }));
 
-        // Replace native `Promise` class so that we can spy on promises during testing
-        const OriginalPromise = window.Promise;
-        window.Promise = ObservablePromise;
-
         /* ---------- Run Assertions ---------- */
         // Sync-Only Failure
         const failingPromiseSyncValidator = formValidityObserver.validateFields();
-        expect(failingPromiseSyncValidator).toEqual(expect.any(OriginalPromise));
-        expect(validators.sync.mock.results[0].value).toEqual(expect.stringMatching(/\w+/));
+        expect(failingPromiseSyncValidator).toEqual(expect.any(Promise));
+        expect(validators.sync).toHaveNthReturnedWith(1, expect.stringMatching(/\w+/));
 
         expect(await failingPromiseSyncValidator).toBe(false);
-        expect(validators.async.mock.results[0].value.settled).toBe(true);
-        expect(validators["async-mid"].mock.results[0].value.settled).toBe(true);
-        expect(validators["async-long"].mock.results[0].value.settled).toBe(true);
+        expect(validators.async).toHaveNthReturnedWith(1, undefined);
+        expect(validators["async-mid"]).toHaveNthReturnedWith(1, undefined);
+        expect(validators["async-long"]).toHaveNthReturnedWith(1, "");
 
         // Sync + Async Failure
         validators["async-mid"].mockImplementation(createAsyncValidator(500, "Async Failure!"));
 
         const failingPromiseBothValidators = formValidityObserver.validateFields();
-        expect(failingPromiseBothValidators).toEqual(expect.any(OriginalPromise));
-        expect(validators.sync.mock.results[1].value).toEqual(expect.stringMatching(/\w+/));
+        expect(failingPromiseBothValidators).toEqual(expect.any(Promise));
+        expect(validators.sync).toHaveNthReturnedWith(2, expect.stringMatching(/\w+/));
 
         expect(await failingPromiseBothValidators).toBe(false);
-        expect(validators.async.mock.results[1].value.settled).toBe(true);
-        expect(validators["async-mid"].mock.results[1].value.settled).toBe(true);
-        expect(validators["async-long"].mock.results[1].value.settled).toBe(true);
+        expect(validators.async).toHaveNthReturnedWith(2, undefined);
+        expect(validators["async-mid"]).toHaveNthReturnedWith(2, expect.stringMatching(/\w+/));
+        expect(validators["async-long"]).toHaveNthReturnedWith(2, "");
 
         // Async Failure Only
         validators.sync.mockReturnValue(undefined); // Sync Validator now passes
 
         const failingPromiseAsyncValidator = formValidityObserver.validateFields();
-        expect(failingPromiseAsyncValidator).toEqual(expect.any(OriginalPromise));
-        expect(validators.sync.mock.results[2].value).toBe(undefined);
+        expect(failingPromiseAsyncValidator).toEqual(expect.any(Promise));
+        expect(validators.sync).toHaveNthReturnedWith(3, undefined);
 
         expect(await failingPromiseAsyncValidator).toBe(false);
-        expect(validators.async.mock.results[2].value.settled).toBe(true);
-        expect(validators["async-mid"].mock.results[2].value.settled).toBe(true);
-        expect(validators["async-long"].mock.results[2].value.settled).toBe(true);
+        expect(validators.async).toHaveNthReturnedWith(3, undefined);
+        expect(validators["async-mid"]).toHaveNthReturnedWith(3, expect.stringMatching(/\w+/));
+        expect(validators["async-long"]).toHaveNthReturnedWith(3, "");
 
         // Async Success
         validators["async-mid"].mockImplementation(createAsyncValidator(500)); // Async Validator now passes
 
         const succeedingPromise = formValidityObserver.validateFields();
-        expect(succeedingPromise).toEqual(expect.any(OriginalPromise));
+        expect(succeedingPromise).toEqual(expect.any(Promise));
 
         expect(await succeedingPromise).toBe(true);
-        expect(validators.async.mock.results[3].value.settled).toBe(true);
-        expect(validators["async-mid"].mock.results[3].value.settled).toBe(true);
-        expect(validators["async-long"].mock.results[3].value.settled).toBe(true);
-
-        /* ---------- Restore the original `Promise` class to avoid disrupting other tests ---------- */
-        window.Promise = OriginalPromise;
+        expect(validators.async).toHaveNthReturnedWith(4, undefined);
+        expect(validators["async-mid"]).toHaveNthReturnedWith(4, undefined);
+        expect(validators["async-long"]).toHaveNthReturnedWith(4, "");
       });
 
       it("Returns `false` if ANY asynchronous validation functions `reject`", async () => {
@@ -1930,10 +1892,10 @@ describe("Form Validity Observer (Class)", () => {
         // Setup User-defined Validation Functions
         const names = { sync: "sync", fulfilled: "fulfilled", rejected: "rejected" } as const;
         const validators = Object.freeze({
-          sync: jest.fn(),
-          fulfilled: jest.fn(() => Promise.resolve(undefined)),
-          rejected: jest.fn(() => Promise.reject(undefined)),
-        }) satisfies { [K in keyof typeof names]: jest.Mock };
+          sync: vi.fn(),
+          fulfilled: vi.fn(() => Promise.resolve(undefined)),
+          rejected: vi.fn(() => Promise.reject(undefined)),
+        }) satisfies { [K in keyof typeof names]: Mock };
 
         // Render Form
         document.body.innerHTML = `
@@ -1971,15 +1933,15 @@ describe("Form Validity Observer (Class)", () => {
         const fields = [syncField, asyncField] as const;
 
         fields.forEach((f) => {
-          jest.spyOn(f, "reportValidity");
-          Object.assign(f, { scrollIntoView: jest.fn() });
+          vi.spyOn(f, "reportValidity");
+          Object.assign(f, { scrollIntoView: vi.fn() });
         });
 
         // Configure Observer
         const errors = Object.freeze({ sync: "Sync Failure", async: "ASYNC OOF" });
         const validators = {
-          sync: jest.fn().mockReturnValue(errors.sync),
-          async: jest.fn().mockImplementation(() => {
+          sync: vi.fn().mockReturnValue(errors.sync),
+          async: vi.fn().mockImplementation(() => {
             return new Promise((resolve) => {
               setTimeout(resolve, 500, errors.async);
             });
@@ -2059,13 +2021,13 @@ describe("Form Validity Observer (Class)", () => {
         form.insertAdjacentElement("afterbegin", fieldset); // Put Radiogroup First
 
         [fieldset, firstRadio, ...fields].forEach((f) => {
-          jest.spyOn(f, "reportValidity");
-          Object.assign(f, { scrollIntoView: jest.fn() });
+          vi.spyOn(f, "reportValidity");
+          Object.assign(f, { scrollIntoView: vi.fn() });
         });
 
         // Configure Observer
         const error = "You didn't get it right...";
-        const validate = jest.fn().mockReturnValue(error);
+        const validate = vi.fn().mockReturnValue(error);
 
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(form);
@@ -2106,14 +2068,14 @@ describe("Form Validity Observer (Class)", () => {
 
         [fieldset, ...fields].forEach(renderErrorContainerForField);
         [fieldset, firstRadio, ...fields].forEach((f) => {
-          jest.spyOn(f, "reportValidity");
-          Object.assign(f, { scrollIntoView: jest.fn() });
+          vi.spyOn(f, "reportValidity");
+          Object.assign(f, { scrollIntoView: vi.fn() });
         });
 
         // Configure Observer
         const error = "Your scrolling isn't powerful enough, bro.";
-        const validate = jest.fn().mockReturnValue(error);
-        const scroller = jest.fn();
+        const validate = vi.fn().mockReturnValue(error);
+        const scroller = vi.fn();
 
         const formValidityObserver = new FormValidityObserver(types[0], { scroller });
         formValidityObserver.observe(form);
@@ -2165,7 +2127,7 @@ describe("Form Validity Observer (Class)", () => {
         // Observe Form
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
-        jest.spyOn(formValidityObserver, "validateField");
+        vi.spyOn(formValidityObserver, "validateField");
 
         // Run Assertions
         formValidityObserver.validateFields();
@@ -2187,7 +2149,7 @@ describe("Form Validity Observer (Class)", () => {
         // Observe Form
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
-        jest.spyOn(formValidityObserver, "validateField");
+        vi.spyOn(formValidityObserver, "validateField");
 
         // Run Assertions
         formValidityObserver.validateFields();
@@ -2224,7 +2186,7 @@ describe("Form Validity Observer (Class)", () => {
         // Observe Form
         const formValidityObserver = new FormValidityObserver(types[0]);
         formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
-        jest.spyOn(formValidityObserver, "validateField");
+        vi.spyOn(formValidityObserver, "validateField");
 
         // Run Assertions (unsupported elements are ignored)
         formValidityObserver.validateFields();
@@ -2395,7 +2357,7 @@ describe("Form Validity Observer (Class)", () => {
 
               // Configure Error Message
               const formValidityObserver = new FormValidityObserver(types[1]);
-              jest.spyOn(formValidityObserver, "validateField");
+              vi.spyOn(formValidityObserver, "validateField");
 
               formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
               formValidityObserver.configure(name, { [constraint.key]: errorDetails });
@@ -2430,7 +2392,7 @@ describe("Form Validity Observer (Class)", () => {
 
               // Configure Error Message
               const formValidityObserver = new FormValidityObserver(types);
-              jest.spyOn(formValidityObserver, "validateField");
+              vi.spyOn(formValidityObserver, "validateField");
 
               formValidityObserver.observe(screen.getByRole("form") as HTMLFormElement);
               formValidityObserver.configure(name, { required: errorDetails });
@@ -2460,7 +2422,7 @@ describe("Form Validity Observer (Class)", () => {
 
               // Configure Error Message
               const formValidityObserver = new FormValidityObserver(types[1]);
-              jest.spyOn(formValidityObserver, "validateField");
+              vi.spyOn(formValidityObserver, "validateField");
 
               formValidityObserver.observe(screen.getByRole("form") as HTMLFormElement);
               formValidityObserver.configure(name, { required: errorDetails });
@@ -2493,9 +2455,9 @@ describe("Form Validity Observer (Class)", () => {
 
                 // Configure Error Message
                 const formValidityObserver = new FormValidityObserver(types[1]);
-                jest.spyOn(formValidityObserver, "validateField");
+                vi.spyOn(formValidityObserver, "validateField");
 
-                const validate = jest.fn(() => Promise.resolve(errorDetails));
+                const validate = vi.fn(() => Promise.resolve(errorDetails));
                 formValidityObserver.observe(screen.getByRole("form") as HTMLFormElement);
                 formValidityObserver.configure(tag, { validate });
 

@@ -7,6 +7,13 @@ I like to keep track of what I'm doing and why I'm doing it. Doing this achieves
 - Providing "bookmarks" that serve as answers to questions which I'm likely to ask again in the future.
 - Opening _you_, the reader, up to my thought processes so that you can learn new things alongside me.
 
+## Helpful Discoveries
+
+### Testing
+
+- Unlike with [Jest](https://jestjs.io/), the mock functions in [Vitest](https://vitest.dev/) that return `Promise`s have [dynamic return `value`s](https://github.com/vitest-dev/vitest/issues/3634): When the returned `Promise` is `pending`, the return `value` is the promise itself; but after the `Promise` has `resolved`, the return `value` is the resolved value. This is helpful for identifying when a `Promise` is still pending and when it has resolved.
+- Code coverage with `istanbul` is [preferred](https://github.com/jestjs/jest/issues/11188) to code coverage with `v8` if the goal is accuracy; so we use `@vitest/coverage-istanbul`. However, [`istanbul ignore` comments are lost](https://github.com/vitest-dev/vitest/issues/2021) when `vitest` runs against TS files. To circumvent this problem, we need to add the `@preserve` directive to any `ignore` comments. This is perhaps another reason to use JSDocs for libraries. That said, this issue might actually be a flaw in Vitest that pops up on rare occasions (specifically when it comes to minimization, though this problem would be manually solvable after running a build step).
+
 ## Answers to Curious Questions
 
 ### Why are you attaching event handlers to the `Document` instead of attaching them directly to `HTMLElement`s?
@@ -200,6 +207,8 @@ In the case of `FormObserver.test.tsx`, since I'm using global constants and hel
 Enforcing a proper testing environment isn't only helpful for the developers on this project, but it's also helpful for the end users. The `FormObserver` class serves as the foundation for the _entire_ project. Every other kind of form-related observer which this project provides extends the `FormObserver`. And consequently, all of the integrations with frontend frameworks that this project provides _also_ depend on the `FormObserver`. The base `FormObserver` class is the most important class in this project. Therefore, guarding it heavily (with a _healthy_ amount of paranoia) even when it comes to test setup is in _everyone_'s best interest. Such heavy guarding also helps prevent the tests from being broken during updates (which, again, is in everyone's best interest).
 
 #### Conditional Assertions Based on the Current `testCase`
+
+**Note: This section was written when I was using Jest instead of Vitest. Since Vitest is more or less a drop-in replacement for Jest, I don't see a need to update any of the content here.**
 
 You'll notice that the large majority of my tests are run in a [`describe.each`](https://jestjs.io/docs/api#describeeachtablename-fn-timeout) block. I've set things up this way to prove that each "variation" (or "overload") of the `FormObserver` satisfies the expected test criteria in its own way.
 

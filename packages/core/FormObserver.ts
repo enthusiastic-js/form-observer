@@ -1,5 +1,5 @@
-import { assertElementIsForm } from "./utils/assertions";
-import type { EventType, FormFieldListener, ListenerOptions, TypesToListeners, OneOrMany } from "./types";
+import { assertElementIsForm } from "./utils/assertions.js";
+import type { EventType, FormFieldListener, ListenerOptions, TypesToListeners, OneOrMany } from "./types.d.ts";
 
 interface FormObserverConstructor {
   /**

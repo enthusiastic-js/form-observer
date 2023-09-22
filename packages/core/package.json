@@ -1,5 +1,6 @@
 {
   "name": "@form-observer/core",
+  "type": "module",
   "version": "0.0.1",
   "description": "A simple utility for reacting to events from a form's fields",
   "main": "build/index.js",

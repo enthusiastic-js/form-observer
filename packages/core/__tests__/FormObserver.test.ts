@@ -1,9 +1,10 @@
+import { vi } from "vitest";
 import { screen } from "@testing-library/dom";
-import userEvent from "@testing-library/user-event";
-import "@testing-library/jest-dom";
-import type { EventType, ListenerOptions, TypesToListeners } from "../types";
-import * as Assertions from "../utils/assertions";
-import FormObserver from "../FormObserver";
+import { userEvent } from "@testing-library/user-event";
+import "@testing-library/jest-dom/vitest";
+import type { EventType, ListenerOptions, TypesToListeners } from "../types.d.ts";
+import * as Assertions from "../utils/assertions.js";
+import FormObserver from "../FormObserver.js";
 
 describe("Form Observer (Class)", () => {
   /* ---------------------------------------- Global Constants ---------------------------------------- */
@@ -15,7 +16,7 @@ describe("Form Observer (Class)", () => {
 
   // Form Observer Constants
   const types = ["focusin", "click"] as const satisfies ReadonlyArray<EventType>;
-  const listeners = [jest.fn(), jest.fn()] as const satisfies TypesToListeners<typeof types>;
+  const listeners = [vi.fn(), vi.fn()] as const satisfies TypesToListeners<typeof types>;
   const options = [true, false] as const satisfies ReadonlyArray<Exclude<ListenerOptions, undefined>>;
 
   /** Events corresponding to the test event `types`. @see {@link types} */
@@ -125,8 +126,8 @@ describe("Form Observer (Class)", () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks(); // For our global mock `listeners`
-    jest.restoreAllMocks(); // For any `spies` on `document.*EventListener` or the Assertion Utilities
+    vi.clearAllMocks(); // For our global mock `listeners`
+    vi.restoreAllMocks(); // For any `spies` on `document.*EventListener` or the Assertion Utilities
 
     // Reset anything that we've rendered to the DOM. (Without a JS framework implementation, we must do this manually.)
     document.body.textContent = "";
@@ -205,7 +206,7 @@ describe("Form Observer (Class)", () => {
         const formObserver = getFormObserverByTestCase(testCase);
         const { nonForm } = renderForms();
 
-        jest.spyOn(Assertions, "assertElementIsForm");
+        vi.spyOn(Assertions, "assertElementIsForm");
         expect(() => formObserver.observe(nonForm as HTMLFormElement)).toThrow();
         expect(Assertions.assertElementIsForm).toHaveBeenNthCalledWith(1, nonForm);
       });
@@ -344,7 +345,7 @@ describe("Form Observer (Class)", () => {
         // Render Form
         const { primaryForm, secondaryForm } = renderForms();
         expect(primaryForm.ownerDocument).toBe(secondaryForm.ownerDocument);
-        const addEventListener = jest.spyOn(primaryForm.ownerDocument, "addEventListener");
+        const addEventListener = vi.spyOn(primaryForm.ownerDocument, "addEventListener");
 
         formObserver.observe(primaryForm);
 
@@ -387,7 +388,7 @@ describe("Form Observer (Class)", () => {
         const formObserver = getFormObserverByTestCase(testCase);
         const { nonForm } = renderForms();
 
-        jest.spyOn(Assertions, "assertElementIsForm");
+        vi.spyOn(Assertions, "assertElementIsForm");
         expect(() => formObserver.unobserve(nonForm as HTMLFormElement)).toThrow();
         expect(Assertions.assertElementIsForm).toHaveBeenNthCalledWith(1, nonForm);
       });
@@ -395,7 +396,7 @@ describe("Form Observer (Class)", () => {
       it("Does nothing with a `form` that isn't currently being observed", () => {
         const formObserver = getFormObserverByTestCase(testCase);
         const { primaryForm } = renderForms();
-        const removeEventListener = jest.spyOn(primaryForm.ownerDocument, "removeEventListener");
+        const removeEventListener = vi.spyOn(primaryForm.ownerDocument, "removeEventListener");
 
         // No errors are thrown, and no attempts are made to remove event listeners
         expect(() => formObserver.unobserve(primaryForm)).not.toThrow();
@@ -445,7 +446,7 @@ describe("Form Observer (Class)", () => {
         // Render Form
         const { primaryForm, secondaryForm } = renderForms();
         expect(primaryForm.ownerDocument).toBe(secondaryForm.ownerDocument);
-        const removeEventListener = jest.spyOn(primaryForm.ownerDocument, "removeEventListener");
+        const removeEventListener = vi.spyOn(primaryForm.ownerDocument, "removeEventListener");
 
         formObserver.observe(primaryForm);
         formObserver.observe(secondaryForm);
@@ -489,7 +490,7 @@ describe("Form Observer (Class)", () => {
     describe("disconnect (Method)", () => {
       it("Unobserves ALL `form`s currently being observed", () => {
         const formObserver = getFormObserverByTestCase(testCase);
-        jest.spyOn(formObserver, "unobserve");
+        vi.spyOn(formObserver, "unobserve");
 
         // Render Form
         const { primaryForm, secondaryForm } = renderForms();
@@ -514,8 +515,8 @@ describe("Form Observer (Class)", () => {
 
         // Render Form
         const { primaryForm } = renderForms();
-        const addEventListener = jest.spyOn(primaryForm.ownerDocument, "addEventListener");
-        const removeEventListener = jest.spyOn(primaryForm.ownerDocument, "removeEventListener");
+        const addEventListener = vi.spyOn(primaryForm.ownerDocument, "addEventListener");
+        const removeEventListener = vi.spyOn(primaryForm.ownerDocument, "removeEventListener");
 
         formObserver.observe(primaryForm);
         expect(addEventListener).toHaveBeenCalledWith(expect.anything(), expect.anything(), singleOptions);

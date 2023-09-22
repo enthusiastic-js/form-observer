@@ -1,15 +1,16 @@
+import { vi } from "vitest";
 import { renderHook } from "@testing-library/react";
-import type { EventType } from "@form-observer/core/types";
-import * as createFormValidityObserverImport from "../createFormValidityObserver";
-import useFormValidityObserver from "../useFormValidityObserver";
+import type { EventType } from "@form-observer/core/types.d.ts";
+import * as createFormValidityObserverImport from "../createFormValidityObserver.js";
+import useFormValidityObserver from "../useFormValidityObserver.js";
 
 describe("useFormValidityObserver (Custom React Hook)", () => {
   // Keep things clean between each test by automatically restoring anything we may have spied on
-  beforeEach(jest.restoreAllMocks);
+  beforeEach(vi.restoreAllMocks);
 
   it("Memoizes its calls to `createFormValidityObserver` (to prevent rerenders caused by reference inequality)", () => {
     const types = ["input", "focusout"] satisfies EventType[];
-    const createFormValidityObserver = jest.spyOn(createFormValidityObserverImport, "default");
+    const createFormValidityObserver = vi.spyOn(createFormValidityObserverImport, "default");
 
     const { result, rerender } = renderHook((t) => useFormValidityObserver(t), { initialProps: types });
     const originalObserver = result.current;
