@@ -21,7 +21,7 @@ Below are some of the people I wanted to acknowledge (listed in ascending order 
 
   <li>
     <p>
-      <a href="https://www.mojotech.com/">MojoTech</a>. Thanks for employing me. :slight_smile: And thanks for giving your employees (including myself) the opportunity to <a href="https://www.mojotech.com/jobs/">explore their own programming ideas</a> each week. Admittedly, most of my work on this project was done in my free time. But having 5 dedicated hours of MojoTime to focus on a single idea or problem has been helpful for making breakthroughs when I've been stuck.
+      <a href="https://www.mojotech.com/">MojoTech</a>. Thanks for employing me. 🙂 And thanks for giving your employees (including myself) the opportunity to <a href="https://www.mojotech.com/jobs/">explore their own programming ideas</a> each week. Admittedly, most of my work on this project was done in my free time. But having 5 dedicated hours of MojoTime to focus on a single idea or problem has been helpful for making breakthroughs when I've been stuck.
     </p>
   </li>
 
@@ -42,7 +42,7 @@ Below are some of the people I wanted to acknowledge (listed in ascending order 
 
   <li>
     <p>
-      <a href="https://github.com/Marioalexsan">@marioalexsan</a>. Thank you <em>so</em> much for letting me run random design ideas by you. It helped me get a sense of what fit well and what was pure garbage. (Maybe you think what I have now is pure garbage. :smirk: Hopefully not. lol.) My conversations with you especially helped me settle on how I wanted to go about handling the <code>configure</code> method of the <code>FormValidityObserver</code>. <em>Big</em> breakthrough for me.
+      <a href="https://github.com/Marioalexsan">@marioalexsan</a>. Thank you <em>so</em> much for letting me run random design ideas by you. It helped me get a sense of what fit well and what was pure garbage. (Maybe you think what I have now is pure garbage. 😏 Hopefully not. lol.) My conversations with you especially helped me settle on how I wanted to go about handling the <code>configure</code> method of the <code>FormValidityObserver</code>. <em>Big</em> breakthrough for me.
     <p>
     <p>
       Frankly, though they may be scarce, I always appreciate/enjoy our developer conversations. And I admire your curiosity when it comes to modding games. I'm glad to have met you on Discord. You remind me of another smart developer friend...
@@ -51,7 +51,7 @@ Below are some of the people I wanted to acknowledge (listed in ascending order 
 
   <li>
     <p>
-      <a href="https://github.com/Rich-Harris">@Rich-Harris</a> and the other Svelte contributors. Thank you for designing a framework that's <em>painfully</em> different from React. :slight_smile: I mean that with all sincerity. <code>React Hook Form</code> was actually the original inspiration for this project. And since they register fields by using <code>React Refs</code> that are spread as props into a developer's fields, I originally thought that I would explore something similar.
+      <a href="https://github.com/Rich-Harris">@Rich-Harris</a> and the other Svelte contributors. Thank you for designing a framework that's <em>painfully</em> different from React. 🙂 I mean that with all sincerity. <code>React Hook Form</code> was actually the original inspiration for this project. And since they register fields by using <code>React Refs</code> that are spread as props into a developer's fields, I originally thought that I would explore something similar.
     </p>
     <p>
       Now, from what I've gathered, Svelte doesn't support spreading <code>bind:this</code> into an element's props, and it doesn't support <a href="https://react.dev/reference/react-dom/components/common#ref-callback"><code>Ref Callbacks</code></a> either... So once I started thinking about how the Svelte-integration of the <code>FormValidityObserver</code> would work, I started getting pretty frustrated. After some discussion on <a href="https://discord.com/channels/457912077277855764/1109831123472756787/1109831123472756787">Discord</a>, I learned that my problem wasn't, "I need ref callbacks". Rather, my problem was, "I need a flexible way to configure form controls". <a href="https://github.com/sveltejs/kit/issues/334#issuecomment-804987028">As you've pointed out before</a>, it's important to identify the <em>true</em> problem.
@@ -63,7 +63,7 @@ Below are some of the people I wanted to acknowledge (listed in ascending order 
 
   <li>
     <p>
-      <a href="https://gomakethings.com/about/">Chris Ferdinandi</a>. Hey! You're another person whom I don't know. :sweat_smile: But you were the one who introduced me to <a href="https://gomakethings.com/why-is-javascript-event-delegation-better-than-attaching-events-to-each-element/">event delegation</a>. Frankly speaking, without that knowledge, the <code>FormObserver</code> never would have been a thing -- which also means that the <code>FormStorageObserver</code> and the <code>FormValidityObserver</code> never would have existed either. So... your influence on this project was really huge. Thanks for putting your thoughts on the internet. :slight_smile:
+      <a href="https://gomakethings.com/about/">Chris Ferdinandi</a>. Hey! You're another person whom I don't know. 😅 But you were the one who introduced me to <a href="https://gomakethings.com/why-is-javascript-event-delegation-better-than-attaching-events-to-each-element/">event delegation</a>. Frankly speaking, without that knowledge, the <code>FormObserver</code> never would have been a thing -- which also means that the <code>FormStorageObserver</code> and the <code>FormValidityObserver</code> never would have existed either. So... your influence on this project was really huge. Thanks for putting your thoughts on the internet. 🙂
     </p>
   </li>
 
