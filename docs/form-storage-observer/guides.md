@@ -18,22 +18,22 @@ Just like the [`MutationObserver`](https://developer.mozilla.org/en-US/docs/Web/
 </form>
 
 <script>
-import { onMount } from "svelte";
-import { FormStorageObserver } from "@form-observer/core";
+  import { onMount } from "svelte";
+  import { FormStorageObserver } from "@form-observer/core";
 
-let form;
-onMount(() => {
-  const observer = new FormStorageObserver("change");
-  observer.observe(form);
-  return () => observer.disconnect();
-});
+  let form;
+  onMount(() => {
+    const observer = new FormStorageObserver("change");
+    observer.observe(form);
+    return () => observer.disconnect();
+  });
 
-function handleSubmit(event) {
-  event.preventDefault();
+  function handleSubmit(event) {
+    event.preventDefault();
 
-  // Clear `localStorage` data after form submission if the data is no longer needed
-  FormStorageObserver.clear(event.currentTarget);
-}
+    // Clear `localStorage` data after form submission if the data is no longer needed
+    FormStorageObserver.clear(event.currentTarget);
+  }
 </script>
 ```
 

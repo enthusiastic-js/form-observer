@@ -80,7 +80,11 @@ This can be simplified if we augment the `configure` function to generate the co
   <div id="username-error" role="alert" />
 
   <label for="email">Email</label>
-  <input id="email" {...configure("email", { required, type: { value: "email", message: "Please provide a valid email" } })} aria-labelledby="email-error" />
+  <input
+    id="email"
+    {...configure("email", { required, type: { value: "email", message: "Please provide a valid email" } })}
+    aria-labelledby="email-error"
+  />
   <div id="email-error" role="alert" />
 
   <!-- Other Fields -->

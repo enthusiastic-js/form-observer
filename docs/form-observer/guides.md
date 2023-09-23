@@ -18,16 +18,16 @@ Just like the [`MutationObserver`](https://developer.mozilla.org/en-US/docs/Web/
 </form>
 
 <script>
-import { onMount } from "svelte";
-import { FormObserver } from "@form-observer/core";
+  import { onMount } from "svelte";
+  import { FormObserver } from "@form-observer/core";
 
-let form;
-onMount(() => {
-  const observer = new FormObserver("focusout", (e) => console.log(`Field ${e.target.name} was \`blur\`red`));
-  observer.observe(form);
+  let form;
+  onMount(() => {
+    const observer = new FormObserver("focusout", (e) => console.log(`Field ${e.target.name} was \`blur\`red`));
+    observer.observe(form);
 
-  return () => observer.disconnect();
-});
+    return () => observer.disconnect();
+  });
 </script>
 ```
 

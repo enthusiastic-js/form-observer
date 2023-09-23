@@ -126,7 +126,7 @@ The rules are as follows:
 <form use:autoObserve>
   <!-- Note: Accessible <label>s and error containers were omitted from this example. -->
   <input {...configure("first-name", { required: requiredField })} />
-  <input {...configure("last-name", { required: "Don't ignore me..."})} />
+  <input {...configure("last-name", { required: "Don't ignore me..." })} />
   <input {...configure("email", { required: { value: true, message: requiredField } })} />
 </form>
 
@@ -147,7 +147,7 @@ This syntax only exists for convenience. You are free to use the regular HTML at
 <form use:autoObserve>
   <!-- Note: Accessible <label>s and error containers were omitted from this example. -->
   <input {...configure("email-1", { required: requiredField, type: "email" })} />
-  <input {...configure("email-2", { required: requiredField, })} type="email" />
+  <input {...configure("email-2", { required: requiredField })} type="email" />
   <input name="email-3" type="email" required />
 </form>
 
