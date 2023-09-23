@@ -1,17 +1,4 @@
 {
-  // TODO: Make compatible with NPM Workspaces
-  "compilerOptions": {
-    "target": "ES2020",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "strict": true,
-    "outDir": "build",
-    "jsx": "react-jsx",
-    "declaration": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": false
-  },
-  // TODO: Split Vitest Config out from final production bundle
-  "include": ["packages/**/*", "vitest.config.ts"]
+  "references": [{ "path": "packages/core" }, { "path": "packages/react" }, { "path": "packages/svelte" }],
+  "files": []
 }

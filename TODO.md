@@ -54,7 +54,12 @@
 
 ## Testing
 
-- [ ] Figure out how to test Svelte components with Jest. (It's surprisingly harder than it ought to be.)
+- [ ] Figure out how to test Svelte components with Jest. (It's surprisingly harder than it ought to be.). **EDIT**: The Svelte test now uses Vitest. So just use a Svelte component for testing now.
+- [ ] FIX TEST COVERAGE where it can be fixed. And add `ignore` comments where that makes sense to do instead.
+- [ ] TRY OUT `vitest workspaces` to see if we get any benefits in how Vitest **_organizes_** our tests in the **_CLI output_**.
+- [ ] FIGURE OUT how to get `vitest` globals working with TypeScript so that it won't complain.
+- [ ] FIGURE OUT if we even need a `tsconfig` for the test files at all... Maybe for the `globals` to work?
+- [ ] CONSIDER looking at the commit where we just recently added `vitest`. There might be other follow-ups that we need which we have forgotten.
 - [ ] Temporarily, we have to change `userEvent` to a named import because of https://github.com/testing-library/user-event/issues/1146. Hopefully this gets fixed soon. Maybe we can contribute something if we figure out this `NodeNext` headache on our own end.
 - [ ] Replace Jest ESLint disable comments with their Vitest equivalents (if appropriate or needed). This, of course, requires updating our ESLint config to use Vitest's eslint rules as well (if they have one).
 - [ ] Replace Jest "TypeScript Tests" with the equivalent in Vitest. It sounds like they have something [designed for this](https://vitest.dev/guide/testing-types.html)? But would we still be able to avoid false positives for code coverage with what they provide?
