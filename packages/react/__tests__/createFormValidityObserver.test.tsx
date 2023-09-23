@@ -1,7 +1,7 @@
-import { vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { vi, beforeEach, afterEach, describe, it, expect } from "vitest";
+import { render, screen, cleanup } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import FormValidityObserver from "@form-observer/core/FormValidityObserver.js";
 import type { EventType, FormField } from "@form-observer/core/types.d.ts";
 import createFormValidityObserver from "../createFormValidityObserver.js";
@@ -11,7 +11,7 @@ describe("Create Form Validity Observer (Function)", () => {
   const types = Object.freeze(["input", "focusout"] as const) satisfies ReadonlyArray<EventType>;
 
   // Keep things clean between each test by automatically restoring anything we may have spied on
-  beforeEach(vi.restoreAllMocks);
+  beforeEach(vi.restoreAllMocks as () => void);
 
   it("Generates a `FormValidityObserver` (enhanced)", () => {
     expect(createFormValidityObserver(types)).toEqual(expect.any(FormValidityObserver));
@@ -55,6 +55,8 @@ describe("Create Form Validity Observer (Function)", () => {
 
   describe("Returned Interface", () => {
     describe("autoObserve (Method)", () => {
+      afterEach(cleanup);
+
       it("Automatically sets up the `FormValidityObserver` (onMount) and cleans it up (onUnmount)", async () => {
         /* ---------- Setup ---------- */
         const message = "Only numbers are allowed!";

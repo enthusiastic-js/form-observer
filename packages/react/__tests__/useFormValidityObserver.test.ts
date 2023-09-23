@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { vi, beforeEach, describe, it, expect } from "vitest";
 import { renderHook } from "@testing-library/react";
 import type { EventType } from "@form-observer/core/types.d.ts";
 import * as createFormValidityObserverImport from "../createFormValidityObserver.js";
@@ -6,7 +6,7 @@ import useFormValidityObserver from "../useFormValidityObserver.js";
 
 describe("useFormValidityObserver (Custom React Hook)", () => {
   // Keep things clean between each test by automatically restoring anything we may have spied on
-  beforeEach(vi.restoreAllMocks);
+  beforeEach(vi.restoreAllMocks as () => void);
 
   it("Memoizes its calls to `createFormValidityObserver` (to prevent rerenders caused by reference inequality)", () => {
     const types = ["input", "focusout"] satisfies EventType[];

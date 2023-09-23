@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest";
 import { assertElementIsForm } from "../assertions.js";
 
 describe("Assertion Utilities", () => {

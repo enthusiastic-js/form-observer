@@ -1,7 +1,7 @@
-import { vi } from "vitest";
+import { vi, beforeAll, beforeEach, describe, it, expect } from "vitest";
 import { screen, within } from "@testing-library/dom";
 import { userEvent } from "@testing-library/user-event";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import { faker } from "@faker-js/faker";
 import type { EventType, FormField } from "../types.d.ts";
 import * as Assertions from "../utils/assertions.js";
@@ -1143,8 +1143,12 @@ describe("Form Storage Observer (Class)", () => {
 
         /* -------------------- `HTMLFormElement` + `FieldName` Overload -------------------- */
         expect(() => FormStorageObserver.load(form, correct.name)).not.toThrow();
-        expect(() => FormStorageObserver.load(form, missing.id)).toThrowErrorMatchingInlineSnapshot('"Expected to find a field with name \\"missing\\", but instead found a field with name \\"\\". Did you accidentally provide your field\'s `id` instead of your field\'s `name`?"');
-        expect(() => FormStorageObserver.load(form, mismatched.id)).toThrowErrorMatchingInlineSnapshot('"Expected to find a field with name \\"mismatched\\", but instead found a field with name \\"wrong-name\\". Did you accidentally provide your field\'s `id` instead of your field\'s `name`?"');
+        expect(() => FormStorageObserver.load(form, missing.id)).toThrowErrorMatchingInlineSnapshot(
+          '"Expected to find a field with name \\"missing\\", but instead found a field with name \\"\\". Did you accidentally provide your field\'s `id` instead of your field\'s `name`?"',
+        );
+        expect(() => FormStorageObserver.load(form, mismatched.id)).toThrowErrorMatchingInlineSnapshot(
+          '"Expected to find a field with name \\"mismatched\\", but instead found a field with name \\"wrong-name\\". Did you accidentally provide your field\'s `id` instead of your field\'s `name`?"',
+        );
       });
 
       describe("Resolved Bugs", () => {

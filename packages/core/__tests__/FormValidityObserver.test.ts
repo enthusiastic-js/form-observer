@@ -1,10 +1,10 @@
 /* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expect*"] }] */
 /* eslint-disable testing-library/no-node-access -- We need node access to make these tests more clear and reliable */
-import { vi } from "vitest";
+import { vi, beforeAll, beforeEach, describe, it, expect } from "vitest";
 import type { Mock } from "vitest";
 import { screen } from "@testing-library/dom";
 import { userEvent } from "@testing-library/user-event";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import type { EventType, FormField } from "../types.d.ts";
 import FormObserver from "../FormObserver.js";
 import FormValidityObserver from "../FormValidityObserver.js";

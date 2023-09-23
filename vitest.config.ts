@@ -4,7 +4,6 @@ export default defineConfig({
   test: {
     include: ["./**/__tests__/**/*.test.ts?(x)"],
     environment: "jsdom",
-    globals: true,
 
     coverage: {
       provider: "istanbul",

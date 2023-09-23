@@ -13,6 +13,7 @@ I like to keep track of what I'm doing and why I'm doing it. Doing this achieves
 
 - Unlike with [Jest](https://jestjs.io/), the mock functions in [Vitest](https://vitest.dev/) that return `Promise`s have [dynamic return `value`s](https://github.com/vitest-dev/vitest/issues/3634): When the returned `Promise` is `pending`, the return `value` is the promise itself; but after the `Promise` has `resolved`, the return `value` is the resolved value. This is helpful for identifying when a `Promise` is still pending and when it has resolved.
 - Code coverage with `istanbul` is [preferred](https://github.com/jestjs/jest/issues/11188) to code coverage with `v8` if the goal is accuracy; so we use `@vitest/coverage-istanbul`. However, [`istanbul ignore` comments are lost](https://github.com/vitest-dev/vitest/issues/2021) when `vitest` runs against TS files. To circumvent this problem, we need to add the `@preserve` directive to any `ignore` comments. This is perhaps another reason to use JSDocs for libraries. That said, this issue might actually be a flaw in Vitest that pops up on rare occasions (specifically when it comes to minimization, though this problem would be manually solvable after running a build step).
+- When Vitest globals are disabled, [The Testing Library Family's `cleanup` function will not run automatically](https://vitest.dev/guide/migration.html#globals-as-a-default).
 
 ## Answers to Curious Questions
 

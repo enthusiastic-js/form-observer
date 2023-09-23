@@ -1,6 +1,6 @@
 {
-  // TODO: Change Jest Rules to Vitest where possible
-  "env": { "browser": true, "node": true, "jest": true },
+  "env": { "browser": true, "node": true },
+  // TODO: Change Jest Rules to Vitest where possible/reasonable
   "extends": [
     "airbnb-base",
     "plugin:@typescript-eslint/recommended",

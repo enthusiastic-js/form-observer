@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { vi, beforeEach, describe, it, expect } from "vitest";
 import FormValidityObserver from "@form-observer/core/FormValidityObserver.js";
 import type { EventType, FormField } from "@form-observer/core/types.d.ts";
 import createFormValidityObserver from "../createFormValidityObserver.js";
@@ -8,7 +8,7 @@ describe("Create Form Validity Observer (Function)", () => {
   const types = Object.freeze(["change", "focusout"] as const) satisfies ReadonlyArray<EventType>;
 
   // Keep things clean between each test by automatically restoring anything we may have spied on
-  beforeEach(vi.restoreAllMocks);
+  beforeEach(vi.restoreAllMocks as () => void);
 
   it("Generates a `FormValidityObserver` (enhanced)", () => {
     expect(createFormValidityObserver(types)).toEqual(expect.any(FormValidityObserver));
