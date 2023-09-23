@@ -63,6 +63,7 @@
     ]
   },
   "overrides": [
+    { "files": "**/utils/*.js", "rules": { "import/prefer-default-export": "off" } },
     {
       "files": "**/__tests__/**/*.test.ts?(x)",
       "rules": {

@@ -123,7 +123,10 @@ describe("Form Validity Observer (Class)", () => {
 
   describe("Overriden Core Methods", () => {
     /* -------------------- Assertion Helpers for Core Methods -------------------- */
-    function expectValidationFunctionsToBeEnabled(observer: FormValidityObserver, enabled = true): void {
+    function expectValidationFunctionsToBeEnabled(
+      observer: InstanceType<typeof FormValidityObserver>,
+      enabled = true,
+    ): void {
       const fakeMessage = "This error doesn't matter";
       const fakeFieldName = "field-not-in-form";
 

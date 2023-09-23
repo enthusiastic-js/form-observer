@@ -3,9 +3,8 @@ import { render, screen, cleanup } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import FormValidityObserver from "@form-observer/core/FormValidityObserver.js";
-import type { EventType, FormField } from "@form-observer/core/types.d.ts";
 import createFormValidityObserver from "../createFormValidityObserver.js";
-import type { ReactValidationErrors, ReactFieldProps } from "../createFormValidityObserver.js";
+import type { EventType, FormField, ReactValidationErrors, ReactFieldProps } from "../types.d.ts";
 
 describe("Create Form Validity Observer (Function)", () => {
   const types = Object.freeze(["input", "focusout"] as const) satisfies ReadonlyArray<EventType>;
@@ -20,7 +19,7 @@ describe("Create Form Validity Observer (Function)", () => {
   it("Exposes `bound` versions of the `FormValidityObserver`'s methods (excluding `configure`)", () => {
     /* ---------- Setup ---------- */
     // Derive `bound` methods
-    type BoundMethod = keyof Omit<FormValidityObserver, "configure">;
+    type BoundMethod = keyof Omit<InstanceType<typeof FormValidityObserver>, "configure">;
     const members = Object.getOwnPropertyNames(FormValidityObserver.prototype);
     const boundMethods = members.filter((m): m is BoundMethod => m !== "constructor" && m !== "configure");
 

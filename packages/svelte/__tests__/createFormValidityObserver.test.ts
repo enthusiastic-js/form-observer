@@ -1,8 +1,7 @@
 import { vi, beforeEach, describe, it, expect } from "vitest";
 import FormValidityObserver from "@form-observer/core/FormValidityObserver.js";
-import type { EventType, FormField } from "@form-observer/core/types.d.ts";
 import createFormValidityObserver from "../createFormValidityObserver.js";
-import type { SvelteValidationErrors } from "../createFormValidityObserver.js";
+import type { EventType, FormField, SvelteValidationErrors } from "../types.d.ts";
 
 describe("Create Form Validity Observer (Function)", () => {
   const types = Object.freeze(["change", "focusout"] as const) satisfies ReadonlyArray<EventType>;
@@ -17,7 +16,7 @@ describe("Create Form Validity Observer (Function)", () => {
   it("Exposes `bound` versions of the `FormValidityObserver`'s methods (excluding `configure`)", () => {
     /* ---------- Setup ---------- */
     // Derive `bound` methods
-    type BoundMethod = keyof Omit<FormValidityObserver, "configure">;
+    type BoundMethod = keyof Omit<typeof FormValidityObserver, "configure">;
     const members = Object.getOwnPropertyNames(FormValidityObserver.prototype);
     const boundMethods = members.filter((m): m is BoundMethod => m !== "constructor" && m !== "configure");
 

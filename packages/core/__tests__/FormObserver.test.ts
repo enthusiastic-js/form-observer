@@ -37,7 +37,7 @@ describe("Form Observer (Class)", () => {
    * @see {@link testCases}
    * @throws {TypeError} for any invalid test case
    */
-  function getFormObserverByTestCase(testCase: (typeof testCases)[number]): FormObserver {
+  function getFormObserverByTestCase(testCase: (typeof testCases)[number]): InstanceType<typeof FormObserver> {
     if (!testCases.includes(testCase)) {
       throw new TypeError("Expected a standardized test case for generating a `Form Observer`.");
     }

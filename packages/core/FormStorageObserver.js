@@ -1,87 +1,52 @@
 import FormObserver from "./FormObserver.js";
 import { assertElementIsForm } from "./utils/assertions.js";
-import type { OneOrMany, EventType, FormFieldEvent, FormField } from "./types.d.ts";
 
-/*
- * NOTE: Watch GitHub Issue for Static Methods on Interfaces: https://github.com/microsoft/TypeScript/issues/33892.
- * If this gets supported, then we can enforce these `static` method types on our physical `class expression`.
+/**
+ * @template {import("./types.d.ts").OneOrMany<import("./types.d.ts").EventType>} T
+ * @type {import("./types.d.ts").FormStorageObserverConstructor}
  */
-interface FormStorageObserverConstructor {
-  /**
-   * Provides a way to store an `HTMLFormElement`'s data in `localStorage` automatically in response to
-   * the events emitted from its fields.
-   *
-   * @param types The type(s) of event(s) that trigger(s) updates to `localStorage`.
-   * @param options
-   */
-  new <T extends OneOrMany<EventType>>(types: T, options?: FormStorageObserverOptions): FormObserver;
-
-  /** Loads all of the data in `localStorage` related to the provided `form`. */
-  load(form: HTMLFormElement): void;
-  /**
-   * Loads the data in `localStorage` for the field that has the provided `name` and belongs to
-   * the provided `form`.
-   */
-  load(form: HTMLFormElement, name: string): void;
-
-  /** Clears all of the data in `localStorage` related to the provided `form`. */
-  clear(form: HTMLFormElement): void;
-  /**
-   * Clears the data in `localStorage` for the field that has the provided `name` and belongs to
-   * the provided `form`.
-   */
-  clear(form: HTMLFormElement, name: string): void;
-}
-
-interface FormStorageObserverOptions {
-  /**
-   * Indicates whether or not the observer should automate the loading/removal of a form's `localStorage` data.
-   * - `loading` (Default): A form's data will automatically be loaded from `localStorage` when it is observed.
-   * - `deletion`: A form's data will automatically be removed from `localStorage` when it is unobserved.
-   * - `both`: Behaves as if `loading` and `deletion` were specified simultaneously.
-   * - `neither`: The observer will not automate any data loading or data removal.
-   */
-  automate?: "loading" | "deletion" | "both" | "neither";
+const FormStorageObserver = class extends FormObserver {
+  /** @readonly @type {Required<import("./types.d.ts").FormStorageObserverOptions>["automate"]} */
+  #automate;
 
   /**
-   * Indicates that the observer's event listener should be called during the event capturing phase
-   * instead of the event bubbling phase. Defaults to `false`.
-   * @see {@link https://www.w3.org/TR/DOM-Level-3-Events/#event-flow DOM Event Flow}
+   * @param {T} types
+   * @param {import("./types.d.ts").FormStorageObserverOptions} [options]
    */
-  useEventCapturing?: boolean;
-}
-
-const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneOrMany<EventType>>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Necessary due to a restriction in TS
-  extends FormObserver<any>
-{
-  readonly #automate: Required<FormStorageObserverOptions>["automate"];
-  constructor(types: T, { automate, useEventCapturing }: FormStorageObserverOptions = {}) {
-    super(types, eventListener, { passive: true, capture: useEventCapturing });
-    this.#automate = automate ?? "loading";
+  constructor(types, options) {
+    super(types, eventListener, { passive: true, capture: options?.useEventCapturing });
+    this.#automate = options?.automate ?? "loading";
   }
 
-  observe(form: HTMLFormElement): boolean {
+  /**
+   * @param {HTMLFormElement} form
+   * @returns {boolean}
+   */
+  observe(form) {
     const newlyObserved = super.observe(form);
     if (newlyObserved && (this.#automate === "loading" || this.#automate === "both")) FormStorageObserver.load(form);
     return newlyObserved;
   }
 
-  static load(form: HTMLFormElement): void;
-  static load(form: HTMLFormElement, name: string): void;
-  static load(form: HTMLFormElement, name?: string): void {
+  /**
+   * @param {HTMLFormElement} form
+   * @param {string} [name]
+   * @returns {void}
+   */
+  static load(form, name) {
     assertElementIsForm(form);
 
     /* -------------------- 1st Overload -------------------- */
     if (name == null) {
-      const loadedRadiogroups = new Set<string>();
+      /** @type {Set<string>} */
+      const loadedRadiogroups = new Set();
 
       for (let i = 0; i < form.elements.length; i++) {
-        const field = form.elements[i] as FormField;
+        const field = /** @type {import("./types.d.ts").FormField} */ (form.elements[i]);
 
         // Avoid loading the same `radiogroup` more than once
         if (loadedRadiogroups.has(field.name)) {
-          const radiogroup = form.elements.namedItem(field.name) as RadioNodeList;
+          const radiogroup = /** @type {RadioNodeList} */ (form.elements.namedItem(field.name));
           i += radiogroup.length - 2; // Skip all remaining radio buttons
           continue;
         }
@@ -99,7 +64,9 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
     /* ---------- Argument Validation ---------- */
     if (name === "") return; // Empty strings represent unnamed fields and are not allowed
 
-    const field = form.elements.namedItem(name) as FormField | RadioNodeList | null;
+    const field = /** @type {import("./types.d.ts").FormField | RadioNodeList | null} */ (
+      form.elements.namedItem(name)
+    );
     if (!field) return; // No field to load data into
 
     // Require that the provided `name` matches the name of the form field
@@ -121,14 +88,18 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
     const storedValueString = localStorage.getItem(getFieldKey(form.name, name));
     if (!storedValueString) return; // No value was stored for this field
 
-    const storedValue = JSON.parse(storedValueString) as unknown;
+    const storedValue = /** @type {unknown} */ (JSON.parse(storedValueString));
 
     // Checkboxes
-    if (field instanceof HTMLInputElement && field.type === "checkbox") field.checked = storedValue as boolean;
+    if (field instanceof HTMLInputElement && field.type === "checkbox") {
+      field.checked = /** @type {boolean} */ (storedValue);
+    }
     // Multi-Selects
     else if (field instanceof HTMLSelectElement && field.multiple && Array.isArray(storedValue)) {
       // Loop over the `options` as long as there are stored values to read
-      let brokenAt: number | undefined;
+      /** @type {number | undefined} */
+      let brokenAt;
+
       for (let i = 0; i < field.options.length; i++) {
         if (!storedValue.length) {
           brokenAt = i;
@@ -136,20 +107,24 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
         }
 
         const option = field.options[i];
-        const index = storedValue.findIndex((v: string) => v === option.value);
+        const index = storedValue.findIndex((/** @type {string} */ v) => v === option.value);
 
         option.selected = index >= 0;
         if (index >= 0) storedValue.splice(index, 1);
       }
 
       // Deselect all remaining `options` after the stored values are emptied
-      for (let i = brokenAt as number; i < field.options.length; i++) field.options[i].selected = false;
+      for (let i = /** @type {number} */ (brokenAt); i < field.options.length; i++) field.options[i].selected = false;
     }
     // Other Form Fields
-    else field.value = storedValue as string;
+    else field.value = /** @type {string} */ (storedValue);
   }
 
-  unobserve(form: HTMLFormElement): boolean {
+  /**
+   * @param {HTMLFormElement} form
+   * @returns {boolean}
+   */
+  unobserve(form) {
     const newlyUnobserved = super.unobserve(form);
     if (newlyUnobserved && (this.#automate === "deletion" || this.#automate === "both")) {
       FormStorageObserver.clear(form);
@@ -158,9 +133,12 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
     return newlyUnobserved;
   }
 
-  static clear(form: HTMLFormElement): void;
-  static clear(form: HTMLFormElement, name: string): void;
-  static clear(form: HTMLFormElement, name?: string): void {
+  /**
+   * @param {HTMLFormElement} form
+   * @param {string} [name]
+   * @returns {void}
+   */
+  static clear(form, name) {
     assertElementIsForm(form);
 
     // 2nd Overload
@@ -169,16 +147,24 @@ const FormStorageObserver: FormStorageObserverConstructor = class<T extends OneO
     // 1st Overload
     for (let i = 0; i < form.elements.length; i++) {
       // Note: We're assuming that this operation is fast enough not to warrant skipping duplicate radio buttons
-      const field = form.elements[i] as FormField;
+      const field = /** @type {import("./types.d.ts").FormField} */ (form.elements[i]);
       if (field.name) localStorage.removeItem(getFieldKey(form.name, field.name));
     }
   }
 };
 
 /* -------------------- Utility Functions -------------------- */
-// TODO: Should we expose a static `FormStorageObserver.save` method instead for greater flexibility?
-/** Event Listener used to store `form` data in `localStorage` */
-function eventListener(event: FormFieldEvent<EventType>): void {
+/*
+ * TODO: Should we expose a static `FormStorageObserver.save` method instead for greater flexibility?
+ * We'd have to update our tests if we did that.`
+ */
+/**
+ * Event Listener used to store `form` data in `localStorage`
+ *
+ * @param {import("./types.d.ts").FormFieldEvent<import("./types.d.ts").EventType>} event
+ * @returns {void}
+ */
+function eventListener(event) {
   const field = event.target;
   if (!field.name) return; // We only store "known" (named) form values
 
@@ -187,12 +173,15 @@ function eventListener(event: FormFieldEvent<EventType>): void {
   if (field instanceof HTMLOutputElement) return; // Value is derived from its inputs
   if (field instanceof HTMLObjectElement) return; // Doesn't seem like a relevant element for form data
 
-  const form = field.form as HTMLFormElement;
+  // eslint-disable-next-line prefer-destructuring -- ESLint doesn't understand the necessary TS syntax
+  const form = /** @type {HTMLFormElement} */ (field.form);
   const scope = getFieldKey(form.name, field.name);
 
   // Multiselects
   if (field instanceof HTMLSelectElement && field.multiple) {
-    const values: string[] = [];
+    /** @type {string[]} */
+    const values = [];
+
     for (let i = 0; i < field.selectedOptions.length; i++) values.push(field.selectedOptions[i].value);
 
     localStorage.setItem(scope, JSON.stringify(values));
@@ -212,9 +201,15 @@ function eventListener(event: FormFieldEvent<EventType>): void {
   localStorage.setItem(scope, JSON.stringify(field.value));
 }
 
-/** Derives the proper `localStorage` key for a given `form`'s field */
-function getFieldKey(formName: string, fieldName: string): `form:${string}:${string}` {
-  return `form:${formName || "global-scope"}:${fieldName}` as const;
+/**
+ * Derives the proper `localStorage` key for a given `form`'s field
+ *
+ * @param {string} formName
+ * @param {string} fieldName
+ * @returns {`form:${string}:${string}`}
+ */
+function getFieldKey(formName, fieldName) {
+  return `form:${formName || "global-scope"}:${fieldName}`;
 }
 
 export default FormStorageObserver;
