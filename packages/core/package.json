@@ -5,7 +5,7 @@
   "description": "A simple utility for reacting to events from a form's fields",
   "main": "build/index.js",
   "devDependencies": {
-    "@testing-library/dom": "^9.3.1"
+    "@testing-library/dom": "^9.3.3"
   },
   "author": "Isaiah Thomason",
   "license": "MIT",
