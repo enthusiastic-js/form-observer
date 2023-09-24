@@ -1281,6 +1281,18 @@ describe("Form Storage Observer (Class)", () => {
           expect(localStorage.getItem(getFieldKey(form.name, missingName))).toBe(null);
         });
       });
+
+      // Note: This test is for the `HTMLFormElement`-only Overload
+      it("Does not crash when it encounters `name`less fields", async () => {
+        document.body.innerHTML = `
+          <form aria-label="Test Form">
+            <label for="bad">Bad</label>
+            <input id="bad" type="text" />
+          </form>
+        `;
+
+        expect(() => FormStorageObserver.clear(screen.getByRole("form"))).not.toThrow();
+      });
     });
   });
 });

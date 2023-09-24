@@ -191,6 +191,15 @@ describe("Form Observer (Class)", () => {
         // Guard against invalid test cases
         else throwUnsupportedTestCaseError(testCase);
       });
+
+      it("Allows the `options` to be omitted", () => {
+        if (testCase === testCases[0]) expect(() => new FormObserver(types[0], listeners[0])).not.toThrow();
+        else if (testCase === testCases[1]) expect(() => new FormObserver(types, listeners[0])).not.toThrow();
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        else if (testCase === testCases[2]) expect(() => new FormObserver(types, listeners)).not.toThrow();
+        // Guard against invalid test cases
+        else throwUnsupportedTestCaseError(testCase);
+      });
     });
 
     describe("observe (Method)", () => {

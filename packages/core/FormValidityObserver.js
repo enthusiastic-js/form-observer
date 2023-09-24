@@ -156,9 +156,11 @@ const FormValidityObserver = class extends FormObserver {
         const { name } = field;
 
         // Avoid looping over the same `radiogroup` more than once
-        if (data.validatedRadiogroups.has(name))
+        if (data.validatedRadiogroups.has(name)) {
           i += /** @type {RadioNodeList} */ (controls.namedItem(name)).length - 1;
+        }
 
+        /* istanbul ignore else -- The structure of our code makes the `else` case impossible */
         if (getErrorOwningControl(field).getAttribute(attrs["aria-invalid"]) === String(true)) {
           this.#callAttentionTo(field);
           break;

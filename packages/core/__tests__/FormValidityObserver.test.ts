@@ -2329,6 +2329,47 @@ describe("Form Validity Observer (Class)", () => {
         /* -------------------- Automated Field Validation Tests -------------------- */
         beforeAll(() => expect(customError).toMatch(/<div>.+<\/div>/));
 
+        it("Is disabled for fields that don't have a `name`", async () => {
+          // Render Form
+          document.body.innerHTML = `
+            <form aria-label="Test Form">
+              <input type="text" value="Default Input" required />
+              <textarea required>Default Text</textarea>
+              <select required>
+                <option value="">Choose an Option</option>
+                <option value="something" selected>Stuff</option>
+              </select>
+            </form>
+          `;
+
+          const form = screen.getByRole<HTMLFormElement>("form");
+          const fields = Array.from(form.elements) as ValidatableField[];
+
+          // Verify that all fields start out nameless, required, and valid
+          fields.forEach((f) => {
+            expect(f).not.toHaveAttribute("name");
+            expect(f.required).toBe(true);
+            expect(f.validity.valid).toBe(true);
+          });
+
+          // Observe Form
+          new FormValidityObserver("input").observe(form);
+
+          // Run Assertions
+          for (let i = 0; i < fields.length; i++) {
+            const field = fields[i];
+            if (field instanceof HTMLSelectElement) await userEvent.selectOptions(field, "");
+            else await userEvent.clear(field);
+
+            // The nameless Field is Invalid ...
+            expect(field.validity.valid).toBe(false);
+
+            // ... but the `FormValidityObserver` refuses to manage its error state
+            expect(field).not.toHaveAttribute("aria-invalid");
+            expect(field).not.toHaveAccessibleDescription();
+          }
+        });
+
         describe.each(testCases)("for %s", (testCase) => {
           const [method, type, rendering] = testCase.split(" ") as [ErrorMethod, ErrorType, ErrorRendering];
           const accessible = method === "Accessible";
