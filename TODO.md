@@ -54,7 +54,8 @@
 
 ## Testing
 
-- [ ] It's weird that `beforeEach(vi.restoreAllMocks)` causes an error in TS. Maybe that ought to be a GitHub issue?
 - [ ] Figure out how to test Svelte components with Jest. (It's surprisingly harder than it ought to be.)
+- [ ] It's weird that `beforeEach(vi.restoreAllMocks)` causes an error in TS. Maybe that ought to be a GitHub issue?
 - [ ] Temporarily, we have to change `userEvent` to a named import because of https://github.com/testing-library/user-event/issues/1146. Hopefully this gets fixed soon. Maybe we can contribute something if we figure out this `NodeNext` headache on our own end.
-- [ ] Replace Jest "TypeScript Tests" with the equivalent in Vitest. It sounds like they have something [designed for this](https://vitest.dev/guide/testing-types.html)? But would we still be able to avoid false positives for code coverage with what they provide?
+- [ ] Replace Pure JS "TypeScript Tests" with the equivalent in Vitest. It sounds like Vitest has something [designed for this](https://vitest.dev/guide/testing-types.html)?
+  - **EDIT**: We're going to forego this for now. Because the [type-testing API](https://vitest.dev/guide/testing-types.html) is specific to Vitest, it seems better to just keep what we have since it will be more flexible in the long run (between different testing tools). What we currently have still enables type checking (WITHOUT the risk of false positives on code coverage), and it keeps us from having to learn a tool-specific API for asserting valid types.
