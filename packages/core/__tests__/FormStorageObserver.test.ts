@@ -14,11 +14,9 @@ describe("Form Storage Observer (Class)", () => {
 
   // General assertions that the test constants were set up correctly
   beforeAll(() => {
-    /* eslint-disable jest/no-standalone-expect */
     expect(types.length).toBeGreaterThan(1); // Correct `types` count
     expect(types).toHaveLength(new Set(types).size); // Unique types
     expect(types.every((t) => typeof t === "string")).toBe(true); // Types are strings
-    /* eslint-enable jest/no-standalone-expect */
   });
 
   beforeEach(() => {
@@ -344,7 +342,6 @@ describe("Form Storage Observer (Class)", () => {
 
     // ADDITIONAL general assertions that the LOCAL test constants were set up correctly
     beforeAll(() => {
-      /* eslint-disable jest/no-standalone-expect */
       // Test Options for select/multiselect/radio buttons
       expect(testOptions.length).toBeGreaterThan(2); // Correct values count
       expect(testOptions).toHaveLength(new Set(testOptions).size); // Unique values
@@ -360,7 +357,6 @@ describe("Form Storage Observer (Class)", () => {
       const fieldNames = Object.values(fields).map(({ name }) => name);
       expect(fieldNames).toHaveLength(new Set(fieldNames).size); // Unique field `name`s
       expect(fieldNames.filter((name: string) => !name)).toHaveLength(0); // No fields are unscoped (unnamed)
-      /* eslint-enable jest/no-standalone-expect */
     });
 
     // Given our heavy reliance on `localStorage` for these tests, we need to reset `localStorage` between each test
@@ -776,7 +772,6 @@ describe("Form Storage Observer (Class)", () => {
           FormStorageObserver.load(form);
 
           /* -------------------- Tests -------------------- */
-          /* eslint-disable jest/no-conditional-expect */
           // Verify that everything was loaded into the `form`'s fields correctly
           (Array.from(form.elements) as FormField[]).forEach((field) => {
             const storedValue = JSON.parse(localStorage.getItem(getFieldKey(form.name, field.name)) as string);
@@ -795,7 +790,6 @@ describe("Form Storage Observer (Class)", () => {
             // All other inputs
             expect(field).toHaveValue(storedValue);
           });
-          /* eslint-enable jest/no-conditional-expect */
         });
       });
 
@@ -815,7 +809,6 @@ describe("Form Storage Observer (Class)", () => {
             FormStorageObserver.load(form, fieldName);
 
             /* -------------------- Tests -------------------- */
-            /* eslint-disable jest/no-conditional-expect */
             // Verify that the stored data was loaded into the specified `form` field correctly
             const field = form.elements.namedItem(fieldName);
             const storedValue = JSON.parse(localStorage.getItem(getFieldKey(form.name, fieldName)) as string);
@@ -833,7 +826,6 @@ describe("Form Storage Observer (Class)", () => {
 
             // All other inputs
             expect(field).toHaveValue(storedValue);
-            /* eslint-enable jest/no-conditional-expect */
           });
         });
       });

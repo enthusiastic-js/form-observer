@@ -1,4 +1,5 @@
-/* eslint jest/expect-expect: ["error", { "assertFunctionNames": ["expect*"] }] */
+// TODO: Vitest ESLint doesn't seem to be able to handle helper `expect` functions yet... Maybe in the future?
+/* eslint vitest/expect-expect: "off" */
 /* eslint-disable testing-library/no-node-access -- We need node access to make these tests more clear and reliable */
 import { vi, beforeAll, beforeEach, describe, it, expect } from "vitest";
 import type { Mock } from "vitest";
@@ -73,11 +74,9 @@ describe("Form Validity Observer (Class)", () => {
   /* ---------------------------------------- Test Setup ---------------------------------------- */
   // General assertions that the test constants were set up correctly
   beforeAll(() => {
-    /* eslint-disable jest/no-standalone-expect */
     expect(types.length).toBeGreaterThan(1); // Correct `types` count
     expect(types).toHaveLength(new Set(types).size); // Unique types
     expect(types.every((t) => typeof t === "string")).toBe(true); // Types are strings
-    /* eslint-enable jest/no-standalone-expect */
   });
 
   beforeEach(() => {
@@ -2328,7 +2327,7 @@ describe("Form Validity Observer (Class)", () => {
         }
 
         /* -------------------- Automated Field Validation Tests -------------------- */
-        beforeAll(() => expect(customError).toMatch(/<div>.+<\/div>/)); // eslint-disable-line jest/no-standalone-expect
+        beforeAll(() => expect(customError).toMatch(/<div>.+<\/div>/));
 
         describe.each(testCases)("for %s", (testCase) => {
           const [method, type, rendering] = testCase.split(" ") as [ErrorMethod, ErrorType, ErrorRendering];
