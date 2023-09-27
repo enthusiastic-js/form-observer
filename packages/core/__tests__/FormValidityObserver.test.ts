@@ -173,14 +173,6 @@ describe("Form Validity Observer (Class)", () => {
         expectValidationFunctionsToBeEnabled(formValidityObserver);
       });
 
-      /*
-       * TODO: We're doing something wrong with how we're setting up the `FormObserver` classes that's causing
-       * JS (or at least _TS_) to wrongly think that the `name` for ALL of our classes is `_a`. It seems that,
-       * generally speaking, JS/TS can derive the correct `name` for an anonymous class. But in our case, the
-       * `name` won't be derived unless we explicitly supply it to the class expression (which we can't
-       * given all of the name clashing)... So ... What do we do? We'll figure that out later. For now,
-       * keep writing tests. Maybe migrating to JS docs will fix this problem too?
-       */
       it("Only allows 1 `form` to be observed at a time", () => {
         const originalForm = document.createElement("form");
         const formValidityObserver = new FormValidityObserver(types);
