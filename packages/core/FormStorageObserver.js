@@ -2,16 +2,39 @@ import FormObserver from "./FormObserver.js";
 import { assertElementIsForm } from "./utils/assertions.js";
 
 /**
- * @template {import("./types.d.ts").OneOrMany<import("./types.d.ts").EventType>} T
- * @type {import("./types.d.ts").FormStorageObserverConstructor}
+ * @typedef {Object} FormStorageObserverOptions
+ * @property {"loading" | "deletion" | "both" | "neither"} [automate] Indicates whether or not the observer should
+ * automate the loading/removal of a form's `localStorage` data.
+ * - `loading` (Default): A form's data will automatically be loaded from `localStorage` when it is observed.
+ * - `deletion`: A form's data will automatically be removed from `localStorage` when it is unobserved.
+ * - `both`: Behaves as if `loading` and `deletion` were specified simultaneously.
+ * - `neither`: The observer will not automate any data loading or data removal.
+ *
+ * @property {boolean} [useEventCapturing] Indicates that the observer's event listener should be called during the
+ * event capturing phase instead of the event bubbling phase. Defaults to `false`.
+ * See {@link https://www.w3.org/TR/DOM-Level-3-Events/#event-flow DOM Event Flow}
  */
-const FormStorageObserver = class extends FormObserver {
-  /** @readonly @type {Required<import("./types.d.ts").FormStorageObserverOptions>["automate"]} */
+
+class FormStorageObserver extends FormObserver {
+  /** @readonly @type {Required<FormStorageObserverOptions>["automate"]} */
   #automate;
 
   /**
-   * @param {T} types
-   * @param {import("./types.d.ts").FormStorageObserverOptions} [options]
+   * @template {import("./types.d.ts").OneOrMany<import("./types.d.ts").EventType>} T
+   * @overload
+   *
+   * Provides a way to store an `HTMLFormElement`'s data in `localStorage` automatically in response to
+   * the events emitted from its fields.
+   *
+   * @param {T} types The type(s) of event(s) that trigger(s) updates to `localStorage`.
+   * @param {FormStorageObserverOptions} [options]
+   * @returns {FormStorageObserver}
+   */
+
+  /**
+   * @param {import("./types.d.ts").OneOrMany<import("./types.d.ts").EventType>} types The type(s) of event(s)
+   * that trigger(s) updates to `localStorage`.
+   * @param {FormStorageObserverOptions} [options]
    */
   constructor(types, options) {
     super(types, eventListener, { passive: true, capture: options?.useEventCapturing });
@@ -27,6 +50,21 @@ const FormStorageObserver = class extends FormObserver {
     if (newlyObserved && (this.#automate === "loading" || this.#automate === "both")) FormStorageObserver.load(form);
     return newlyObserved;
   }
+
+  /**
+   * @overload Loads all of the data in `localStorage` related to the provided `form`.
+   * @param {HTMLFormElement} form
+   * @returns {void}
+   */
+
+  /**
+   * @overload Loads the data in `localStorage` for the field that has the provided `name` and belongs to
+   * the provided `form`.
+   *
+   * @param {HTMLFormElement} form
+   * @param {string} name
+   * @returns {void}
+   */
 
   /**
    * @param {HTMLFormElement} form
@@ -134,6 +172,21 @@ const FormStorageObserver = class extends FormObserver {
   }
 
   /**
+   * @overload Clears all of the data in `localStorage` related to the provided `form`.
+   * @param {HTMLFormElement} form
+   * @returns {void}
+   */
+
+  /**
+   * @overload Clears the data in `localStorage` for the field that has the provided `name` and belongs to
+   * the provided `form`.
+   *
+   * @param {HTMLFormElement} form
+   * @param {string} name
+   * @returns {void}
+   */
+
+  /**
    * @param {HTMLFormElement} form
    * @param {string} [name]
    * @returns {void}
@@ -151,7 +204,7 @@ const FormStorageObserver = class extends FormObserver {
       if (field.name) localStorage.removeItem(getFieldKey(form.name, field.name));
     }
   }
-};
+}
 
 /* -------------------- Utility Functions -------------------- */
 /*

@@ -1,10 +1,6 @@
 import { assertElementIsForm } from "./utils/assertions.js";
 
-/**
- * @template {import("./types.d.ts").OneOrMany<import("./types.d.ts").EventType>} T
- * @type {import("./types.d.ts").FormObserverConstructor}
- */
-const FormObserver = class {
+class FormObserver {
   /* ---------- Constructor-related Fields. (Must be compatible with `document.addEventListener`.) ---------- */
   /** @readonly @type {ReadonlyArray<import("./types.d.ts").EventType>} */
   #types;
@@ -22,8 +18,67 @@ const FormObserver = class {
    */
   #observedForms = new Set();
 
+  /* ---------------------------------------- Constructor Setup ---------------------------------------- */
   /**
-   * @param {T} types
+   * Provides a way to respond to events emitted by the fields belonging to an `HTMLFormElement`.
+   *
+   * @template {import("./types.d.ts").EventType} T1
+   * @overload
+   *
+   * @param {T1} type The type of event to respond to.
+   * @param {import("./types.d.ts").FormFieldListener<T1>} listener The function to call when a form field
+   * emits an event matching the provided `type`.
+   * @param {import("./types.d.ts").ListenerOptions} [options] The `addEventListener` options for the provided
+   * `listener`.
+   *
+   * See {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
+   * @returns {FormObserver}
+   */
+
+  /**
+   * Provides a way to respond to events emitted by the fields belonging to an `HTMLFormElement`.
+   *
+   * @template {ReadonlyArray<import("./types.d.ts").EventType>} T2
+   * @overload
+   *
+   * @param {T2} types An array containing the types of events to respond to.
+   * @param {import("./types.d.ts").FormFieldListener<T2[number]>} listener The function to call when a form field emits
+   * an event specified in the list of `types`.
+   * @param {import("./types.d.ts").ListenerOptions} [options] The `addEventListener` options for the provided
+   * `listener`.
+   *
+   * See {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
+   * @returns {FormObserver}
+   */
+
+  /**
+   * Provides a way to respond to events emitted by the fields belonging to an `HTMLFormElement`.
+   *
+   * @template {ReadonlyArray<import("./types.d.ts").EventType>} T3
+   * @overload
+   *
+   * @param {T3} types An array containing the types of events to respond to.
+   * @param {import("./types.d.ts").TypesToListeners<T3>} listeners An array of event listeners corresponding
+   * to the provided list of `types`. When an event matching one of the `types` is emitted by a form field, its
+   * corresponding listener function will be called.
+   *
+   * For example, when a field emits an event matching the 2nd type in `types`, the 2nd listener will be called.
+   * @param {import("./types.d.ts").OneOrMany<import("./types.d.ts").ListenerOptions>} [options] An array of
+   * `addEventListener` options corresponding to the provided list of `listeners`. When a listener is attached
+   * to a form's `Document`, the listener's corresponding set of options will be used to configure it.
+   *
+   * For example, when the 2nd listener in `listeners` is attached to the `Document`, it will use the 2nd value
+   * in the `options` array for its configuration.
+   *
+   * If `options` is a single value instead of an array, then that value will be used to configure all of
+   * the listeners.)
+   *
+   * See {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
+   * @returns {FormObserver}
+   */
+
+  /**
+   * @param {import("./types.d.ts").OneOrMany<import("./types.d.ts").EventType>} types
    * @param {import("./types.d.ts").OneOrMany<import("./types.d.ts").FormFieldListener<import("./types.d.ts").EventType>>} listeners
    * @param {import("./types.d.ts").OneOrMany<import("./types.d.ts").ListenerOptions>} options
    */
@@ -69,9 +124,14 @@ const FormObserver = class {
     else this.#options = Array.from({ length: types.length }, () => options);
   }
 
+  /* ---------------------------------------- Class Methods ---------------------------------------- */
   /**
+   * Instructs the observer to listen for events emitted from the provided `form`'s fields.
+   * The observer will only listen for events which match the types that were specified
+   * during its instantiation.
+   *
    * @param {HTMLFormElement} form
-   * @returns {boolean}
+   * @returns {boolean} `true` if the `form` was not already being observed, and `false` otherwise.
    */
   observe(form) {
     assertElementIsForm(form);
@@ -98,8 +158,10 @@ const FormObserver = class {
   }
 
   /**
+   * Stops the observer from listening for any events emitted from the provided `form`'s fields.
+   *
    * @param {HTMLFormElement} form
-   * @returns {boolean}
+   * @returns {boolean} `true` if the `form` was originally being observed, and `false` otherwise.
    */
   unobserve(form) {
     assertElementIsForm(form);
@@ -129,11 +191,11 @@ const FormObserver = class {
     return true;
   }
 
-  /** @returns {void} */
+  /** Stops the observer from listening for any events emitted from all `form` fields. @returns {void} */
   disconnect() {
     this.#observedForms.forEach((form) => this.unobserve(form));
   }
-};
+}
 
 /**
  * @param {unknown} types
