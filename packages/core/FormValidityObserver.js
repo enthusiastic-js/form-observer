@@ -3,30 +3,109 @@ import FormObserver from "./FormObserver.js";
 const radiogroupSelector = "fieldset[role='radiogroup']";
 const attrs = Object.freeze({ "aria-describedby": "aria-describedby", "aria-invalid": "aria-invalid" });
 
-/**
- * @template {import("./types.d.ts").OneOrMany<import("./types.d.ts").EventType>} T
- * @template M
- * @type {import("./types.d.ts").FormValidityObserverConstructor}
+/** @template M @typedef {M | ((field: import("./types.d.ts").FormField) => M)} ErrorMessage */
+/** @template M 
+ * @typedef {
+     | ErrorMessage<string>
+     | { render: true; message: ErrorMessage<M> }
+     | { render?: false; message: ErrorMessage<string> }
+   } ErrorDetails
  */
-const FormValidityObserver = class extends FormObserver {
+
+/**
+ * The errors to display to the user in the various situations where a field fails validation.
+ * @template M
+ * @typedef {Object} ValidationErrors
+ *
+ * 
+ * @property {ErrorDetails<M>} [required]
+ * @property {ErrorDetails<M>} [minlength]
+ * @property {ErrorDetails<M>} [min]
+ * @property {ErrorDetails<M>} [maxlength]
+ * @property {ErrorDetails<M>} [max]
+ * @property {ErrorDetails<M>} [step]
+ * @property {ErrorDetails<M>} [type]
+ * @property {ErrorDetails<M>} [pattern]
+ *
+ * 
+ * @property {ErrorDetails<M>} [badinput] The error to display when the user's input is malformed, such as an
+ * incomplete date.
+ * See {@link https://developer.mozilla.org/en-US/docs/Web/API/ValidityState/badInput ValidityState.badInput}
+ *
+ * @property {
+     (field: import("./types.d.ts").FormField) => void | ErrorDetails<M> | Promise<void | ErrorDetails<M>>
+   } [validate]  A function that runs custom validation logic for a field. This validation is always run _last_.
+ */
+
+/**
+ * @template M
+ * @typedef {Object} FormValidityObserverOptions
+ *
+ * @property {boolean} [useEventCapturing] Indicates that the observer's event listener should be called during
+ * the event capturing phase instead of the event bubbling phase. Defaults to `false`.
+ * See {@link https://www.w3.org/TR/DOM-Level-3-Events/#event-flow DOM Event Flow}
+ *
+ * @property {(fieldOrRadiogroup: import("./types.d.ts").FormField) => void} [scroller] The function used to scroll a
+ * `field` (or `radiogroup`) that has failed validation into view. Defaults to a function that calls
+ * `fieldOrRadiogroup.scrollIntoView()`.
+ *
+ * @property {(errorContainer: HTMLElement, errorMessage: M) => void} [renderer] The function used to render
+ * error messages to the DOM when a validation constraint's `render` option is `true`. Defaults to a function that
+ * accepts a string and renders it to the DOM as raw HTML.
+ *
+ * You can replace the default function with your own `renderer` that renders other types of error messages
+ * (e.g., DOM Nodes, React Elements, etc.) to the DOM instead.
+ */
+
+/**
+ * @typedef {Object} ValidateFieldOptions
+ * @property {boolean} [focus] Indicates that the field should be focused if it fails validation. Defaults to `false`.
+ */
+
+/**
+ * @typedef {Object} ValidateFieldsOptions
+ * @property {boolean} [focus] Indicates that the _first_ field in the DOM that fails validation should be focused.
+ * Defaults to `false`.
+ */
+
+/** @template [M=string] */
+class FormValidityObserver extends FormObserver {
   /** @type {HTMLFormElement | undefined} The `form` currently being observed by the `FormValidityObserver` */
   #form;
 
-  /** @type {Required<import("./types.d.ts").FormValidityObserverOptions<M>>["scroller"]} */
+  /** @readonly @type {Required<FormValidityObserverOptions<M>>["scroller"]} */
   #scrollTo;
 
-  /** @type {Required<import("./types.d.ts").FormValidityObserverOptions<M>>["renderer"]} */
+  /** @readonly @type {Required<FormValidityObserverOptions<M>>["renderer"]} */
   #renderError;
 
   /**
-   * @type {Map<string, import("./types.d.ts").ValidationErrors<M> | undefined>}
+   * @readonly
+   * @type {Map<string, ValidationErrors<M> | undefined>}
    * The {@link configure}d error messages for the various fields belonging to the observed `form`
    */
   #errorMessagesByFieldName = new Map();
 
+  /*
+   * TODO: It's a little weird that we have to declare `M` twice for things to work. Maybe it's related to
+   * illegal generic constructors?
+   */
   /**
-   * @param {T} types
-   * @param {import("./types.d.ts").FormValidityObserverOptions<M>} [options]
+   * @template {import("./types.d.ts").OneOrMany<import("./types.d.ts").EventType>} T
+   * @template [M=string]
+   * @overload
+   *
+   * Provides a way to validate an `HTMLFormElement`'s fields (and to display _accessible_ errors for those fields)
+   * in response to the events that the fields emit.
+   *
+   * @param {T} types The type(s) of event(s) that trigger(s) form field validation.
+   * @param {FormValidityObserverOptions<M>} [options]
+   * @returns {FormValidityObserver<M>}
+   */
+
+  /**
+   * @param {import("./types.d.ts").OneOrMany<import("./types.d.ts").EventType>} types
+   * @param {FormValidityObserverOptions<M>} [options]
    */
   constructor(types, options) {
     /**
@@ -42,14 +121,20 @@ const FormValidityObserver = class extends FormObserver {
 
     super(types, eventListener, { passive: true, capture: options?.useEventCapturing });
     this.#scrollTo = options?.scroller ?? defaultScroller;
-    this.#renderError =
-      options?.renderer ??
-      /** @type {Required<import("./types.d.ts").FormValidityObserverOptions<M>>["renderer"]} */ (defaultErrorRenderer);
+    this.#renderError = /** @type {any} Necessary because of double `M`s */ (options?.renderer ?? defaultErrorRenderer);
   }
 
   /**
+   * Instructs the observer to watch the validity state of the provided `form`'s fields.
+   * Also connects the `form` to the observer's validation functions.
+   *
+   * (_Automated_ field validation will only occur when a field emits an event having a type
+   * that was specified during the observer's instantiation.)
+   *
+   * **Note: A `FormValidityObserver` can only watch 1 form at a time.**
+   *
    * @param {HTMLFormElement} form
-   * @returns {boolean}
+   * @returns {boolean} `true` if the `form` was not already being observed, and `false` otherwise.
    */
   observe(form) {
     if (this.#form && form instanceof HTMLFormElement && form !== this.#form) {
@@ -62,8 +147,11 @@ const FormValidityObserver = class extends FormObserver {
   }
 
   /**
+   * Stops the observer from watching the validity state of the provided `form`'s fields.
+   * Also disconnects the `form` from the observer's validation functions.
+   *
    * @param {HTMLFormElement} form
-   * @returns {boolean}
+   * @returns {boolean} `true` if the `form` was originally being observed, and `false` otherwise.
    */
   unobserve(form) {
     if (form === this.#form) {
@@ -74,14 +162,22 @@ const FormValidityObserver = class extends FormObserver {
     return super.unobserve(form);
   }
 
-  /** @returns {void} */
+  /**
+   * Behaves the same way as `unobserve`, but without the need to provide the currently-observed
+   * `form` as an argument. @returns {void}
+   */
   disconnect() {
     if (this.#form) this.unobserve(this.#form);
   }
 
   /**
-   * @param {import("./types.d.ts").ValidateFieldsOptions} [options]
-   * @returns {boolean | Promise<boolean>}
+   * Validates all of the observed form's fields.
+   *
+   * Runs asynchronously if _any_ of the validated fields use an asynchronous function for the
+   * {@link ValidationErrors.validate validate} constraint. Runs synchronously otherwise.
+   *
+   * @param {ValidateFieldsOptions} [options]
+   * @returns {boolean | Promise<boolean>} `true` if all of the validated fields pass validation and `false` otherwise.
    */
   validateFields(options) {
     assertFormExists(this.#form);
@@ -137,7 +233,7 @@ const FormValidityObserver = class extends FormObserver {
    *
    * @param {{ pass: boolean; validatedRadiogroups: Set<string> }} data The internal data from `validateFields`
    * that needs to be shared with this method
-   * @param {import("./types.d.ts").ValidateFieldsOptions | undefined} options The options that were
+   * @param {ValidateFieldsOptions | undefined} options The options that were
    * used for the form's validation
    *
    * @returns {boolean} `true` if the form passed validation (indicated by a truthy `data.pass` value)
@@ -172,9 +268,14 @@ const FormValidityObserver = class extends FormObserver {
   }
 
   /**
+   * Validates the form field with the specified `name`.
+   *
+   * Runs asynchronously for fields whose {@link ValidationErrors.validate validate} constraint is
+   * an asynchronous function. Runs synchronously otherwise.
+   *
    * @param {string} name
-   * @param {import("./types.d.ts").ValidateFieldOptions} [options]
-   * @returns {boolean | Promise<boolean>}
+   * @param {ValidateFieldOptions} [options]
+   * @returns {boolean | Promise<boolean>} `true` if the field passes validation and `false` otherwise.
    */
   validateField(name, options) {
     const field = this.#getTargetField(name);
@@ -201,22 +302,22 @@ const FormValidityObserver = class extends FormObserver {
    * a field validation attempt.
    *
    * @param {import("./types.d.ts").FormField} field The `field` for which the validation was run
-   * @param {import("./types.d.ts").ErrorDetails<M> | void} error The error to apply to the `field`, if any
-   * @param {import("./types.d.ts").ValidateFieldOptions | undefined} opts The options that were
-   * used for the field's validation
+   * @param {ErrorDetails<M> | void} error The error to apply to the `field`, if any
+   * @param {ValidateFieldOptions | undefined} options The options that were used for the field's validation
    *
    * @returns {boolean} `true` if the field passed validation (indicated by a falsy `error` value) and `false` otherwise.
    */
-  #resolveValidation(field, error, opts) {
+  #resolveValidation(field, error, options) {
     if (!error) {
       this.clearFieldError(field.name);
       return true;
     }
 
-    if (typeof error === "object") this.setFieldError(field.name, error.message, error.render);
-    else this.setFieldError(field.name, error);
+    if (typeof error === "object") {
+      this.setFieldError(field.name, /** @type {any} */ (error).message, /** @type {any} */ (error).render);
+    } else this.setFieldError(field.name, error);
 
-    if (opts?.focus) this.#callAttentionTo(field);
+    if (options?.focus) this.#callAttentionTo(field);
     return false;
   }
 
@@ -239,9 +340,32 @@ const FormValidityObserver = class extends FormObserver {
     field.focus({ preventScroll: true }); // TODO: Add `focusVisible: true` when it's supported by Browsers / TypeScript
   }
 
+  // TODO: Do we need to duplicate the documenation for these overloads? (Must wait until GitHub bug is resolved.)
+  /**
+   * @overload Marks the form field with the specified `name` as invalid (`[aria-invalid="true"]`)
+   * and applies the provided error `message` to it.
+   *
+   * @param {string} name The name of the invalid form field
+   * @param {ErrorMessage<M>} message The error message to apply to the invalid form field
+   * @param {true} render When `true`, the error `message` will be rendered to the DOM using the observer's
+   * {@link FormValidityObserverOptions.renderer `renderer`} function.
+   * @returns {void}
+   */
+
+  /**
+   * @overload Marks the form field with the specified `name` as invalid (`[aria-invalid="true"]`)
+   * and applies the provided error `message` to it.
+   *
+   * @param {string} name The name of the invalid form field
+   * @param {ErrorMessage<string>} message The error message to apply to the invalid form field
+   * @param {false} [render] When `true`, the error `message` will be rendered to the DOM using the observer's
+   * {@link FormValidityObserverOptions.renderer `renderer`} function.
+   * @returns {void}
+   */
+
   /**
    * @param {string} name
-   * @param {import("./types.d.ts").ErrorMessage<string> | import("./types.d.ts").ErrorMessage<M>} message
+   * @param {ErrorMessage<string> | ErrorMessage<M>} message
    * @param {boolean} [render]
    * @returns {void}
    */
@@ -277,6 +401,7 @@ const FormValidityObserver = class extends FormObserver {
   }
 
   /**
+   * Marks the form field with the specified `name` as valid (`[aria-invalid="false"]`) and clears its error message.
    * @param {string} name
    * @returns {void}
    */
@@ -296,9 +421,22 @@ const FormValidityObserver = class extends FormObserver {
   }
 
   /**
-   * @param {string} name
-   * @param {import("./types.d.ts").ValidationErrors<M>} errorMessages
+   * Configures the error messages that will be displayed for a form field's validation constraints.
+   * If an error message is not configured for a validation constraint, then the browser's default error message
+   * for that constraint will be used instead.
+   *
+   * Note: If the field is _only_ using the browser's default error messages, it does _not_ need to be `configure`d.
+   *
+   * @param {string} name The `name` of the form field
+   * @param {ValidationErrors<M>} errorMessages A `key`-`value` pair of validation constraints (key)
+   * and their corresponding error messages (value)
    * @returns {void}
+   *
+   * @example
+   * // If the field is empty, the error will display: "You must provide a credit card number".
+   * // If the field is too long, the error will display the browser's `tooLong` error string.
+   * // If the field passes all of its validation constraints, no error message will be shown.
+   * observer.configure("credit-card", { required: "You must provide a credit card number" })
    */
   configure(name, errorMessages) {
     if (typeof window === "undefined") return;
@@ -318,7 +456,7 @@ const FormValidityObserver = class extends FormObserver {
     );
     return field instanceof RadioNodeList ? /** @type {HTMLInputElement} */ (field[0]) : field;
   }
-};
+}
 
 export default FormValidityObserver;
 
@@ -370,7 +508,7 @@ function messageIsErrorFunction(value) {
  * Returns the **prioritized** field constraint that failed validation
  *
  * @param {ValidityState} validity
- * @return {keyof Omit<import("./types.d.ts").ValidationErrors<unknown>, "validate"> | undefined}
+ * @return {keyof Omit<ValidationErrors<unknown>, "validate"> | undefined}
  */
 function getBrokenConstraint(validity) {
   // Malformed Inputs
