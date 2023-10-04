@@ -268,7 +268,7 @@ class MyCustomObserver extends FormObserver {
 }
 ```
 
-If you're interested in creating your own extension of the `FormObserver` but don't know where to start, we recommend looking at the [implementation](https://github.com/enthusiastic-js/form-observer/blob/main/src/FormStorageObserver.ts) of the `FormStorageObserver` for an intermediate-level example of extending the base `FormObserver`'s functionality. It's only ~215 lines of code -- with about 20% of the code being JS Docs.
+If you're interested in creating your own extension of the `FormObserver` but don't know where to start, we recommend looking at the [implementation](https://github.com/enthusiastic-js/form-observer/blob/main/src/FormStorageObserver.ts) of the `FormStorageObserver` for an intermediate-level example of extending the base `FormObserver`'s functionality. It's only ~269 lines of code -- with about 33% of the code being types/JSDocs.
 
 Of course, using the `extends` clause isn't the only way to create reusable logic related to the `FormObserver`. For instance, you can also encapsulate whatever reusable logic you want within a regular function that closes over an instance of the `FormObserver`.
 
