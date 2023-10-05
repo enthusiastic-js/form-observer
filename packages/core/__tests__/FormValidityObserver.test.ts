@@ -6,9 +6,10 @@ import type { Mock } from "vitest";
 import { screen } from "@testing-library/dom";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
-import type { EventType, FormField } from "../types.d.ts";
+import type { EventType, FormField, ValidatableField } from "../types.d.ts";
 import FormObserver from "../FormObserver.js";
 import FormValidityObserver from "../FormValidityObserver.js";
+import type { ValidationErrors } from "../FormValidityObserver.js";
 
 /*
  * NOTE: You may find that some of these tests are a little redundant in the assertions that they run. For
@@ -31,8 +32,8 @@ describe("Form Validity Observer (Class)", () => {
   const types = Object.freeze(["change", "focusout"] as const) satisfies ReadonlyArray<EventType>;
 
   /* ---------------------------------------- Global Helpers ---------------------------------------- */
-  /** An `HTMLElement` that is able to partake in form field validation */
-  type ValidatableField = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+  /** A **_native_** `HTMLElement` that is able to partake in form field validation */
+  type NativeFormField = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
   /** The options for the {@link renderField} utility function */
   interface RenderFieldOptions {
@@ -47,7 +48,7 @@ describe("Form Validity Observer (Class)", () => {
    * @param options
    * @returns References to the `field` that was provided and the `form` in which it was rendered.
    */
-  function renderField<T extends ValidatableField>(field: T, { accessible }: RenderFieldOptions = {}) {
+  function renderField<T extends NativeFormField>(field: T, { accessible }: RenderFieldOptions = {}) {
     const form = document.createElement("form");
     form.setAttribute("aria-label", "Form with Single Field");
     form.appendChild(field);
@@ -122,10 +123,7 @@ describe("Form Validity Observer (Class)", () => {
 
   describe("Overriden Core Methods", () => {
     /* -------------------- Assertion Helpers for Core Methods -------------------- */
-    function expectValidationFunctionsToBeEnabled(
-      observer: InstanceType<typeof FormValidityObserver>,
-      enabled = true,
-    ): void {
+    function expectValidationFunctionsToBeEnabled(observer: FormValidityObserver, enabled = true): void {
       const fakeMessage = "This error doesn't matter";
       const fakeFieldName = "field-not-in-form";
 
@@ -361,7 +359,7 @@ describe("Form Validity Observer (Class)", () => {
      *
      * @returns A reference to the rendered error container
      */
-    function renderErrorContainerForField(field: ValidatableField | HTMLFieldSetElement): HTMLDivElement {
+    function renderErrorContainerForField(field: NativeFormField | HTMLFieldSetElement): HTMLDivElement {
       const errorId = `${field instanceof HTMLFieldSetElement && !field.name ? "fieldset" : field.name}-error`;
       field.setAttribute(attrs["aria-describedby"], errorId);
       return document.body.appendChild(createElementWithProps("div", { id: errorId }));
@@ -375,7 +373,7 @@ describe("Form Validity Observer (Class)", () => {
      * **WARNING: DO NOT call this function inside the `clearFieldError` tests (i.e., the `clearFieldError`
      * describe block)! Use regular assertions that meet the test criteria instead.**
      */
-    function expectNoErrorsFor(field: ValidatableField): void {
+    function expectNoErrorsFor(field: NativeFormField): void {
       // Unique Validation for Radio Buttons
       if (field.type === "radio") {
         const radiogroup = field.closest<HTMLFieldSetElement>("fieldset[role='radiogroup']");
@@ -427,7 +425,7 @@ describe("Form Validity Observer (Class)", () => {
      * was rendered _as raw HTML_. `none` (**default**) indicates that the message was created as a pure string,
      * but not accessibly.
      */
-    function expectErrorFor(field: ValidatableField, error: string, method: "none" | "a11y" | "html" = "none"): void {
+    function expectErrorFor(field: NativeFormField, error: string, method: "none" | "a11y" | "html" = "none"): void {
       expect(error).not.toBe("");
 
       // Unique Validation for Radio Buttons
@@ -753,7 +751,7 @@ describe("Form Validity Observer (Class)", () => {
 
         // Render Form
         const { form } = renderEmptyFields();
-        const orphanField = createElementWithProps("textarea", { name: fieldName }) satisfies ValidatableField;
+        const orphanField = createElementWithProps("textarea", { name: fieldName }) satisfies NativeFormField;
         document.body.appendChild(orphanField);
         formValidityObserver.observe(form);
 
@@ -962,7 +960,7 @@ describe("Form Validity Observer (Class)", () => {
 
         // Render Forms
         const { form } = renderEmptyFields();
-        const orphanedField = createElementWithProps("textarea", { name: fieldName }) satisfies ValidatableField;
+        const orphanedField = createElementWithProps("textarea", { name: fieldName }) satisfies NativeFormField;
         form.appendChild(orphanedField);
         formValidityObserver.observe(form);
 
@@ -987,7 +985,7 @@ describe("Form Validity Observer (Class)", () => {
 
         // Render Forms
         const { form } = renderEmptyFields();
-        const transientField = createElementWithProps("textarea", { name: fieldName }) satisfies ValidatableField;
+        const transientField = createElementWithProps("textarea", { name: fieldName }) satisfies NativeFormField;
         form.appendChild(transientField);
         formValidityObserver.observe(form);
 
@@ -1055,6 +1053,25 @@ describe("Form Validity Observer (Class)", () => {
         // Success
         field.value = "Some Value"; // Avoid triggering events
         expect(formValidityObserver.validateField(field.name)).toBe(true);
+      });
+
+      it("Returns `true` when a field cannot participate in constraint validation, even if it is invalid", () => {
+        // Render Field
+        const { form, field } = renderField(createElementWithProps("input", { name: "input", required: true }));
+        const formValidityObserver = new FormValidityObserver(types[0]);
+        formValidityObserver.observe(form);
+
+        expect(field.validity.valid).toBe(false);
+
+        // Validation is skipped when the field is barred from constraint validation
+        field.disabled = true;
+        expect(field.willValidate).toBe(false);
+        expect(formValidityObserver.validateField(field.name)).toBe(true);
+
+        // Validation is enforced when the field participates in costraint validation
+        field.disabled = false;
+        expect(field.willValidate).toBe(true);
+        expect(formValidityObserver.validateField(field.name)).toBe(false);
       });
 
       it("Sets the field's error when it fails validation", () => {
@@ -1379,7 +1396,7 @@ describe("Form Validity Observer (Class)", () => {
           pattern: "Okay. Here's what I want...",
           badinput: "Seriously, I cannot understand a single thing you're saying.",
           validate: (f: HTMLInputElement) => `The value ${f.value} is incorrect, bro.`,
-        }) satisfies Required<Parameters<(typeof formValidityObserver)["configure"]>[1]>;
+        }) satisfies Required<ValidationErrors<string, HTMLInputElement>>;
 
         // Require that ALL of the custom error messages are UNIQUE. (This is just for clarity/future-proofing)
         Object.values(errorMessages).forEach((e, i, a) =>
@@ -1737,7 +1754,7 @@ describe("Form Validity Observer (Class)", () => {
 
         // Verify Required Test Conditions
         const formControls = Array.from(form.elements);
-        const validatableFields = formControls.filter((e): e is ValidatableField => e.tagName !== "FIELDSET");
+        const validatableFields = formControls.filter((e): e is NativeFormField => e.tagName !== "FIELDSET");
         const uniqueFieldNames = new Set(validatableFields.map((f) => f.name));
 
         // We must have MULTIPLE validatable fields in the `form`
@@ -1761,7 +1778,7 @@ describe("Form Validity Observer (Class)", () => {
         formControls.forEach((f) => expect(f.validity.valid).toBe(true));
 
         // We must have MULTIPLE validatable fields in the `form`
-        const validatableFields = formControls.filter((e): e is ValidatableField => e.tagName !== "FIELDSET");
+        const validatableFields = formControls.filter((e): e is NativeFormField => e.tagName !== "FIELDSET");
         const uniqueFieldNames = new Set(validatableFields.map((f) => f.name));
         expect(uniqueFieldNames.size).toBeGreaterThan(1);
 
@@ -1781,7 +1798,7 @@ describe("Form Validity Observer (Class)", () => {
         formControls.forEach((f) => expect(f.validity.valid).toBe(true));
 
         // We must have MULTIPLE validatable fields in the `form`
-        const validatableFields = formControls.filter((e): e is ValidatableField => e.tagName !== "FIELDSET");
+        const validatableFields = formControls.filter((e): e is NativeFormField => e.tagName !== "FIELDSET");
         const uniqueFieldNames = new Set(validatableFields.map((f) => f.name));
         expect(uniqueFieldNames.size).toBeGreaterThan(1);
 
@@ -2058,7 +2075,7 @@ describe("Form Validity Observer (Class)", () => {
         // Render Fields
         const { form, fieldset, fields } = renderEmptyFields();
         const firstRadio = fieldset.elements[0] as HTMLInputElement;
-        const firstField = form.elements[0] as ValidatableField;
+        const firstField = form.elements[0] as NativeFormField;
 
         [fieldset, ...fields].forEach(renderErrorContainerForField);
         [fieldset, firstRadio, ...fields].forEach((f) => {
@@ -2301,7 +2318,7 @@ describe("Form Validity Observer (Class)", () => {
 
         /* -------------------- Assertion Helpers for Automated Field Validation Tests -------------------- */
         /** Asserts that for a given `testCase`, the provided `field` properly displays the correct error message. */
-        function expectInvalidField(field: ValidatableField, testCase: TestTypes): void {
+        function expectInvalidField(field: NativeFormField, testCase: TestTypes): void {
           if (!testCases.includes(testCase)) throw new TypeError(`Test Case not supported: ${testCase}.`);
 
           // Determine whether the error should be what the user provides or what the browser provides by default
@@ -2335,7 +2352,7 @@ describe("Form Validity Observer (Class)", () => {
           `;
 
           const form = screen.getByRole<HTMLFormElement>("form");
-          const fields = Array.from(form.elements) as ValidatableField[];
+          const fields = Array.from(form.elements) as NativeFormField[];
 
           // Verify that all fields start out nameless, required, and valid
           fields.forEach((f) => {
@@ -2727,6 +2744,33 @@ describe("Form Validity Observer (Class)", () => {
       if (Math.random() < 0.5) return (f) => ({ message: f.childElementCount, render: true }); // Bad render type
       return Promise.resolve(field.childElementCount); // Needs to be a `string`
     },
+  });
+
+  /* -------------------- Type Tests for Dynamic Fields -------------------- */
+  /* ---------- `setFieldError` ---------- */
+  // Both specific AND general types work
+  new FormValidityObserver(event1).setFieldError(name, (_: HTMLSelectElement) => "");
+  new FormValidityObserver(event1).setFieldError(name, (_: HTMLInputElement) => "");
+  new FormValidityObserver(event1).setFieldError(name, (_: ValidatableField) => "");
+  new FormValidityObserver(event1).setFieldError(name, (_: FormField) => "");
+
+  /* ---------- `validate` Constraint ---------- */
+  // Both specific AND general types work
+  new FormValidityObserver(event1).configure(name, { required: (_: HTMLTextAreaElement) => "" });
+  new FormValidityObserver(event1).configure(name, { required: (_: HTMLInputElement) => "" });
+  new FormValidityObserver(event1).configure(name, { required: (_: ValidatableField) => "" });
+  new FormValidityObserver(event1).configure(name, { required: (_: FormField) => "" });
+
+  new FormValidityObserver(event1).configure(name, { validate: (_: HTMLTextAreaElement) => "" });
+  new FormValidityObserver(event1).configure(name, { validate: (_: HTMLInputElement) => "" });
+  new FormValidityObserver(event1).configure(name, { validate: (_: ValidatableField) => "" });
+  new FormValidityObserver(event1).configure(name, { validate: (_: FormField) => "" });
+
+  // Fields must be consistant/compatible, however
+  new FormValidityObserver(event1).configure(name, {
+    required: (_: HTMLInputElement) => "",
+    // @ts-expect-error -- Incompatible with the `HTMLInputElement` specified earlier
+    validate: (_: HTMLSelectElement) => "",
   });
 })();
 /* eslint-enable @typescript-eslint/no-empty-function */

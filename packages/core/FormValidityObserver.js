@@ -3,37 +3,47 @@ import FormObserver from "./FormObserver.js";
 const radiogroupSelector = "fieldset[role='radiogroup']";
 const attrs = Object.freeze({ "aria-describedby": "aria-describedby", "aria-invalid": "aria-invalid" });
 
-/** @template M @typedef {M | ((field: import("./types.d.ts").FormField) => M)} ErrorMessage */
-/** @template M 
+// NOTE: Generic `T` = Event TYPE. Generic `M` = Error MESSAGE. Generic `E` = ELEMENT
+
+/**
+ * @template M
+ * @template {import("./types.d.ts").ValidatableField} [E=import("./types.d.ts").ValidatableField]
+ * @typedef {M | ((field: E) => M)} ErrorMessage
+ */
+
+/**
+ * @template M 
+ * @template {import("./types.d.ts").ValidatableField} [E=import("./types.d.ts").ValidatableField]
  * @typedef {
-     | ErrorMessage<string>
-     | { render: true; message: ErrorMessage<M> }
-     | { render?: false; message: ErrorMessage<string> }
+     | ErrorMessage<string, E>
+     | { render: true; message: ErrorMessage<M, E> }
+     | { render?: false; message: ErrorMessage<string, E> }
    } ErrorDetails
  */
 
 /**
  * The errors to display to the user in the various situations where a field fails validation.
  * @template M
+ * @template {import("./types.d.ts").ValidatableField} [E=import("./types.d.ts").ValidatableField]
  * @typedef {Object} ValidationErrors
  *
  * 
- * @property {ErrorDetails<M>} [required]
- * @property {ErrorDetails<M>} [minlength]
- * @property {ErrorDetails<M>} [min]
- * @property {ErrorDetails<M>} [maxlength]
- * @property {ErrorDetails<M>} [max]
- * @property {ErrorDetails<M>} [step]
- * @property {ErrorDetails<M>} [type]
- * @property {ErrorDetails<M>} [pattern]
+ * @property {ErrorDetails<M, E>} [required]
+ * @property {ErrorDetails<M, E>} [minlength]
+ * @property {ErrorDetails<M, E>} [min]
+ * @property {ErrorDetails<M, E>} [maxlength]
+ * @property {ErrorDetails<M, E>} [max]
+ * @property {ErrorDetails<M, E>} [step]
+ * @property {ErrorDetails<M, E>} [type]
+ * @property {ErrorDetails<M, E>} [pattern]
  *
  * 
- * @property {ErrorDetails<M>} [badinput] The error to display when the user's input is malformed, such as an
+ * @property {ErrorDetails<M, E>} [badinput] The error to display when the user's input is malformed, such as an
  * incomplete date.
  * See {@link https://developer.mozilla.org/en-US/docs/Web/API/ValidityState/badInput ValidityState.badInput}
  *
  * @property {
-     (field: import("./types.d.ts").FormField) => void | ErrorDetails<M> | Promise<void | ErrorDetails<M>>
+     (field: E) => void | ErrorDetails<M, E> | Promise<void | ErrorDetails<M, E>>
    } [validate]  A function that runs custom validation logic for a field. This validation is always run _last_.
  */
 
@@ -45,8 +55,8 @@ const attrs = Object.freeze({ "aria-describedby": "aria-describedby", "aria-inva
  * the event capturing phase instead of the event bubbling phase. Defaults to `false`.
  * See {@link https://www.w3.org/TR/DOM-Level-3-Events/#event-flow DOM Event Flow}
  *
- * @property {(fieldOrRadiogroup: import("./types.d.ts").FormField) => void} [scroller] The function used to scroll a
- * `field` (or `radiogroup`) that has failed validation into view. Defaults to a function that calls
+ * @property {(fieldOrRadiogroup: import("./types.d.ts").ValidatableField) => void} [scroller] The function used to
+ * scroll a `field` (or `radiogroup`) that has failed validation into view. Defaults to a function that calls
  * `fieldOrRadiogroup.scrollIntoView()`.
  *
  * @property {(errorContainer: HTMLElement, errorMessage: M) => void} [renderer] The function used to render
@@ -81,7 +91,7 @@ class FormValidityObserver extends FormObserver {
 
   /**
    * @readonly
-   * @type {Map<string, ValidationErrors<M> | undefined>}
+   * @type {Map<string, ValidationErrors<M, any> | undefined>}
    * The {@link configure}d error messages for the various fields belonging to the observed `form`
    */
   #errorMessagesByFieldName = new Map();
@@ -111,7 +121,7 @@ class FormValidityObserver extends FormObserver {
     /**
      * Event listener used to validate form fields in response to user interactions
      *
-     * @param {import("./types.d.ts").FormFieldEvent<import("./types.d.ts").EventType>} event
+     * @param {Event & { target: import("./types.d.ts").ValidatableField }} event
      * @returns {void}
      */
     const eventListener = (event) => {
@@ -191,7 +201,7 @@ class FormValidityObserver extends FormObserver {
 
     // Validate Each Field
     for (let i = 0; i < this.#form.elements.length; i++) {
-      const field = /** @type {import("./types.d.ts").FormField} */ (this.#form.elements[i]);
+      const field = /** @type {import("./types.d.ts").ValidatableField} */ (this.#form.elements[i]);
       if (fieldNotValidatable(field)) continue;
       const { name } = field;
 
@@ -247,7 +257,7 @@ class FormValidityObserver extends FormObserver {
       const controls = /** @type {HTMLFormElement} */ (this.#form).elements;
 
       for (let i = 0; i < controls.length; i++) {
-        const field = /** @type {import("./types.d.ts").FormField} */ (controls[i]);
+        const field = /** @type {import("./types.d.ts").ValidatableField} */ (controls[i]);
         if (fieldNotValidatable(field)) continue;
         const { name } = field;
 
@@ -280,8 +290,9 @@ class FormValidityObserver extends FormObserver {
   validateField(name, options) {
     const field = this.#getTargetField(name);
     if (!field) return false; // TODO: should we give a warning that the field doesn't exist? Same for other methods.
+    if (!field.willValidate) return true;
 
-    field.setCustomValidity(""); // Reset the custom error message in case a default browser error is displayed next.
+    field.setCustomValidity?.(""); // Reset the custom error message in case a default browser error is displayed next.
 
     const constraint = getBrokenConstraint(field.validity);
     if (constraint) {
@@ -301,7 +312,7 @@ class FormValidityObserver extends FormObserver {
    * **Internal** helper for {@link validateField}. Used _strictly_ as a reusable way to handle the result of
    * a field validation attempt.
    *
-   * @param {import("./types.d.ts").FormField} field The `field` for which the validation was run
+   * @param {import("./types.d.ts").ValidatableField} field The `field` for which the validation was run
    * @param {ErrorDetails<M> | void} error The error to apply to the `field`, if any
    * @param {ValidateFieldOptions | undefined} options The options that were used for the field's validation
    *
@@ -325,13 +336,13 @@ class FormValidityObserver extends FormObserver {
    * **Internal** helper (shared). Focuses the specified `field` and scrolls it (or its owning `radiogroup`) into view
    * so that its error message is visible.
    *
-   * @param {import("./types.d.ts").FormField} field
+   * @param {import("./types.d.ts").ValidatableField} field
    * @returns {void}
    */
   #callAttentionTo(field) {
     const errorOwner = getErrorOwningControl(field);
     if (!errorOwner.hasAttribute(attrs["aria-describedby"])) {
-      field.reportValidity();
+      field.reportValidity?.();
       return;
     }
 
@@ -342,30 +353,33 @@ class FormValidityObserver extends FormObserver {
 
   // TODO: Do we need to duplicate the documenation for these overloads? (Must wait until GitHub bug is resolved.)
   /**
+   * @template {import("./types.d.ts").ValidatableField} E
    * @overload Marks the form field with the specified `name` as invalid (`[aria-invalid="true"]`)
    * and applies the provided error `message` to it.
    *
    * @param {string} name The name of the invalid form field
-   * @param {ErrorMessage<M>} message The error message to apply to the invalid form field
+   * @param {ErrorMessage<M, E>} message The error message to apply to the invalid form field
    * @param {true} render When `true`, the error `message` will be rendered to the DOM using the observer's
    * {@link FormValidityObserverOptions.renderer `renderer`} function.
    * @returns {void}
    */
 
   /**
+   * @template {import("./types.d.ts").ValidatableField} E
    * @overload Marks the form field with the specified `name` as invalid (`[aria-invalid="true"]`)
    * and applies the provided error `message` to it.
    *
    * @param {string} name The name of the invalid form field
-   * @param {ErrorMessage<string>} message The error message to apply to the invalid form field
+   * @param {ErrorMessage<string, E>} message The error message to apply to the invalid form field
    * @param {false} [render] When `true`, the error `message` will be rendered to the DOM using the observer's
    * {@link FormValidityObserverOptions.renderer `renderer`} function.
    * @returns {void}
    */
 
   /**
+   * @template {import("./types.d.ts").ValidatableField} E
    * @param {string} name
-   * @param {ErrorMessage<string> | ErrorMessage<M>} message
+   * @param {ErrorMessage<string, E> | ErrorMessage<M, E>} message
    * @param {boolean} [render]
    * @returns {void}
    */
@@ -395,8 +409,6 @@ class FormValidityObserver extends FormObserver {
 
     // Raw String Variant
     if (errorElement) errorElement.textContent = error;
-
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Support Web Components lacking method
     field.setCustomValidity?.(error);
   }
 
@@ -416,7 +428,6 @@ class FormValidityObserver extends FormObserver {
     );
 
     if (errorElement) errorElement.textContent = "";
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Support Web Components lacking method
     field.setCustomValidity?.("");
   }
 
@@ -427,8 +438,9 @@ class FormValidityObserver extends FormObserver {
    *
    * Note: If the field is _only_ using the browser's default error messages, it does _not_ need to be `configure`d.
    *
+   * @template {import("./types.d.ts").ValidatableField} E
    * @param {string} name The `name` of the form field
-   * @param {ValidationErrors<M>} errorMessages A `key`-`value` pair of validation constraints (key)
+   * @param {ValidationErrors<M, E>} errorMessages A `key`-`value` pair of validation constraints (key)
    * and their corresponding error messages (value)
    * @returns {void}
    *
@@ -447,11 +459,11 @@ class FormValidityObserver extends FormObserver {
    * **Internal** helper (shared). Returns the correct form field to use for a validation or error-handling action.
    *
    * @param {string} name
-   * @returns {import("./types.d.ts").FormField | null}
+   * @returns {import("./types.d.ts").ValidatableField | null}
    */
   #getTargetField(name) {
     assertFormExists(this.#form);
-    const field = /** @type {import("./types.d.ts").FormField | RadioNodeList | null} */ (
+    const field = /** @type {import("./types.d.ts").ValidatableField | RadioNodeList | null} */ (
       this.#form.elements.namedItem(name)
     );
     return field instanceof RadioNodeList ? /** @type {HTMLInputElement} */ (field[0]) : field;
@@ -464,7 +476,7 @@ export default FormValidityObserver;
 /**
  * The default scrolling function used for the {@link FormValidityObserver}'s `scroller` option
  *
- * @param {import("./types.d.ts").FormField} fieldOrRadiogroup
+ * @param {import("./types.d.ts").ValidatableField} fieldOrRadiogroup
  * @returns {void}
  */
 export function defaultScroller(fieldOrRadiogroup) {
@@ -484,7 +496,7 @@ export function defaultErrorRenderer(errorContainer, error) {
 }
 
 /**
- * @param {import("./types.d.ts").FormField} field
+ * @param {import("./types.d.ts").ValidatableField} field
  * @returns {field is HTMLOutputElement | HTMLObjectElement | HTMLFieldSetElement}
  */
 function fieldNotValidatable(field) {
@@ -498,7 +510,7 @@ function fieldNotValidatable(field) {
  * cannot be used directly (i.e., inlined) until https://github.com/microsoft/TypeScript/issues/37663 is resolved.
  *
  * @param {unknown} value
- * @returns {value is (field: import("./types.d.ts").FormField) => unknown}
+ * @returns {value is (field: import("./types.d.ts").ValidatableField) => unknown}
  */
 function messageIsErrorFunction(value) {
   return typeof value === "function";
@@ -535,12 +547,12 @@ function getBrokenConstraint(validity) {
  * the error owner is the `radiogroup` to which that `field` belongs. Otherwise, the error owner is
  * the `field` itself.
  *
- * @param {import("./types.d.ts").FormField} field
- * @returns {import("./types.d.ts").FormField}
+ * @param {import("./types.d.ts").ValidatableField} field
+ * @returns {import("./types.d.ts").ValidatableField}
  */
 function getErrorOwningControl(field) {
   const fieldOrRadiogroup = field.type === "radio" ? field.closest(radiogroupSelector) : field;
-  if (fieldOrRadiogroup) return /** @type {import("./types.d.ts").FormField} */ (fieldOrRadiogroup);
+  if (fieldOrRadiogroup) return /** @type {import("./types.d.ts").ValidatableField} */ (fieldOrRadiogroup);
 
   throw new Error("Validated radio buttons must be placed inside a `<fieldset>` with role `radiogroup`");
 }

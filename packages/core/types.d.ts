@@ -15,6 +15,20 @@ export type FormField =
   | HTMLSelectElement
   | HTMLTextAreaElement;
 
+/** An `HTMLElement` that participates in form validation */
+export interface ValidatableField
+  extends HTMLElement,
+    Pick<HTMLInputElement, "name" | "validity" | "validationMessage" | "willValidate">,
+    Partial<Pick<HTMLInputElement, "type" | "setCustomValidity">>,
+    Partial<Pick<ElementInternals, "form" | "reportValidity">> {
+  /**
+   * Returns a NodeList of all the label elements that are associated with the form control.
+   *
+   * [MDN Reference](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/labels)
+   */
+  labels?: ElementInternals["labels"] | null;
+}
+
 // Utility Types relating to `addEventListener`
 export type EventType = keyof DocumentEventMap;
 export type FormFieldEvent<T extends EventType> = DocumentEventMap[T] & { target: FormField };
