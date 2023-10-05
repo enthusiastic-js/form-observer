@@ -2,7 +2,6 @@
 
 ## Things to Do Before Releasing
 
-- [ ] Delete obsolete types from `types.d.ts`
 - [ ] Update docs now that we require more things for validated `Web Component`s (e.g., `willValidate`). Also update docs surrounding `FormValidityObserver` types (e.g., add `ValidatableField` and update generic constraint parameters).
 - [ ] `NPM Packaging`|`Critical`: Get everything in order so that we can have a streamlined process for releasing all of the NPM Packages in our monorepo.
 - [ ] `NPM Packaging`|`Critical`: Add `README.md` files to the root of **each** individual NPM Package/Project. This is separate from our project's documenation. Currently, our "Documentation" is the `/docs` folder of our GitHub repo. (And we can point this out in each package's `README.md` file.) But in terms of users getting a quick understanding of what our packages do, having `README`s that are included with each of our packages on NPM is absolutely critical.
