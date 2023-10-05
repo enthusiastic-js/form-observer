@@ -19,9 +19,9 @@ Extra: Should we include a `Philosphy` document/page? Perhaps _additionally_ inc
 
 ## Enabling Accessible Error Messages during Form Submissions
 
-By default, the browser will not allow a form to be submitted if _any_ of its fields are invalid (assuming the fields are not `disabled`). If a user attempts to submit a form with invalid fields, the browser will block the submission and display an error message instead. This message will briefly appear in a bubble before disappearing, and the message only appears over one field at a time; so the user experience isn't the best.
+By default, the browser will not allow a form to be submitted if _any_ of its fields are invalid (assuming the fields [can participate in field validation](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/willValidate)). If a user attempts to submit a form with invalid fields, the browser will block the submission and display an error message instead. This message will briefly appear in a bubble before disappearing, and the message only appears over one field at a time; so the user experience isn't the best.
 
-You can override the browser's behavior by applying the [`novalidate`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#novalidate) property to the form element.
+You can override the browser's behavior by applying the [`novalidate`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#novalidate) attribute to the form element.
 
 ```html
 <form novalidate>
@@ -47,8 +47,8 @@ function handleSubmit(event) {
 An alternative to setting the form's `novalidate` attribute in your markup is setting it in your JavaScript.
 
 ```js
-form.noValidate = true;
-// or form.setAttribute("novalidate", "");
+form.setAttribute("novalidate", "");
+// or form.noValidate = true;
 ```
 
 (See the [`form.noValidate`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement#htmlformelement.novalidate) property and the and the [`Element.setAttribute`](https://developer.mozilla.org/en-US/docs/Web/API/Element/setAttribute) method for reference.)
@@ -72,7 +72,7 @@ Concerning users who don't have JavaScript, the benefit of this approach is two-
 1. **The user experience is better.** Users will be able to learn what fields they need to fix thanks to the browser's native error messages. And if their network connection is weak, they'll be able to gain this information _without_ making additional requests to your server.
 2. **The load on your server is lighter.** The browser will automatically block form submissions for invalid fields. This reduces the number of requests that your server has to handle.
 
-You gain these benefits while maintaining the better, more accessible user experience for users who have JS enabled. But if you're determined to apply the `novalidate` attribute in your HTML, then it's recommended to make sure that your server is able to render accessible error messages for your fields whenever the user submits an invalid form. In that case, the error messages will likely look better and be more accessible to your users (if they're done well). But the downside is that users with weaker connections will have a harder time, and your server will experience a little more communication. Ultimately, it's a set of trade-offs; so it's up to you to determine whether to set `novalidate` in your HTML or in your JS.
+You gain these benefits while maintaining the better, more accessible user experience for users who have JS enabled. But if you're determined to apply the `novalidate` attribute in your HTML instead of your JavaScript, then it's recommended to make sure that your server is able to render accessible error messages for your fields whenever the user submits an invalid form. In that case, the error messages will likely look better and be more accessible to your users (if they're done well). But the downside is that users with weaker connections will have a harder time, and your server will experience a little more communication. Ultimately, it's a set of trade-offs; so it's up to you to determine whether to set `novalidate` in your HTML or in your JS.
 
 ## Keeping Track of Visited/Dirty Fields
 
@@ -133,9 +133,9 @@ To get an idea of how these event listeners would function, you can play around 
 
 Unlike some of the other form validation libraries out there, the `FormValidityObserver` is compatible with native [Web Components](https://developer.mozilla.org/en-US/docs/Web/API/Web_components). In addition to the guidelines given in the [`FormObserver` documentation](../form-observer/guides.md#usage-with-web-components), there are a few things to keep in mind when using Custom Elements with the `FormValidityObserver`.
 
-#### You Must Expose the Validity State of Your Custom Element
+#### You Must Expose the Validation Properties of Your Custom Element
 
-Custom Elements do not expose their [`ValidityState`](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/validity) by default. Because the `FormValidityObserver` relies on the `ValidityState` of form fields to perform proper validation, your Custom Element will need to expose its `ValidityState` like so:
+Custom Elements do not expose their [`ValidityState`](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/validity) by default, nor do they expose their [`validationMessage`](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/validationMessage) or [`willValidate`](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/willValidate) properties. Because the `FormValidityObserver` needs these details to perform proper validation, your Custom Element will need to expose them like so:
 
 ```js
 class CustomField extends HTMLElement {
@@ -151,12 +151,22 @@ class CustomField extends HTMLElement {
   get validity() {
     return this.#internals.validity;
   }
+
+  get validationMessage() {
+    return this.#internals.validationMessage;
+  }
+
+  get willValidate() {
+    return this.#internals.willValidate;
+  }
 }
 
 customElements.define("custom-field", CustomField);
 ```
 
-The `FormValidityObserver` _requires_ the `ValidityState` of Custom Elements to be exposed via the `validity` property because this is consistent with the behavior of native form controls. This is already a best practice if you're writing Custom Elements that others will be using since it creates a more intuitive developer experience. It is recommended to keep the `ElementInternals` private and to use a getter (_without_ a setter) for the `validity` property to prevent unwanted mutations from the outside.
+The `FormValidityObserver` _requires_ the `ValidityState` of Custom Elements to be exposed via the `validity` property because this is consistent with the behavior of native form controls. This is already a best practice if you're writing Custom Elements that others will be using since it creates a more intuitive developer experience. It is recommended to keep the `ElementInternals` private and to use a getter (_without_ a setter) for the `validity` property to prevent unwanted mutations from the outside. The same goes for the `validationMessage` and `willValidate` properties.
+
+> Note: One benefit of exposing the `validationMessage` property is that you typically won't need to call `FormValidityObserver.configure` for your Web Components. This is because the observer falls back to displaying the `validationMessage` when no configured error messages are found.
 
 If you are using the native form error bubbles to display error messages to users (or if you anticipate that the consumers of your Web Component will do the same), then you will also need to expose the `reportValidity()` method of your component in a similar manner.
 
@@ -171,15 +181,9 @@ class CustomField extends HTMLElement {
     // Other Setup ...
   }
 
-  get validity() {
-    return this.#internals.validity;
-  }
+  // Validation Properties ...
 
-  /**
-   * Returns `true` if the element has no validity problems; otherwise, returns `false`.
-   * Fires an `invalid` event at the element, and (if the event isn't canceled) reports the problem to the user.
-   * @returns {boolean}
-   */
+  /** @type {ElementInternals["reportValidity"]} */
   reportValidity() {
     return this.#internals.reportValidity();
   }
@@ -188,15 +192,9 @@ class CustomField extends HTMLElement {
 customElements.define("custom-field", CustomField);
 ```
 
-Optionally, you can also expose the `validationMessage` and `willValidate` properties of your Custom Element. (These should also be exposed as getters without setters.) In addition to helping the end users of your Web Component, exposing the `validationMessage` property will enable the `FormValidityObserver` to show default error messages for your component whenever it fails validation. (This means that by default you won't have to use `FormValidityObserver.configure` on any instances of your Custom Element.)
+#### You Must Expose the `name` of Your Custom Element
 
-#### Consider Exposing a `setCustomValidity` Method (Optional)
-
-No Custom Element that acts as a form control has a `setCustomValidity` method by default. Instead, it has a [`setValidity`](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/setValidity) method which handles _all_ of the ways that the element's `ValidityState` can be marked as valid or invalid.
-
-Technically speaking, a robust Custom Element can manage all of its `ValidityState` and error messaging internally; so a public `setCustomValidity` method isn't necessary. For this reason, the `FormValidityObserver` does not require you to expose this method on your class.
-
-That said, if you're writing Web Components that others will be using, then it's a best practice to expose a `setCustomValidity` method. This is because it's impossible to predict all the ways in which other developers will use your Custom Element. A `setCustomValidity` method that mimics the behavior of native form controls will be more intuitive for your end users and satisfy whatever custom error handling needs they may have.
+Because the `FormValidityObserver` does not validate nameless fields, you must expose your Custom Element's `name`:
 
 ```js
 class CustomField extends HTMLElement {
@@ -209,9 +207,41 @@ class CustomField extends HTMLElement {
     // Other Setup ...
   }
 
-  get validity() {
-    return this.#internals.validity;
+  /** Sets or retrieves the name of the object. @returns {string} */
+  get name() {
+    return this.getAttribute("name") ?? "";
   }
+
+  set name(value) {
+    this.setAttribute("name", value);
+  }
+
+  // Validation Properties ...
+}
+
+customElements.define("custom-field", CustomField);
+```
+
+#### Consider Exposing a `setCustomValidity` Method (Optional)
+
+No Custom Element that acts as a form control has a `setCustomValidity` method by default. Instead, it has a [`setValidity`](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/setValidity) method which handles _all_ of the ways that the element's `ValidityState` can be marked as valid or invalid.
+
+Technically speaking, a robust Custom Element can manage all of its `ValidityState` and error messaging internally; so a public `setCustomValidity` method isn't necessary. For this reason, the `FormValidityObserver` does not require you to expose this method on your class.
+
+That said, if you're writing Web Components that others will be using, then it's a best practice to expose a `setCustomValidity` method. This is because it's impossible to predict all of the ways that other developers will use your Custom Element. A `setCustomValidity` method that mimics the behavior of native form controls will be more intuitive for your end users and will satisfy whatever custom error handling needs they may have.
+
+```js
+class CustomField extends HTMLElement {
+  static formAssociated = true;
+  #internals;
+
+  constructor() {
+    super();
+    this.#internals = this.attachInternals();
+    // Other Setup ...
+  }
+
+  // Other Properties ...
 
   /**
    * Sets a custom error message that is displayed when a form is submitted.

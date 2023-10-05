@@ -1,11 +1,11 @@
 # Form Validity Observer
 
-The `FormValidityObserver` is an [extension of the `FormObserver`](../form-observer/guides.md#extending-the-formobserver-with-specialized-logic) that automatically validates your fields _and_ displays [accessible](https://developer.mozilla.org/en-US/docs/Web/Accessibility) error messages for those fields as users interact with your forms. Additionally, it exposes methods that can be used to handle field/form validation and error display/removal manually.
+The `FormValidityObserver` is an [extension of the `FormObserver`](../form-observer/guides.md#extending-the-formobserver-with-specialized-logic) that automatically validates your fields _and_ displays [accessible](https://developer.mozilla.org/en-US/docs/Web/Accessibility) error messages for those fields as users interact with your forms. Additionally, it exposes methods that can be used to handle manual field/form validation and manual error display/removal.
 
 <p id="initial-code-example"><strong>Example</strong></p>
 
 ```html
-<textarea name="external-textbox" maxlength="150" required aria-describedby="textarea-error"></textarea>
+<textarea name="external-textbox" form="my-form" maxlength="150" required aria-describedby="textarea-error"></textarea>
 <div id="textarea-error"></div>
 
 <form id="my-form">
@@ -100,14 +100,14 @@ The `FormValidityObserver()` constructor creates a new observer and configures i
       <dd>
         Indicates that the observer's event listener should be called during the event capturing phase instead of the event bubbling phase. Defaults to <code>false</code>. See <a href="https://www.w3.org/TR/DOM-Level-3-Events/#event-flow">DOM Event Flow</a> for more details on event phases.
       </dd>
-      <dt id="form-validity-observer-options-scroller"><code>scroller: (fieldOrRadiogroup: FormField) => void</code></dt>
+      <dt id="form-validity-observer-options-scroller"><code>scroller: (fieldOrRadiogroup: ValidatableField) => void</code></dt>
       <dd>
         The function used to scroll a field (or radiogroup) that has failed validation into view. Defaults to a function that calls <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView"><code>scrollIntoView()</code></a> on the field (or radiogroup) that failed validation.
       </dd>
       <dt id="form-validity-observer-options-renderer"><code>renderer: (errorContainer: HTMLElement, errorMessage: M) => void</code></dt>
       <dd>
         <p>
-          The custom function used to render error messages to the DOM when a validation constraint's <code>render</code> option is <code>true</code> or when <a href="#method-formvalidityobserversetfielderrorname-string-message-errormessagestringerrormessagem-render-boolean-void"><code>FormValidityObserver.setFieldError()</code></a> is called with the <code>render=true</code> option. (See the <a href="./types.md#validationerrorsm"><code>ValidationErrors</code></a> type for more details about validation constraints.)
+          The custom function used to render error messages to the DOM when a validation constraint's <code>render</code> option is <code>true</code> or when <a href="#method-formvalidityobserversetfielderrorename-string-message-errormessagestring-eerrormessagem-e-render-boolean-void"><code>FormValidityObserver.setFieldError()</code></a> is called with the <code>render=true</code> option. (See the <a href="./types.md#validationerrorsm-e"><code>ValidationErrors</code></a> type for more details about validation constraints.)
         </p>
         <p>
           The message type, <code>M</code> is determined from your function definition. The type can be anything (e.g., a <code>string</code>, an <code>object</code>, a <code>ReactElement</code>, or anything else).
@@ -202,11 +202,13 @@ observer.unobserve(form); // Returns `false` because the form was already `unobs
 form1.elements[0].dispatchEvent(new FocusEvent("focusout")); // Does nothing
 ```
 
-### Method: `FormValidityObserver.configure(name: string, errorMessages: `[`ValidationErrors<M>`](./types.md#validationerrorsm)`): void`
+### Method: `FormValidityObserver.configure<E>(name: string, errorMessages: `[`ValidationErrors<M, E>`](./types.md#validationerrorsm-e)`): void`
 
-Configures the error messages that will be displayed for a form field's validation constraints. If an error message is not configured for a validation constraint, then the browser's default error message for that constraint will be used instead.
+Configures the error messages that will be displayed for a form field's validation constraints. If an error message is not configured for a validation constraint, then the field's [`validationMessage`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLObjectElement/validationMessage) will be used instead. For [native form fields](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/elements), the browser automatically supplies a default `validationMessage` depending on the broken constraint.
 
-Note: If the field is _only_ using the browser's default error messages, it does _not_ need to be `configure`d.
+> Note: If the field is _only_ using the browser's default error messages, it does _not_ need to be `configure`d.
+
+The Form Element Type, `E`, represents the form field being configured. This type is inferred from the `errorMessages` configuration and defaults to a general [`ValidatableField`](./types.md#validatablefield).
 
 #### Parameters
 
@@ -241,10 +243,10 @@ observer.observe(form);
 observer.configure("credit-card", { pattern: "Card number must be 16 digits" });
 const creditCardField = document.querySelector("[name='credit-card']");
 
-// Browser's native error message for `required` fields is displayed.
+// Browser's native error message for `required` fields will be ACCESSIBLY displayed.
 creditCardField.dispatchEvent(new FocusEvent("focusout"));
 
-// Our custom error message for `pattern` will be displayed,
+// Our custom error message for `pattern` will be ACCESSIBLY displayed,
 // _not_ the browser's native error message for the `pattern` attribute.
 creditCardField.value = "abcd";
 creditCardField.dispatchEvent(new FocusEvent("focusout"));
@@ -252,7 +254,7 @@ creditCardField.dispatchEvent(new FocusEvent("focusout"));
 
 ### Method: `FormValidityObserver.validateFields(options?: ValidateFieldsOptions): boolean | Promise<boolean>`
 
-Validates all of the observed form's fields, returning `true` if _all_ of the validated fields pass validation and `false` otherwise. The `boolean` that `validateFields()` returns will be wrapped in a [`Promise`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) if _any_ of the validated fields use an asynchronous function for the [`validate` constraint](./types.md#validationerrorsm). This promise will `resolve` after all asynchronous validation functions have `settled`.
+Validates all of the observed form's fields, returning `true` if _all_ of the validated fields pass validation and `false` otherwise. The `boolean` that `validateFields()` returns will be wrapped in a [`Promise`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) if _any_ of the validated fields use an asynchronous function for the [`validate` constraint](./types.md#validationerrorsm-e). This promise will `resolve` after all asynchronous validation functions have `settled`.
 
 #### Parameters
 
@@ -269,7 +271,9 @@ When the `focus` option is `false`, you can consider `validateFields()` to be an
 
 ### Method: `FormValidityObserver.validateField(name: string, options?: ValidateFieldOptions): boolean | Promise<boolean>`
 
-Validates the form field with the specified `name`, returning `true` if the field passes validation and `false` otherwise. The `boolean` that `validateField()` returns will be wrapped in a [`Promise`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) if the field's [`validate` constraint](./types.md#validationerrorsm) runs asynchronously. This promise will `resolve` after the asynchronous validation function `resolves`. Unlike the [`validateFields()`](#method-formvalidityobservervalidatefieldsoptions-validatefieldsoptions-boolean--promiseboolean) method, this promise will also `reject` if the asynchronous validation function `rejects`.
+Validates the form field with the specified `name`, returning `true` if the field passes validation and `false` otherwise. The `boolean` that `validateField()` returns will be wrapped in a [`Promise`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) if the field's [`validate` constraint](./types.md#validationerrorsm-e) runs asynchronously. This promise will `resolve` after the asynchronous validation function `resolves`. Unlike the [`validateFields()`](#method-formvalidityobservervalidatefieldsoptions-validatefieldsoptions-boolean--promiseboolean) method, this promise will also `reject` if the asynchronous validation function `rejects`.
+
+> Note: Per the HTML spec, any field whose [`willValidate`](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/willValidate) property is `false` will automatically pass validation.
 
 #### Parameters
 
@@ -289,11 +293,11 @@ Validates the form field with the specified `name`, returning `true` if the fiel
 
 When the `focus` option is `false`, you can consider `validateField()` to be an enhanced version of [`field.checkValidity()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/checkValidity). When the `focus` option is `true`, you can consider `validateField()` to be an enhanced version of [`field.reportValidity()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/reportValidity).
 
-### Method: `FormValidityObserver.setFieldError(name: string, message: `[`ErrorMessage<string>`](./types.md#errormessagem)`|`[`ErrorMessage<M>`](./types.md#errormessagem)`, render?: boolean): void`
+### Method: `FormValidityObserver.setFieldError<E>(name: string, message: `[`ErrorMessage<string, E>`](./types.md#errormessagem-e)`|`[`ErrorMessage<M, E>`](./types.md#errormessagem-e)`, render?: boolean): void`
 
-Marks the form field having the specified `name` as invalid (via the [`[aria-invalid="true"]`](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-invalid) attribute) and applies the provided error `message` to it.
+Marks the form field having the specified `name` as invalid (via the [`[aria-invalid="true"]`](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-invalid) attribute) and applies the provided error `message` to it. Typically, you shouldn't need to call this method manually; but in rare situations it might be helpful.
 
-Typically, you shouldn't need to call this method manually; but in rare situations it might be helpful.
+The Form Element Type, `E`, represents the invalid form field. This type is inferred from the error `message` if it is a function. Otherwise, `E` defaults to a general [`ValidatableField`](./types.md#validatablefield).
 
 #### Parameters
 
@@ -338,7 +342,7 @@ observer.setFieldError("textbox", htmlErrorString, true);
 
 Marks the form field with the specified `name` as valid (via the [`[aria-invalid="false"]`](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-invalid) attribute) and clears its error message.
 
-Typically, you shouldn't need to call this method manually; but in rare situations it might be helpful.
+Typically, you shouldn't need to call this method manually; but in rare situations it might be helpful. For example, if you manually [exclude a field from constraint validation](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/willValidate) by marking it as [`disabled`](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/disabled) with JavaScript, then you can use this method to delete the obsolete error message.
 
 #### Parameters
 
