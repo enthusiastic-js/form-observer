@@ -1,11 +1,7 @@
-import type { ErrorMessage, ValidationErrors, FormValidityObserver } from "@form-observer/core/types.d.ts";
-import type { Action } from "svelte/action";
+import type { ErrorMessage, ValidationErrors, ValidatableField, FormValidityObserver } from "@form-observer/core";
+import type { ActionReturn } from "svelte/action";
 import type { HTMLInputAttributes } from "svelte/elements";
 
-/* -------------------- Core Types -------------------- */
-export type * from "@form-observer/core/types.d.ts";
-
-/* -------------------- Svelte Form Validity Observer Types -------------------- */
 export interface SvelteFormValidityObserver<M = string> extends Omit<FormValidityObserver<M>, "configure"> {
   /**
    * An enhanced version of {@link FormValidityObserver.configure} for `Svelte`. In addition to configuring a field's
@@ -25,15 +21,19 @@ export interface SvelteFormValidityObserver<M = string> extends Omit<FormValidit
    * <input {...configure("comment", { maxlength: 10 })} />
    * <input name="another-comment" maxlength="10" />
    */
-  configure(name: string, errorMessages: SvelteValidationErrors<M>): SvelteFieldProps;
+  configure<E extends ValidatableField>(name: string, errorMessages: SvelteValidationErrors<M, E>): SvelteFieldProps;
 
   /**
    * Svelte `action` used to automatically setup and cleanup a form's observer.
    *
    * **Note**: If you use this `action`, you should **not** call `observe`, `unobserve`, or `disconnect` directly.
    *
+   * @param form
+   * @param novalidate Indicates that the
+   * {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#novalidate novalidate} attribute should
+   * be applied to the `form` element when JavaScript is enabled. Defaults to `true`.
    */
-  autoObserve: Action<HTMLFormElement>;
+  autoObserve(form: HTMLFormElement, novalidate?: boolean): ActionReturn;
 }
 
 export type SvelteFieldProps = Pick<
@@ -45,20 +45,21 @@ export type SvelteFieldProps = Pick<
  * An augmetation of {@link ValidationErrors} for `Svelte`. Represents the constraints that should be applied
  * to a form field, and the error messages that should be displayed when those constraints are broken.
  */
-export interface SvelteValidationErrors<M> extends Pick<ValidationErrors<M>, "badinput" | "validate"> {
+export interface SvelteValidationErrors<M, E extends ValidatableField = ValidatableField>
+  extends Pick<ValidationErrors<M, E>, "badinput" | "validate"> {
   // Standard HTML Attributes
-  required?: SvelteErrorDetails<M, HTMLInputAttributes["required"]> | ErrorMessage<string>;
-  minlength?: SvelteErrorDetails<M, HTMLInputAttributes["minlength"]>;
-  min?: SvelteErrorDetails<M, HTMLInputAttributes["min"]>;
-  maxlength?: SvelteErrorDetails<M, HTMLInputAttributes["maxlength"]>;
-  max?: SvelteErrorDetails<M, HTMLInputAttributes["max"]>;
-  step?: SvelteErrorDetails<M, HTMLInputAttributes["step"]>;
-  type?: SvelteErrorDetails<M, HTMLInputAttributes["type"]>;
-  pattern?: SvelteErrorDetails<M, HTMLInputAttributes["pattern"]>;
+  required?: SvelteErrorDetails<M, HTMLInputAttributes["required"], E> | ErrorMessage<string, E>;
+  minlength?: SvelteErrorDetails<M, HTMLInputAttributes["minlength"], E>;
+  min?: SvelteErrorDetails<M, HTMLInputAttributes["min"], E>;
+  maxlength?: SvelteErrorDetails<M, HTMLInputAttributes["maxlength"], E>;
+  max?: SvelteErrorDetails<M, HTMLInputAttributes["max"], E>;
+  step?: SvelteErrorDetails<M, HTMLInputAttributes["step"], E>;
+  type?: SvelteErrorDetails<M, HTMLInputAttributes["type"], E>;
+  pattern?: SvelteErrorDetails<M, HTMLInputAttributes["pattern"], E>;
 }
 
-/** An augmentation of {@link ErrorDetails} for `Svelte`. */
-export type SvelteErrorDetails<M, V> =
+/** An augmentation of `ErrorDetails` for `Svelte`. */
+export type SvelteErrorDetails<M, V, E extends ValidatableField = ValidatableField> =
   | V
-  | { render: true; message: ErrorMessage<M>; value: V }
-  | { render?: false; message: ErrorMessage<string>; value: V };
+  | { render: true; message: ErrorMessage<M, E>; value: V }
+  | { render?: false; message: ErrorMessage<string, E>; value: V };

@@ -19,12 +19,14 @@ The following methods on the `SvelteFormValidityObserver` are the exact same as 
 - [`disconnect()`](../README.md#method-formvalidityobserverdisconnect-void)
 - [`validateFields(options)`](../README.md#method-formvalidityobservervalidatefieldsoptions-validatefieldsoptions-boolean--promiseboolean)
 - [`validateField(name, options)`](../README.md#method-formvalidityobservervalidatefieldname-string-options-validatefieldoptions-boolean--promiseboolean)
-- [`setFieldError(name, message, render)`](../README.md#method-formvalidityobserversetfielderrorname-string-message-errormessagestringerrormessagem-render-boolean-void)
+- [`setFieldError(name, message, render)`](../README.md#method-formvalidityobserversetfielderrorename-string-message-errormessagestring-eerrormessagem-e-render-boolean-void)
 - [`clearFieldError(name)`](../README.md#method-formvalidityobserverclearfielderrorname-string-void)
 
-#### Function: `autoObserve(form: HTMLFormElement): `[`Action`](https://svelte.dev/docs/svelte-action)
+#### Function: `autoObserve(form: HTMLFormElement, novalidate?: boolean): `[`ActionReturn`](https://svelte.dev/docs/svelte-action#types-actionreturn)
 
 A Svelte [`action`](https://learn.svelte.dev/tutorial/actions) used to simplify the process of setting up and cleaning up a form's `FormValidityObserver`.
+
+The `novalidate` parameter indicates that the [novalidate](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#novalidate) attribute should be applied to the `form` element when JavaScript is available to the client. By default, its value is `true`.
 
 > Note: If you use this `action`, you should **not** need to call `observe`, `unobserve`, or `disconnect` directly.
 
@@ -41,13 +43,13 @@ A Svelte [`action`](https://learn.svelte.dev/tutorial/actions) used to simplify 
 </script>
 ```
 
-#### Function: `configure(name: string, errorMessages: SvelteValidationErrors<M>): SvelteFieldProps`
+#### Function: `configure<E>(name: string, errorMessages: SvelteValidationErrors<M, E>): SvelteFieldProps`
 
-An enhanced version of [`FormValidityObserver.configure`](../README.md#method-formvalidityobserverconfigurename-string-errormessages-validationerrorsm-void) for `Svelte`. In addition to configuring a field's error messages, it generates the props that should be applied to the field based on the provided arguments.
+An enhanced version of [`FormValidityObserver.configure`](../README.md#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-void) for `Svelte`. In addition to configuring a field's error messages, it generates the props that should be applied to the field based on the provided arguments.
 
 > Note: If the field is _only_ using the browser's default error messages, it does _not_ need to be `configure`d.
 
-The `SvelteValidationErrors<M>` type is an enhanced version of the core [`ValidationErrors<M>`](../types.md#validationerrorsm) type. Here is how `SvelteValidationErrors` compares to `ValidationErrors`.
+The `SvelteValidationErrors<M, E>` type is an enhanced version of the core [`ValidationErrors<M, E>`](../types.md#validationerrorsm-e) type. Here is how `SvelteValidationErrors` compares to `ValidationErrors`.
 
 ##### Properties That Mimic the `ValidationErrors` Properties
 
@@ -101,7 +103,7 @@ All the other properties on the `SvelteValidationErrors` type are enhancements o
 
 The rules are as follows:
 
-1&rpar; When a constraint is configured with an [`ErrorDetails`](../types.md#errordetailsm) object, the object must include a `value` property specifying the value of the constraint. In this scenario, both the field's constraint value _and_ its error message are configured.
+1&rpar; When a constraint is configured with an [`ErrorDetails`](../types.md#errordetailsm-e) object, the object must include a `value` property specifying the value of the constraint. In this scenario, both the field's constraint value _and_ its error message are configured.
 
 ```svelte
 <form use:autoObserve>
@@ -113,10 +115,10 @@ The rules are as follows:
 
 <script lang="ts">
   import { createFormValidityObserver } from "@form-observer/svelte";
-  import type { FormField } from "@form-observer/svelte";
+  import type { ValidatableField } from "@form-observer/svelte";
 
   const { autoObserve, configure } = createFormValidityObserver("focusout");
-  const requiredField = (field: FormField) => `<p>${field.labels[0]?.textContent ?? "Field"} is required.</p>`;
+  const requiredField = (field: ValidatableField) => `<p>${field.labels[0]?.textContent ?? "Field"} is required.</p>`;
 </script>
 ```
 
@@ -132,10 +134,10 @@ The rules are as follows:
 
 <script lang="ts">
   import { createFormValidityObserver } from "@form-observer/svelte";
-  import type { FormField } from "@form-observer/svelte";
+  import type { ValidatableField } from "@form-observer/svelte";
 
   const { autoObserve, configure } = createFormValidityObserver("focusout");
-  const requiredField = (field: FormField) => `${field.labels[0]?.textContent ?? "Field"} is required.`;
+  const requiredField = (field: ValidatableField) => `${field.labels[0]?.textContent ?? "Field"} is required.`;
 </script>
 ```
 
@@ -153,10 +155,10 @@ This syntax only exists for convenience. You are free to use the regular HTML at
 
 <script lang="ts">
   import { createFormValidityObserver } from "@form-observer/svelte";
-  import type { FormField } from "@form-observer/svelte";
+  import type { ValidatableField } from "@form-observer/svelte";
 
   const { autoObserve, configure } = createFormValidityObserver("focusout");
-  const requiredField = (field: FormField) => `${field.labels[0]?.textContent ?? "Field"} is required.`;
+  const requiredField = (field: ValidatableField) => `${field.labels[0]?.textContent ?? "Field"} is required.`;
 </script>
 ```
 

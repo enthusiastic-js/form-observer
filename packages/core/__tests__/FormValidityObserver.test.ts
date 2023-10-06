@@ -2542,7 +2542,7 @@ describe("Form Validity Observer (Class)", () => {
 /* eslint-disable @typescript-eslint/no-empty-function */
 (function runTypeOnlyTests() {
   /*
-   * This early return statement allows our type-only tests to be validated by `ts-jest` WITHOUT us getting
+   * This early return statement allows our type-only tests to be validated by TypeScript WITHOUT us getting
    * false positives for code coverage.
    */
   return;
@@ -2766,7 +2766,7 @@ describe("Form Validity Observer (Class)", () => {
   new FormValidityObserver(event1).configure(name, { validate: (_: ValidatableField) => "" });
   new FormValidityObserver(event1).configure(name, { validate: (_: FormField) => "" });
 
-  // Fields must be consistant/compatible, however
+  // Fields must be consistent/compatible, however
   new FormValidityObserver(event1).configure(name, {
     required: (_: HTMLInputElement) => "",
     // @ts-expect-error -- Incompatible with the `HTMLInputElement` specified earlier

@@ -1,18 +1,17 @@
 import FormValidityObserver from "@form-observer/core/FormValidityObserver.js";
 
-/* ---------------------------------------- Logic ---------------------------------------- */
 /**
  * Creates an enhanced version of the {@link FormValidityObserver} that's more convenient for `Svelte` apps
  *
- * @template {import("./types.d.ts").OneOrMany<import("./types.d.ts").EventType>} T
+ * @template {import("./index.d.ts").OneOrMany<import("./index.d.ts").EventType>} T
  * @template [M=string]
  * @param {T} types
- * @param {import("./types.d.ts").FormValidityObserverOptions<M>} [options]
+ * @param {import("./index.d.ts").FormValidityObserverOptions<M>} [options]
  * @returns {import("./types.d.ts").SvelteFormValidityObserver<M>}
  */
 export default function createFormValidityObserver(types, options) {
   const observer = /** @type {import("./types.d.ts").SvelteFormValidityObserver<M>} */ (
-    new FormValidityObserver(types, options)
+    /** @type {unknown} */ (new FormValidityObserver(types, options))
   );
 
   /* -------------------- Bindings -------------------- */
@@ -28,18 +27,17 @@ export default function createFormValidityObserver(types, options) {
   observer.clearFieldError = observer.clearFieldError.bind(observer);
 
   /** **Private** reference to the original {@link FormValidityObserver.configure} method */
-  const originalConfigure = /** @type {import("./types.d.ts").FormValidityObserver<M>["configure"]} */ (
-    observer.configure.bind(observer)
-  );
+  const originalConfigure = /** @type {FormValidityObserver<M>["configure"]} */ (observer.configure.bind(observer));
 
   /* -------------------- Enhancements -------------------- */
   // Add automatic setup/teardown
-  observer.autoObserve = function autoObserve(node) {
-    observer.observe(node);
+  observer.autoObserve = function autoObserve(form, novalidate = true) {
+    observer.observe(form);
+    if (novalidate) form.setAttribute("novalidate", "");
 
     return {
       destroy() {
-        observer.unobserve(node);
+        observer.unobserve(form);
       },
     };
   };
@@ -50,7 +48,7 @@ export default function createFormValidityObserver(types, options) {
       Object.keys(errorMessages)
     );
     const props = /** @type {import("./types.d.ts").SvelteFieldProps} */ ({ name });
-    const config = /** @type {import("./types.d.ts").ValidationErrors<M>} */ ({});
+    const config = /** @type {import("./index.d.ts").ValidationErrors<M>} */ ({});
 
     // Build `props` object and error `config` object from `errorMessages`
     for (let i = 0; i < keys.length; i++) {

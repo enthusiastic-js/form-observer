@@ -30,6 +30,7 @@ When you're working with pure HTML and pure JS, you'll have code that looks like
 ```js
 const observer = new FormValidityObserver("focusout");
 const form = document.querySelector("form");
+form.setAttribute("novalidate", "");
 observer.observe(form);
 
 const required = (field) => `${field.labels[0]?.textContent ?? "Field"} is required.`;
@@ -60,6 +61,7 @@ The code above is pretty simple. However, the fact that we have to keep track of
   let form;
   const observer = new FormValidityObserver("focusout");
   onMount(() => {
+    form.setAttribute("novalidate", "");
     observer.observe(form);
     return () => observer.disconnect();
   });
@@ -115,7 +117,7 @@ This is the approach being taken in our "Pure HTML + Pure JS" example at the beg
 
 ## Where's My JavaScript Framework?
 
-As you know, JS frameworks are always being created at an incredibly rapid pace; so we can't provide a package for _every_ framework that's out there. However, the steps to create your own convenience functions for the `FormValidityObserver` in your preferred framework are pretty straightforward. Well, the JS logic itself is straightforward. If you're using TypeScript, you will have to do a little bit of type dancing (which we will explain).
+As you know, JS frameworks are always being created at an incredibly rapid pace; so we can't provide a convenience wrapper for _every_ framework that's out there. However, the steps to create your own convenience functions for the `FormValidityObserver` in your preferred framework are pretty straightforward. Well, the JS logic itself is straightforward. If you're using TypeScript, you will have to do a little bit of type dancing (which we will explain).
 
 We'll walk you through the process by going step-by-step on how we made our `Svelte` integration. As we walk you through this example, we'll be using `TypeScript`. If you're only familiar with JavaScript, you can still follow along. The code we provide below will work in JavaScript if you remove all of the type declarations and type assertions.
 
@@ -124,15 +126,14 @@ We'll walk you through the process by going step-by-step on how we made our `Sve
 The first step is easy. Just create a function that instantiates and returns a `FormValidityObserver`. Because this function will only be creating an augmented `FormValidityObserver`, it should accept the same arguments as the class's [constructor](../README.md#constructor-formvalidityobservertypes-options). The return type will be an `interface` that represents the enhanced observer, but we won't add anything to it yet.
 
 ```ts
-import type { EventType, OneOrMany } from "@form-observer/core/types";
+import type { EventType, OneOrMany, FormValidityObserverOptions } from "@form-observer/core";
 import FormValidityObserver from "@form-observer/core/FormValidityObserver";
-import type { FormValidityObserverOptions } from "@form-observer/core/FormValidityObserver";
 
 function createFormValidityObserver<T extends OneOrMany<EventType>, M = string>(
   types: T,
   options?: FormValidityObserverOptions<M>,
 ): SvelteFormValidityObserver<M> {
-  const observer = new FormValidityObserver(types, options) as SvelteFormValidityObserver<M>;
+  const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M>;
   return observer;
 }
 
@@ -158,7 +159,7 @@ function createFormValidityObserver<T extends OneOrMany<EventType>, M = string>(
   types: T,
   options?: FormValidityObserverOptions<M>,
 ): SvelteFormValidityObserver<M> {
-  const observer = new FormValidityObserver(types, options) as SvelteFormValidityObserver<M>;
+  const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M>;
 
   /* ---------- Bindings ---------- */
   // Form Observer Methods
@@ -178,35 +179,35 @@ function createFormValidityObserver<T extends OneOrMany<EventType>, M = string>(
 interface SvelteFormValidityObserver<M = string> extends Omit<FormValidityObserver<M>, "configure"> {}
 ```
 
-Note: Because we will be enhancing the `configure` method, we _have not_ re-bound it to the `observer` object that we return.
+Note: Because we will be enhancing the `configure` method, we _have not_ attached it to the `observer` object that we return.
 
 ### 3&rpar; Create a Utility Function to Automatically Handle Setup and Cleaup (Optional)
 
 In this step, we create a reusable utility function that will enable us to automatically handle the setup and cleanup of the observer that `createFormValidityObserver` generates. Just like the previous step, this step is not mandatory. But the process for accomplishing this step is very easy, as it only requires 2 sub-steps:
 
-1. During the component's "mounting phase", call `observe` with the `HTMLFormElement` of interest.
+1. During the component's "mounting phase", call `observe` with the `HTMLFormElement` of interest. Optionally, you may also apply the [`novalidate`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#novalidate) attribute to the form element during this phase.
 2. During the component's "unmounting phase", call `unobserve` (or `disconnect`).
 
 Most JS frameworks create a way for you to accomplish this easily with utility functions. In [`React`](https://react.dev/reference/react-dom/components/common#ref-callback) or [`Vue`](https://vuejs.org/api/built-in-special-attributes.html#ref), you would pass a `ref` callback to an `HTMLFormElement`. In `Svelte`, the idiomatic way to accomplish this is with [`actions`](https://learn.svelte.dev/tutorial/actions):
 
 ```ts
-import type { EventType, OneOrMany } from "@form-observer/core/types";
+import type { EventType, OneOrMany, FormValidityObserverOptions } from "@form-observer/core";
 import FormValidityObserver from "@form-observer/core/FormValidityObserver";
-import type { FormValidityObserverOptions } from "@form-observer/core/FormValidityObserver";
-import type { Action } from "svelte/action";
+import type { ActionReturn } from "svelte/action";
 
 function createFormValidityObserver<T extends OneOrMany<EventType>, M = string>(
   types: T,
   options?: FormValidityObserverOptions<M>,
 ): SvelteFormValidityObserver<M> {
-  const observer = new FormValidityObserver(types, options) as SvelteFormValidityObserver<M>;
+  const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M>;
 
   /* ---------- Bindings ---------- */
   // Apply all bindings...
 
   /* ---------- Enhancements ---------- */
-  observer.autoObserve = (form) => {
+  observer.autoObserve = (form, novalidate = true) => {
     observer.observe(form);
+    if (novalidate) form.setAttribute("novalidate", "");
 
     return {
       destroy() {
@@ -219,7 +220,7 @@ function createFormValidityObserver<T extends OneOrMany<EventType>, M = string>(
 }
 
 interface SvelteFormValidityObserver<M = string> extends Omit<FormValidityObserver<M>, "configure"> {
-  autoObserve: Action<HTMLFormElement>;
+  autoObserve(form: HTMLFormElement, novalidate?: boolean): ActionReturn;
 }
 ```
 
@@ -260,6 +261,8 @@ Note: Because we now have the `autoObserve` utility, the exposed `observe`, `uno
 
 Because we promise a consistent API between the pure JS version of our package and the framework integrations for our package, we do not remove these methods from `@form-observer/svelte` (or our other integrations). However, you are free from such constraints.
 
+In this example, we added the `novalidate` option to the `autoObserve` action to help with displaying accessible error messages to our users. If you're unfamiliar with the significance of this attribute, see [_Enabling Accessible Error Messages during Form Submissions_](../guides.md#enabling-accessible-error-messages-during-form-submissions) for more details.
+
 ### 4&rpar; Create an Enhanced Version of the `configure` Method
 
 This is the most involved part of the process, though it still isn't too complicated. Here, we want to enhance the `FormValidityObserver.configure` method so that we can configure a field's constraints _and_ its error messages whenever `configure` is called. You can accomplish this in any way you please. We use [`React Hook Form`'s model](https://react-hook-form.com/docs/useform/register#options) because we believe it's intuitive and the most flexible.
@@ -289,13 +292,15 @@ Now that we've specified all the requirements, let's implement this functionalit
 #### Adding the TypeScript Types for `configure`
 
 ```ts
-import type { EventType, OneOrMany } from "@form-observer/core/types";
-import FormValidityObserver from "@form-observer/core/FormValidityObserver";
 import type {
+  EventType,
+  OneOrMany,
   ErrorMessage,
   ValidationErrors,
+  ValidatableField,
   FormValidityObserverOptions,
-} from "@form-observer/core/FormValidityObserver";
+} from "@form-observer/core";
+import FormValidityObserver from "@form-observer/core/FormValidityObserver";
 import type { Action } from "svelte/action";
 import type { HTMLInputAttributes } from "svelte/elements";
 
@@ -303,8 +308,8 @@ import type { HTMLInputAttributes } from "svelte/elements";
 
 interface SvelteFormValidityObserver<M = string> extends Omit<FormValidityObserver<M>, "configure"> {
   // Augments `FormValidityObserver.configure()`
-  configure(name: string, errorMessages: SvelteValidationErrors<M>): SvelteFieldProps;
-  autoObserve: Action<HTMLFormElement>;
+  configure<E extends ValidatableField>(name: string, errorMessages: SvelteValidationErrors<M, E>): SvelteFieldProps;
+  autoObserve(form: HTMLFormElement, novalidate?: boolean): ActionReturn;
 }
 
 // Augmented return type of `configure`
@@ -314,22 +319,23 @@ type SvelteFieldProps = Pick<
 >;
 
 // Augments `ValidationErrors` type
-interface SvelteValidationErrors<M> extends Pick<ValidationErrors<M>, "badinput" | "validate"> {
-  required?: SvelteErrorDetails<M, HTMLInputAttributes["required"]> | ErrorMessage<string>;
-  minlength?: SvelteErrorDetails<M, HTMLInputAttributes["minlength"]>;
-  min?: SvelteErrorDetails<M, HTMLInputAttributes["min"]>;
-  maxlength?: SvelteErrorDetails<M, HTMLInputAttributes["maxlength"]>;
-  max?: SvelteErrorDetails<M, HTMLInputAttributes["max"]>;
-  step?: SvelteErrorDetails<M, HTMLInputAttributes["step"]>;
-  type?: SvelteErrorDetails<M, HTMLInputAttributes["type"]>;
-  pattern?: SvelteErrorDetails<M, HTMLInputAttributes["pattern"]>;
+export interface SvelteValidationErrors<M, E extends ValidatableField = ValidatableField>
+  extends Pick<ValidationErrors<M, E>, "badinput" | "validate"> {
+  required?: SvelteErrorDetails<M, HTMLInputAttributes["required"], E> | ErrorMessage<string, E>;
+  minlength?: SvelteErrorDetails<M, HTMLInputAttributes["minlength"], E>;
+  min?: SvelteErrorDetails<M, HTMLInputAttributes["min"], E>;
+  maxlength?: SvelteErrorDetails<M, HTMLInputAttributes["maxlength"], E>;
+  max?: SvelteErrorDetails<M, HTMLInputAttributes["max"], E>;
+  step?: SvelteErrorDetails<M, HTMLInputAttributes["step"], E>;
+  type?: SvelteErrorDetails<M, HTMLInputAttributes["type"], E>;
+  pattern?: SvelteErrorDetails<M, HTMLInputAttributes["pattern"], E>;
 }
 
 // Augments `ErrorDetails` type
-type SvelteErrorDetails<M, V> =
+type SvelteErrorDetails<M, V, E extends ValidatableField = ValidatableField> =
   | V
-  | { render: true; message: ErrorMessage<M>; value: V }
-  | { render?: false; message: ErrorMessage<string>; value: V };
+  | { render: true; message: ErrorMessage<M, E>; value: V }
+  | { render?: false; message: ErrorMessage<string, E>; value: V };
 ```
 
 You don't have to understand what these types do to use them. But if you're interested in understanding what's happening here, let's walk you through what we did.
@@ -338,7 +344,7 @@ You don't have to understand what these types do to use them. But if you're inte
 
 Our `configure` method has changed the type of the `errorMessages` argument from `ValidationErrors` to `SvelteValidationErrors` so that we can configure a field's constraints and error messages simultaneously. The type that enables us to support this feature is `SvelteErrorDetails`.
 
-`SvelteErrorDetails` is _almost_ the exact same type as [`ErrorDetails`](../types.md#errordetailsm). There are only two differences between `SvelteErrorDetail` and `ErrorDetails`:
+`SvelteErrorDetails` is _almost_ the exact same type as [`ErrorDetails`](../types.md#errordetailsm-e). There are only two differences between `SvelteErrorDetail` and `ErrorDetails`:
 
 <ol>
   <li>
@@ -359,11 +365,11 @@ Our `configure` method has changed the type of the `errorMessages` argument from
   </li>
 </ol>
 
-Just as the `ErrorDetails` type forms the foundation of the [`ValidationErrors`](../types.md#validationerrorsm) type, so the `SvelteErrorDetails` type forms the foundation of the `SvelteValidationErrors` type. The type definition for `SvelteValidationErrors` is _almost_ the exact same as the type definition for `ValidationErrors`. In fact, the `badinput` and `validate` properties are exactly the same between the 2.
+Just as the `ErrorDetails` type forms the foundation of the [`ValidationErrors`](../types.md#validationerrorsm-e) type, so the `SvelteErrorDetails` type forms the foundation of the `SvelteValidationErrors` type. The type definition for `SvelteValidationErrors` is _almost_ the exact same as the type definition for `ValidationErrors`. In fact, the `badinput` and `validate` properties are exactly the same between the 2.
 
-The primary way in which the `SvelteValidationErrors` type differs from the `ValidationErrors` type is that it takes constraint values into account (with the help of `SvelteErrorDetails`). It determines the values that each constraint supports by looking at `Svelte`'s type definition for the `input` field's props (i.e., `HTMLInputAttributes`). (**Note: If you're using a different JS framework, you should use _that_ framework's type definitions for the `input` field's props instead.**)
+The primary way in which the `SvelteValidationErrors` type differs from the `ValidationErrors` type is that it takes constraint values into account (with the help of `SvelteErrorDetails`). It determines the value types that each constraint supports by looking at `Svelte`'s type definition for the `input` field's props (i.e., `HTMLInputAttributes`). (**Note: If you're using a different JS framework, you should use _that_ framework's type definitions for the `input` field's props instead.**)
 
-Notice that the `required` constraint is slightly different from the others in that it supports one additional type: [`ErrorMessage<string>`](../types.md#errormessagem). If the developer supplies an error message by itself for the `required` constraint, it is safe to assume that `required` is `true`. This is an assumption that can only be made safely with the `required` constraint because it is a `boolean`.
+Notice that the `required` constraint is slightly different from the others in that it supports one additional type: [`ErrorMessage<string>`](../types.md#errormessagem-e). If the developer supplies an error message by itself for the `required` constraint, it is safe to assume that `required` is `true`. This is an assumption that can only be made safely with the `required` constraint because it is a `boolean`.
 
 ##### Enhancing the Return Type of `configure`
 
@@ -380,8 +386,8 @@ And we make _this_ the return type of `configure`:
 
 ```ts
 interface SvelteFormValidityObserver<M = string> extends Omit<FormValidityObserver<M>, "configure"> {
-  configure(name: string, errorMessages: SvelteValidationErrors<M>): SvelteFieldProps;
-  autoObserve: Action<HTMLFormElement>;
+  configure<E extends ValidatableField>(name: string, errorMessages: SvelteValidationErrors<M, E>): SvelteFieldProps;
+  autoObserve(form: HTMLFormElement, novalidate?: boolean): ActionReturn;
 }
 ```
 
@@ -398,7 +404,7 @@ export default function createFormValidityObserver<T extends OneOrMany<EventType
   types: T,
   options?: FormValidityObserverOptions<M>,
 ): SvelteFormValidityObserver<M> {
-  const observer = new FormValidityObserver(types, options) as SvelteFormValidityObserver<M>;
+  const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M>;
 
   /* ---------- Bindings ---------- */
   // Apply bindings for exposed methods ...
@@ -450,7 +456,7 @@ export default function createFormValidityObserver<T extends OneOrMany<EventType
     return props;
   };
 
-  return observe;
+  return observer;
 }
 
 // Type Definitions ...
@@ -500,7 +506,7 @@ However, this approach is unnecessarily redundant, and the redundancy gets much 
 
 The next alternative is to use `@ts-expect-error` at every location where TypeScript complains. This keeps the bundle size of our application intact, but it _also_ makes the code more difficult to read.
 
-If we want to keep our code readable, then the next best solution is to use `any`. Yep, I know. The purist in me hates it too. But for the sake of readability, it's probably the best thing that we've got. The `any` type was designed for rare cases like these where JavaScript knows what TypeScript can never know. So let's rewrite what we have:
+If we want to keep our code readable, then the next best solution is to use `any`. Yep, I know. The purist in me hates it too. But for the sake of readability, it's probably the best thing that we've got. The `any` type was designed for rare cases like these where JavaScript knows what TypeScript can never know. So let's update what we have:
 
 ```ts
 observer.configure = (name, errorMessages) => {
@@ -544,9 +550,9 @@ observer.configure = (name, errorMessages) => {
 
 ##### Handling Mismatched Constraint Properties
 
-If your framework behaves unorthodoxically by using JS properties for the `props` instead of HTML attributes, then you will have to add an object that maps HTML attributes to JS properties to this function. But that update is easy to do. The only framework that we currently know would cause this problem is `React`. You can look at our code for the [`@form-observer/react`](https://github.com/enthusiastic-js/form-observer/tree/main/packages/react) package to see how we handle that issue.
+If your framework behaves unorthodoxically by using JS properties for the form field `props` instead of HTML attributes, then you will have to create an object that maps HTML attributes to JS properties for this function. But that update is easy to do. The only framework that we currently know would cause this problem is `React`. You can look at our code for the [`@form-observer/react`](https://github.com/enthusiastic-js/form-observer/tree/main/packages/react) package to see how we handle that issue.
 
-`Svelte`, like many other frameworks does not have this issue. So no additional code is necessary.
+`Svelte`, like many other frameworks, does not have this issue; so no additional code is necessary here.
 
 ### 5&rpar; Enjoy Your New `createFormValidityObserver` Utility Function!
 
