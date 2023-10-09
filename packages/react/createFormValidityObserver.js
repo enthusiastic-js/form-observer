@@ -2,7 +2,10 @@ import FormValidityObserver from "@form-observer/core/FormValidityObserver.js";
 
 /**
  * Maps the standardized HTML constraint-related attributes to valid React props
- * @satisfies {Record<keyof Omit<import("./types.d.ts").ValidationErrors<string>, "badinput" | "validate">, keyof import("./types.d.ts").ReactFieldProps>}
+ * @satisfies {Record<
+     keyof Omit<import("./index.d.ts").ValidationErrors<string>, 
+     "badinput" | "validate">, keyof import("./types.d.ts").ReactFieldProps
+   >}
  */
 const constraintsMap = Object.freeze({
   required: "required",
@@ -18,15 +21,15 @@ const constraintsMap = Object.freeze({
 /**
  * Creates an enhanced version of the {@link FormValidityObserver} that's more convenient for `React` apps
  *
- * @template {import("./types.d.ts").OneOrMany<import("./types.d.ts").EventType>} T
+ * @template {import("./index.d.ts").OneOrMany<import("./index.d.ts").EventType>} T
  * @template [M=string]
  * @param {T} types
- * @param {import("./types.d.ts").FormValidityObserverOptions<M>} [options]
+ * @param {import("./index.d.ts").FormValidityObserverOptions<M>} [options]
  * @returns {import("./types.d.ts").ReactFormValidityObserver<M>}
  */
 export default function createFormValidityObserver(types, options) {
   const observer = /** @type {import("./types.d.ts").ReactFormValidityObserver<M>} */ (
-    new FormValidityObserver(types, options)
+    /** @type {unknown} */ (new FormValidityObserver(types, options))
   );
 
   /* -------------------- Bindings -------------------- */
@@ -42,21 +45,21 @@ export default function createFormValidityObserver(types, options) {
   observer.clearFieldError = observer.clearFieldError.bind(observer);
 
   /** **Private** reference to the original `FormValidityObserver.configure` method */
-  const originalConfigure = /** @type {import("./types.d.ts").FormValidityObserver<M>["configure"]} */ (
-    observer.configure.bind(observer)
-  );
+  const originalConfigure = /** @type {FormValidityObserver<M>["configure"]} */ (observer.configure.bind(observer));
 
   /* -------------------- Enhancements -------------------- */
   // Add automatic setup/teardown
-  observer.autoObserve = function autoObserve() {
+  observer.autoObserve = function autoObserve(novalidate = true) {
     /** @type {HTMLFormElement | null} */
     let form;
 
-    /** @param {typeof form} reactRef */
+    /** @param {typeof form} reactRef @returns {void} */
     return (reactRef) => {
       if (reactRef) {
         form = reactRef;
-        return observer.observe(form);
+        observer.observe(form);
+        if (novalidate) form.setAttribute("novalidate", "");
+        return;
       }
 
       observer.unobserve(/** @type {HTMLFormElement} */ (form));
@@ -70,7 +73,7 @@ export default function createFormValidityObserver(types, options) {
       Object.keys(errorMessages)
     );
     const props = /** @type {import("./types.d.ts").ReactFieldProps} */ ({ name });
-    const config = /** @type {import("./types.d.ts").ValidationErrors<M>} */ ({});
+    const config = /** @type {import("./index.d.ts").ValidationErrors<M>} */ ({});
 
     // Build `props` object and error `config` object from `errorMessages`
     for (let i = 0; i < keys.length; i++) {

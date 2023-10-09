@@ -4,7 +4,7 @@ import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import FormValidityObserver from "@form-observer/core/FormValidityObserver.js";
 import createFormValidityObserver from "../createFormValidityObserver.js";
-import type { EventType, FormField, ReactValidationErrors, ReactFieldProps } from "../types.d.ts";
+import type { EventType, FormField, ValidatableField, ReactValidationErrors, ReactFieldProps } from "../index.d.ts";
 
 describe("Create Form Validity Observer (Function)", () => {
   const types = Object.freeze(["input", "focusout"] as const) satisfies ReadonlyArray<EventType>;
@@ -19,7 +19,7 @@ describe("Create Form Validity Observer (Function)", () => {
   it("Exposes `bound` versions of the `FormValidityObserver`'s methods (excluding `configure`)", () => {
     /* ---------- Setup ---------- */
     // Derive `bound` methods
-    type BoundMethod = keyof Omit<InstanceType<typeof FormValidityObserver>, "configure">;
+    type BoundMethod = keyof Omit<FormValidityObserver, "configure">;
     const members = Object.getOwnPropertyNames(FormValidityObserver.prototype);
     const boundMethods = members.filter((m): m is BoundMethod => m !== "constructor" && m !== "configure");
 
@@ -27,8 +27,9 @@ describe("Create Form Validity Observer (Function)", () => {
     expect(boundMethods).toHaveLength(7); // Note: This number will change if we add more methods (unlikely).
     expect(boundMethods.length).toBe(new Set(boundMethods).size);
 
+    // TODO: We shouldn't have to cast as `never`. This is probably a bug with `vitest`. See other `never` as well.
     // Spy on the `bound` methods
-    boundMethods.forEach((method) => vi.spyOn(FormValidityObserver.prototype[method], "bind"));
+    boundMethods.forEach((method) => vi.spyOn(FormValidityObserver.prototype[method], "bind" as never));
 
     /* ---------- Run Assertions ---------- */
     const observer = createFormValidityObserver(types);
@@ -43,7 +44,7 @@ describe("Create Form Validity Observer (Function)", () => {
   it("DOES NOT expose the `FormValidityObserver`'s ORIGINAL `configure` method", () => {
     /** The name of the {@link FormValidityObserver.configure} method */
     const configure = "configure";
-    vi.spyOn(FormValidityObserver.prototype[configure], "bind");
+    vi.spyOn(FormValidityObserver.prototype[configure], "bind" as never); // See earlier TODO TS comment
 
     // Run Assertions
     const observer = createFormValidityObserver(types);
@@ -91,6 +92,29 @@ describe("Create Form Validity Observer (Function)", () => {
         /* ----- After `unount` ----- */
         unmount();
         expect(FormValidityObserver.prototype.unobserve).toHaveBeenCalledWith(form);
+      });
+
+      it("Configures the `novalidate` attribute of the observed `form` (defaults to `true`)", () => {
+        // Setup
+        const labels = { default: "Default Config", true: "Explicit True Option", false: "Explicit False Option" };
+        const novalidate = "novalidate";
+
+        const { autoObserve: autoObserveDefault } = createFormValidityObserver(types[0]);
+        const { autoObserve: autoObserveTrue } = createFormValidityObserver(types[0]);
+        const { autoObserve: autoObserveFalse } = createFormValidityObserver(types[0]);
+
+        // Assertions
+        render(
+          <>
+            <form ref={autoObserveDefault()} aria-label={labels.default}></form>
+            <form ref={autoObserveTrue(true)} aria-label={labels.true}></form>
+            <form ref={autoObserveFalse(false)} aria-label={labels.false}></form>
+          </>,
+        );
+
+        expect(screen.getByRole("form", { name: labels.default })).toHaveAttribute(novalidate, "");
+        expect(screen.getByRole("form", { name: labels.true })).toHaveAttribute(novalidate, "");
+        expect(screen.getByRole("form", { name: labels.false })).not.toHaveAttribute(novalidate);
       });
     });
 
@@ -160,10 +184,10 @@ describe("Create Form Validity Observer (Function)", () => {
         const observer = createFormValidityObserver(types[0]);
 
         const errorMessages: Omit<ConstraintValues, "badinput" | "validate"> = {
-          required: { value: true, message: (field: FormField) => `<p>${field.tagName} required</p>`, render: true },
+          required: { value: true, message: (field) => `<p>${field.tagName} required</p>`, render: true },
           minlength: { value: 10, message: "This message is too small", render: false },
           min: { value: 10, message: "Your power level is too weak" },
-          maxlength: { value: 30, message: (field: FormField) => `${field.tagName} is a little too chatty` },
+          maxlength: { value: 30, message: (field) => `${field.tagName} is a little too chatty` },
           max: { value: 15, message: "<strong>WHAT POWER!!!</strong>", render: true },
           step: { value: 10, message: "Your dancing has to be a bit more clever" },
           type: { value: "email", message: "Give me your email plzzzz!" },
@@ -222,3 +246,37 @@ describe("Create Form Validity Observer (Function)", () => {
     });
   });
 });
+
+/* ---------------------------------------- TypeScript Type-only Tests ---------------------------------------- */
+/* eslint-disable no-unreachable */
+(function runTypeOnlyTests() {
+  /*
+   * This early return statement allows our type-only tests to be validated by TypeScript WITHOUT us getting
+   * false positives for code coverage.
+   */
+  return;
+  const event = "beforeinput" satisfies keyof DocumentEventMap; // Correlates to `InputEvent`
+  const name = "name";
+
+  /*
+   * Only the types for `configure` need to be tested since the other validation methods are copies of the Core Methods.
+   * Both specific AND general element types should work for `configure`d error message functions.
+   */
+  createFormValidityObserver(event).configure(name, { required: (_: HTMLTextAreaElement) => "" });
+  createFormValidityObserver(event).configure(name, { required: (_: HTMLInputElement) => "" });
+  createFormValidityObserver(event).configure(name, { required: (_: ValidatableField) => "" });
+  createFormValidityObserver(event).configure(name, { required: (_: FormField) => "" });
+
+  createFormValidityObserver(event).configure(name, { validate: (_: HTMLTextAreaElement) => "" });
+  createFormValidityObserver(event).configure(name, { validate: (_: HTMLInputElement) => "" });
+  createFormValidityObserver(event).configure(name, { validate: (_: ValidatableField) => "" });
+  createFormValidityObserver(event).configure(name, { validate: (_: FormField) => "" });
+
+  // Fields must be consistent/compatible, however
+  createFormValidityObserver(event).configure(name, {
+    required: (_: HTMLInputElement) => "",
+    // @ts-expect-error -- Incompatible with the `HTMLInputElement` specified earlier
+    validate: (_: HTMLSelectElement) => "",
+  });
+})();
+/* eslint-enable no-unreachable */

@@ -26,7 +26,7 @@ The following methods on the `SvelteFormValidityObserver` are the exact same as 
 
 A Svelte [`action`](https://learn.svelte.dev/tutorial/actions) used to simplify the process of setting up and cleaning up a form's `FormValidityObserver`.
 
-The `novalidate` parameter indicates that the [novalidate](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#novalidate) attribute should be applied to the `form` element when JavaScript is available to the client. By default, its value is `true`.
+The `novalidate` parameter indicates that the [novalidate](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#novalidate) attribute should be applied to the `form` element when JavaScript is available to the client. By default, its value is `true`. (For details on why this attribute is significant, see [_Enabling Accessible Error Messages during Form Submissions_](../guides.md#enabling-accessible-error-messages-during-form-submissions).)
 
 > Note: If you use this `action`, you should **not** need to call `observe`, `unobserve`, or `disconnect` directly.
 

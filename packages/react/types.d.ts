@@ -1,9 +1,6 @@
-import type { ErrorMessage, ValidationErrors, FormValidityObserver } from "@form-observer/core/types.d.ts";
+import type { ErrorMessage, ValidationErrors, ValidatableField, FormValidityObserver } from "@form-observer/core";
+import type React from "react";
 
-/* -------------------- Core Types -------------------- */
-export type * from "@form-observer/core/types.d.ts";
-
-/* -------------------- React Form Validity Observer Types -------------------- */
 export interface ReactFormValidityObserver<M = string> extends Omit<FormValidityObserver<M>, "configure"> {
   /**
    * An enhanced version of {@link FormValidityObserver.configure} for `React`. In addition to configuring a field's
@@ -21,21 +18,25 @@ export interface ReactFormValidityObserver<M = string> extends Omit<FormValidity
    *
    * // If the field is too long, the error will display the browser's `tooLong` error string.
    * <input {...configure("comment", { maxlength: 10 })} />
-   * <input name="another-comment" maxlength="10" />
+   * <input name="another-comment" maxLength={10} />
    */
-  configure(name: string, errorMessages: ReactValidationErrors<M>): ReactFieldProps;
+  configure<E extends ValidatableField>(name: string, errorMessages: ReactValidationErrors<M, E>): ReactFieldProps;
 
   /**
    * Creates a React `ref` callback used to automatically setup and cleanup a form's observer.
    *
    * **Note**: If you use this `ref`, you should **not** call `observe`, `unobserve`, or `disconnect` directly.
    *
+   * @param novalidate Indicates that the
+   * {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#novalidate novalidate} attribute should
+   * be applied to the `form` element when JavaScript is enabled. Defaults to `true`.
+   *
    * @example
    * <form ref={autoObserve()}>
    *   <input name="first-name" type="textbox" required />
    * </form>
    */
-  autoObserve(): (formRef: HTMLFormElement) => void;
+  autoObserve(novalidate?: boolean): (formRef: HTMLFormElement) => void;
 }
 
 export type ReactFieldProps = Pick<
@@ -47,20 +48,21 @@ export type ReactFieldProps = Pick<
  * An augmetation of {@link ValidationErrors} for `React`. Represents the constraints that should be applied
  * to a form field, and the error messages that should be displayed when those constraints are broken.
  */
-export interface ReactValidationErrors<M> extends Pick<ValidationErrors<M>, "badinput" | "validate"> {
+export interface ReactValidationErrors<M, E extends ValidatableField = ValidatableField>
+  extends Pick<ValidationErrors<M, E>, "badinput" | "validate"> {
   // Standard HTML Attributes
-  required?: ReactErrorDetails<M, React.ComponentProps<"input">["required"]> | ErrorMessage<string>;
-  minlength?: ReactErrorDetails<M, React.ComponentProps<"input">["minLength"]>;
-  min?: ReactErrorDetails<M, React.ComponentProps<"input">["min"]>;
-  maxlength?: ReactErrorDetails<M, React.ComponentProps<"input">["maxLength"]>;
-  max?: ReactErrorDetails<M, React.ComponentProps<"input">["max"]>;
-  step?: ReactErrorDetails<M, React.ComponentProps<"input">["step"]>;
-  type?: ReactErrorDetails<M, React.ComponentProps<"input">["type"]>;
-  pattern?: ReactErrorDetails<M, React.ComponentProps<"input">["pattern"]>;
+  required?: ReactErrorDetails<M, React.ComponentProps<"input">["required"], E> | ErrorMessage<string, E>;
+  minlength?: ReactErrorDetails<M, React.ComponentProps<"input">["minLength"], E>;
+  min?: ReactErrorDetails<M, React.ComponentProps<"input">["min"], E>;
+  maxlength?: ReactErrorDetails<M, React.ComponentProps<"input">["maxLength"], E>;
+  max?: ReactErrorDetails<M, React.ComponentProps<"input">["max"], E>;
+  step?: ReactErrorDetails<M, React.ComponentProps<"input">["step"], E>;
+  type?: ReactErrorDetails<M, React.ComponentProps<"input">["type"], E>;
+  pattern?: ReactErrorDetails<M, React.ComponentProps<"input">["pattern"], E>;
 }
 
 /** An augmentation of the core `ErrorDetails` type for `React`. */
-export type ReactErrorDetails<M, V> =
+export type ReactErrorDetails<M, V, E extends ValidatableField = ValidatableField> =
   | V
-  | { render: true; message: ErrorMessage<M>; value: V }
-  | { render?: false; message: ErrorMessage<string>; value: V };
+  | { render: true; message: ErrorMessage<M, E>; value: V }
+  | { render?: false; message: ErrorMessage<string, E>; value: V };

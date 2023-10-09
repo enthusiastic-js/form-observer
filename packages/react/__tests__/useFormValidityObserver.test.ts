@@ -2,7 +2,7 @@ import { vi, beforeEach, describe, it, expect } from "vitest";
 import { renderHook } from "@testing-library/react";
 import * as createFormValidityObserverImport from "../createFormValidityObserver.js";
 import useFormValidityObserver from "../useFormValidityObserver.js";
-import type { EventType } from "../types.d.ts";
+import type { EventType } from "../index.d.ts";
 
 describe("useFormValidityObserver (Custom React Hook)", () => {
   // Keep things clean between each test by automatically restoring anything we may have spied on
