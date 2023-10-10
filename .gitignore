@@ -1,5 +1,9 @@
 # -------------------- Our Own Ignore Config --------------------
-build
+# Auto-generated DTS Files
+*.d.ts
+!/packages/*/index.d.ts
+!/packages/*/types.d.ts
+
 
 # -------------------- NPM (via GitHub) --------------------
 # Logs
