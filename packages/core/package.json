@@ -3,7 +3,31 @@
   "type": "module",
   "version": "0.0.1",
   "description": "A simple utility for reacting to events from a form's fields",
-  "main": "build/index.js",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./FormObserver": {
+      "types": "./FormObserver.d.ts",
+      "default": "./FormObserver.js"
+    },
+    "./FormStorageObserver": {
+      "types": "./FormStorageObserver.d.ts",
+      "default": "./FormStorageObserver.js"
+    },
+    "./FormValidityObserver": {
+      "types": "./FormValidityObserver.d.ts",
+      "default": "./FormValidityObserver.js"
+    },
+    "./utils/assertions": {
+      "types": "./utils/assertions.d.ts",
+      "default": "./utils/assertions.js"
+    },
+    "./types": {
+      "types": "./types.d.ts"
+    }
+  },
   "devDependencies": {
     "@testing-library/dom": "^9.3.3"
   },

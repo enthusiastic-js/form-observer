@@ -3,6 +3,23 @@
   "type": "module",
   "version": "0.0.1",
   "description": "Convenience functions for the `@form-observer/core` package, designed for React apps",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "defaut": "./index.js"
+    },
+    "./createFormValidityObserver": {
+      "types": "./createFormValidityObserver.d.ts",
+      "default": "./createFormValidityObserver.js"
+    },
+    "./useFormValidityObserver": {
+      "types": "./useFormValidityObserver.d.ts",
+      "default": "./useFormValidityObserver.js"
+    },
+    "./types": {
+      "types": "./types.d.ts"
+    }
+  },
   "peerDependencies": {
     "@form-observer/core": "*",
     "react": ">=16.8.0"
