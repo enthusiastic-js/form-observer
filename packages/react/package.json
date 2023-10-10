@@ -6,7 +6,7 @@
   "exports": {
     ".": {
       "types": "./index.d.ts",
-      "defaut": "./index.js"
+      "default": "./index.js"
     },
     "./createFormValidityObserver": {
       "types": "./createFormValidityObserver.d.ts",
