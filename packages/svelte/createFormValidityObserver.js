@@ -1,4 +1,4 @@
-import FormValidityObserver from "@form-observer/core/FormValidityObserver.js";
+import FormValidityObserver from "@form-observer/core/FormValidityObserver";
 
 /**
  * Creates an enhanced version of the {@link FormValidityObserver} that's more convenient for `Svelte` apps

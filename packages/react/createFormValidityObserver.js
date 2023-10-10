@@ -1,4 +1,4 @@
-import FormValidityObserver from "@form-observer/core/FormValidityObserver.js";
+import FormValidityObserver from "@form-observer/core/FormValidityObserver";
 
 /**
  * Maps the standardized HTML constraint-related attributes to valid React props

@@ -1,6 +1,6 @@
 import { vi, beforeEach, describe, it, expect } from "vitest";
 import "@testing-library/jest-dom/vitest";
-import FormValidityObserver from "@form-observer/core/FormValidityObserver.js";
+import FormValidityObserver from "@form-observer/core/FormValidityObserver";
 import createFormValidityObserver from "../createFormValidityObserver.js";
 import type { SvelteValidationErrors } from "../types.d.ts";
 import type { EventType, FormField, ValidatableField } from "../index.d.ts";

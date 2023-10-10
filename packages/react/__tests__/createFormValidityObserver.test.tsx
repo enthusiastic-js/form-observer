@@ -2,7 +2,7 @@ import { vi, beforeEach, afterEach, describe, it, expect } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
-import FormValidityObserver from "@form-observer/core/FormValidityObserver.js";
+import FormValidityObserver from "@form-observer/core/FormValidityObserver";
 import createFormValidityObserver from "../createFormValidityObserver.js";
 import type { EventType, FormField, ValidatableField, ReactValidationErrors, ReactFieldProps } from "../index.d.ts";
 
