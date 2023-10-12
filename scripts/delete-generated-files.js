@@ -20,7 +20,7 @@ export default async function deleteGeneratedFilesFrom(directoryPath, isPackageD
       const filepath = path.resolve(directoryPath, f);
       if ((await fs.stat(filepath)).isDirectory()) return /** @type {any} */ (deleteGeneratedFilesFrom(filepath));
 
-      if (!generatedFileExtension.test(f)) return;
+      if (!generatedFileExtension.test(f) && f !== ".npmignore" && f !== "LICENSE") return;
       if (isPackageDirectory && (f === "index.d.ts" || f === "types.d.ts")) return;
       return fs.rm(filepath);
     }),

@@ -8,6 +8,10 @@
 packages/**/*.cjs
 packages/**/*.cts
 
+# Published Files Owned by Root Directory
+packages/*/.npmignore
+packages/*/LICENSE
+
 # -------------------- NPM (via GitHub) --------------------
 # Logs
 logs

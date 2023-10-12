@@ -1,3 +1,4 @@
+// Prepares ALL NPM Packages for publishing
 import fs from "node:fs/promises";
 import path from "node:path";
 import { exec } from "node:child_process";
@@ -23,6 +24,7 @@ Promise.all(packages.map((p) => deleteGeneratedFilesFrom(path.resolve(root, "pac
     return Promise.allSettled(packages.filter((p) => p !== "core").map(generateDTSFilesFor));
   })
   .then(() => Promise.all(packages.map((p) => generateCJSFilesFor(path.resolve(root, "packages", p)))))
+  .then(() => Promise.all(packages.map(addNPMFilesTo)))
   .then(() => console.log("\nBuild process was successful."))
   .catch((error) => {
     console.log("\nReverting the build process because the following error occurred:\n");
@@ -103,4 +105,17 @@ async function generateCJSFilesFor(directoryPath) {
       return fs.writeFile(filepath.replace(/\.js$/, ".cjs"), `"use strict";\n\n${cjsVersion}`, "utf-8");
     }),
   );
+}
+
+/* -------------------- Function for Generating CommonJS Files -------------------- */
+/**
+ * Adds files to the specified `packageDirectory` that are needed for a successful
+ * [`npm publish`](https://docs.npmjs.com/cli/v10/commands/npm-publish?v=true).
+ * @param {string} packageDirectory The **_name_** of a package folder
+ * @return {Promise<void[]>}
+ */
+function addNPMFilesTo(packageDirectory) {
+  const publishFiles = /** @type {const} */ ([".npmignore", "LICENSE"]);
+  const directoryPath = path.resolve(root, "packages", packageDirectory);
+  return Promise.all(publishFiles.map((f) => fs.copyFile(path.resolve(root, f), path.resolve(directoryPath, f))));
 }

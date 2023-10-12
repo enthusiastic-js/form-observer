@@ -1,7 +1,7 @@
 {
   "name": "@form-observer/svelte",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.0-experimental-1",
   "description": "Convenience functions for the `@form-observer/core` package, designed for Svelte apps",
   "exports": {
     ".": {

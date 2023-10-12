@@ -1,0 +1,10 @@
+# Files That NPM Wrongly Ignores
+!*.d.ts
+
+# Development Files
+tsconfig.json
+
+*.test.ts
+*.svelte
+*.vue
+*.tsx

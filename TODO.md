@@ -2,10 +2,8 @@
 
 ## Things to Do Before Releasing
 
-- [ ] `NPM Packaging`|`Critical`: Get everything in order so that we can have a streamlined process for releasing all of the NPM Packages in our monorepo.
 - [ ] `NPM Packaging`|`Critical`: Add `README.md` files to the root of **each** individual NPM Package/Project. This is separate from our project's documenation. Currently, our "Documentation" is the `/docs` folder of our GitHub repo. (And we can point this out in each package's `README.md` file.) But in terms of users getting a quick understanding of what our packages do, having `README`s that are included with each of our packages on NPM is absolutely critical.
 - [ ] **FormObserver and Children** (`Types`|`Negotiable`): Support custom event types. (Currently, we only support the standard event types that are recognized by the browser.)
-- [ ] After you've finalized how the code _and especially_ the build process will look/work, update the example for [creating convenience functions for the `FormValidityObserver`](./docs/form-validity-observer/integrations/README.md#wheres-my-javascript-framework).
 - [ ] `Docs`: Consider mentioning that we have valid TypeScript support in the `FormObserver`'s [Features and Benefits](./docs/form-observer/README.md#features-and-benefits) list. (After we finalize the build step, we might not need this step. We only need this step if our usage of JSDocs is misleading.)
 
 ## Documentation
