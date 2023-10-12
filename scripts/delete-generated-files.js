@@ -10,7 +10,7 @@ const generatedFileExtension = /(\.cjs|\.d\.c?ts)$/;
  * @param {string} directoryPath The _absolute path_ to a package folder _or_ a directory within a package folder
  * @param {boolean} [isPackageDirectory] Indicates that `directoryPath` points _directly_ to a package folder
  * (e.g., the `/packages/core` folder).
- * @returns {Promise<void>}
+ * @returns {Promise<void[]>}
  */
 export default async function deleteGeneratedFilesFrom(directoryPath, isPackageDirectory) {
   const filenames = await fs.readdir(directoryPath);
@@ -18,7 +18,7 @@ export default async function deleteGeneratedFilesFrom(directoryPath, isPackageD
   return Promise.all(
     filenames.map(async (f) => {
       const filepath = path.resolve(directoryPath, f);
-      if ((await fs.stat(filepath)).isDirectory()) return deleteGeneratedFilesFrom(filepath);
+      if ((await fs.stat(filepath)).isDirectory()) return /** @type {any} */ (deleteGeneratedFilesFrom(filepath));
 
       if (!generatedFileExtension.test(f)) return;
       if (isPackageDirectory && (f === "index.d.ts" || f === "types.d.ts")) return;

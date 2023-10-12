@@ -1,7 +1,7 @@
 {
   // TODO: Make compatible with NPM Workspaces ... EDIT: Do we need workspaces if we're using JSDocs?
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2021",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "strict": true,
@@ -15,5 +15,5 @@
     "skipLibCheck": false
   },
   // TODO: Split Vitest Config out from final production bundle ... EDIT: Depends on comment above
-  "include": ["packages/**/*", "vitest.config.ts", "vitest.workspace.ts"]
+  "include": ["packages/**/*", "scripts/**/*", "vitest.config.ts", "vitest.workspace.ts"]
 }

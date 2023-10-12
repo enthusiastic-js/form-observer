@@ -19,7 +19,7 @@ Promise.all(packages.map((p) => deleteGeneratedFilesFrom(path.resolve(root, "pac
      * error during the build process (hence `Promise.allSettled`), all of the types seem to get generated
      * as expected. So again, this works for now.
      */
-    await generateDTSFilesFor(packages.find((p) => p === "core"));
+    await generateDTSFilesFor(/** @type {string} */ (packages.find((p) => p === "core")));
     return Promise.allSettled(packages.filter((p) => p !== "core").map(generateDTSFilesFor));
   })
   .then(() => Promise.all(packages.map((p) => generateCJSFilesFor(path.resolve(root, "packages", p)))))
@@ -55,7 +55,7 @@ const cjsFiles = '"$1.c$2s"';
 const importNamed = /import ({ .+ }) from (".+")/g;
 const importDefault = /import (\w+) from (".+")/g;
 
-const jsdoc = /(\/\*\*\s*\n([^\*]|(\*(?!\/)))*\*\/\n)/;
+const jsdoc = /(\/\*\*\s*\n([^*]|(\*(?!\/)))*\*\/\n)/;
 const exportDefaultFunc = new RegExp(`${jsdoc.toString().slice(1, -1)}export default function (\\w+)(.+)`);
 const exportDefaultValue = /export default (\w+);/;
 const exportFunc = new RegExp(`${jsdoc.toString().slice(1, -1)}export function (\\w+)(.+)`, "g");
@@ -70,7 +70,7 @@ const exportAll = /export \* from (".+");/g;
  * and CJS is no longer needed by (or an impediment for) the vast majority of users.
  *
  * @param {string} directoryPath The _absolute path_ to a package folder _or_ a directory within a package folder
- * @returns {Promise<void>}
+ * @returns {Promise<void[]>}
  */
 async function generateCJSFilesFor(directoryPath) {
   const filenames = await fs.readdir(directoryPath);
@@ -78,7 +78,7 @@ async function generateCJSFilesFor(directoryPath) {
   return Promise.all(
     filenames.map(async (f) => {
       const filepath = path.resolve(directoryPath, f);
-      if ((await fs.stat(filepath)).isDirectory()) return generateCJSFilesFor(filepath);
+      if ((await fs.stat(filepath)).isDirectory()) return /** @type {any} */ (generateCJSFilesFor(filepath));
       if (!f.endsWith(".js") && !f.endsWith(".d.ts")) return;
 
       // Create `.d.cts` Files

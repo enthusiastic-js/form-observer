@@ -80,6 +80,7 @@
         "no-restricted-syntax": "off",
         "prefer-promise-reject-errors": "off"
       }
-    }
+    },
+    { "files": "scripts/**/*.js", "rules": { "no-console": "off" } }
   ]
 }
