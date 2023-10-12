@@ -5,22 +5,42 @@
   "description": "A simple utility for reacting to events from a form's fields",
   "exports": {
     ".": {
+      "require": {
+        "types": "./index.d.cts",
+        "default": "./index.cjs"
+      },
       "types": "./index.d.ts",
       "default": "./index.js"
     },
     "./FormObserver": {
+      "require": {
+        "types": "./FormObserver.d.cts",
+        "default": "./FormObserver.cjs"
+      },
       "types": "./FormObserver.d.ts",
       "default": "./FormObserver.js"
     },
     "./FormStorageObserver": {
+      "require": {
+        "types": "./FormStorageObserver.d.cts",
+        "default": "./FormStorageObserver.cjs"
+      },
       "types": "./FormStorageObserver.d.ts",
       "default": "./FormStorageObserver.js"
     },
     "./FormValidityObserver": {
+      "require": {
+        "types": "./FormValidityObserver.d.cts",
+        "default": "./FormValidityObserver.cjs"
+      },
       "types": "./FormValidityObserver.d.ts",
       "default": "./FormValidityObserver.js"
     },
     "./utils/assertions": {
+      "require": {
+        "types": "./utils/assertions.d.cts",
+        "default": "./utils/assertions.cjs"
+      },
       "types": "./utils/assertions.d.ts",
       "default": "./utils/assertions.js"
     },

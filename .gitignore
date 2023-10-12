@@ -4,6 +4,9 @@
 !/packages/*/index.d.ts
 !/packages/*/types.d.ts
 
+# Auto-generated CJS Files
+packages/**/*.cjs
+packages/**/*.cts
 
 # -------------------- NPM (via GitHub) --------------------
 # Logs
