@@ -2,8 +2,8 @@
 
 We currently provide _convenience APIs_ for the following JS Frameworks:
 
-- [Svelte](./svelte.md)
-- [React](./react.md)
+- [Svelte](./svelte.md) (`@form-observer/svelte`)
+- [React](./react.md) (`@form-observer/react`)
 
 Convenience APIs will be coming soon for [Vue](https://vuejs.org/) and [Solid](https://www.solidjs.com/). :&rpar;
 

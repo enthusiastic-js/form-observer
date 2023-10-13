@@ -232,7 +232,7 @@ class MyForm extends Component {
 
   componentDidMount() {
     this.#observer.observe(this.#form.current as HTMLFormElement);
-    this.#form.setAttribute("novalidate", ""); // Optional
+    this.#form.current?.setAttribute("novalidate", ""); // Optional
   }
 
   componentWillUnmount() {

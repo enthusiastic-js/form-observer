@@ -50,7 +50,7 @@ form.addEventListener("submit", handleSubmit);
 
 function handleSubmit(event) {
   event.preventDefault();
-  const success = observer.validateFields();
+  const success = observer.validateFields({ focus: true });
 
   if (success) {
     // Submit data to server
