@@ -107,7 +107,7 @@ async function generateCJSFilesFor(directoryPath) {
   );
 }
 
-/* -------------------- Function for Generating CommonJS Files -------------------- */
+/* -------------------- Function for Adding NPM Files -------------------- */
 /**
  * Adds files to the specified `packageDirectory` that are needed for a successful
  * [`npm publish`](https://docs.npmjs.com/cli/v10/commands/npm-publish?v=true).
