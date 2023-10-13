@@ -4,7 +4,6 @@
 
 - [ ] `NPM Packaging`|`Critical`: Add `README.md` files to the root of **each** individual NPM Package/Project. This is separate from our project's documenation. Currently, our "Documentation" is the `/docs` folder of our GitHub repo. (And we can point this out in each package's `README.md` file.) But in terms of users getting a quick understanding of what our packages do, having `README`s that are included with each of our packages on NPM is absolutely critical.
 - [ ] **FormObserver and Children** (`Types`|`Negotiable`): Support custom event types. (Currently, we only support the standard event types that are recognized by the browser.)
-- [ ] `Docs`: Consider mentioning that we have valid TypeScript support in the `FormObserver`'s [Features and Benefits](./docs/form-observer/README.md#features-and-benefits) list. (After we finalize the build step, we might not need this step. We only need this step if our usage of JSDocs is misleading.)
 
 ## Documentation
 
