@@ -2,7 +2,7 @@
 
 ## Things to Do Before Releasing
 
-- [ ] `Critical`: Figure out what to do about broken, overloaded generic constructor type for the `FormObserver` (and children). This is a problem with TypeScript... So we have to figure out if we want to rewrite our code again, or if we want to wait and see if the TypeScript team will update anything, or if we want to temporarily create a separate `.d.ts` file that will work for our consumers until we get a clear response from the TypeScript team. See https://github.com/microsoft/TypeScript/issues/55919 and https://github.com/microsoft/TypeScript/issues/40451.
+- [ ] `Critical`: Figure out what to do about broken, overloaded generic constructor type for the `FormObserver` (and children). This is a problem with TypeScript... So we have to figure out if we want to rewrite our code again, or if we want to wait and see if the TypeScript team will update anything, or if we want to temporarily create a separate `.d.ts` file that will work for our consumers until we get a clear response from the TypeScript team. See https://github.com/microsoft/TypeScript/issues/55919 and https://github.com/microsoft/TypeScript/issues/40451. **Note**: If we end up having to go this route, perhaps we should add a note about the size of our package gzipped (in the browser, without TS files).
 - [ ] **FormObserver and Children** (`Types`|`Negotiable`): Support custom event types. (Currently, we only support the standard event types that are recognized by the browser.)
 - [ ] Negotiable: Figure out Logo for enthusiastic-js and maybe the Form Observer package?
 
