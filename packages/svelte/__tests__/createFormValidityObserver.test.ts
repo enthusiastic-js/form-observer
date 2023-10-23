@@ -1,12 +1,15 @@
-import { vi, beforeEach, describe, it, expect } from "vitest";
+import { vi, beforeEach, afterEach, describe, it, expect } from "vitest";
+import { render, screen, cleanup } from "@testing-library/svelte";
+import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import FormValidityObserver from "@form-observer/core/FormValidityObserver";
 import createFormValidityObserver from "../createFormValidityObserver.js";
 import type { SvelteValidationErrors } from "../types.d.ts";
 import type { EventType, FormField, ValidatableField } from "../index.d.ts";
+import SmallTestForm from "./SmallTestForm.svelte";
 
 describe("Create Form Validity Observer (Function)", () => {
-  const types = Object.freeze(["change", "focusout"] as const) satisfies ReadonlyArray<EventType>;
+  const types = Object.freeze(["input", "focusout"] as const) satisfies ReadonlyArray<EventType>;
 
   // Keep things clean between each test by automatically restoring anything we may have spied on
   beforeEach(vi.restoreAllMocks as () => void);
@@ -53,54 +56,51 @@ describe("Create Form Validity Observer (Function)", () => {
   });
 
   describe("Returned Interface", () => {
-    /*
-     * TODO: Make test REALISTIC and NON-HACKY. What we SHOULD be doing is rendering a form in a `Svelte`
-     * and testing _that_. We shouldn't be testing `autoObserve` directly.
-     *
-     * However, because Svelte and Svelte Testing Library packages are ESM, things get very complicated with
-     * Jest. This is ... a rather undesirable situation to be in. But we aren't going to stall the project's
-     * release because we want to write this test the "right way". The current test is ... technicaly valid,
-     * but it's weak (because it isn't testing that it's compatible with `Svelte`'s APIs). We'll circle
-     * back to these Jest/ESM issues later. For now, we have a weak test that "at least does something".
-     * Could using `bun` also help us here? IDK.
-     */
     describe("autoObserve (Method)", () => {
+      afterEach(cleanup);
+
       it("Automatically sets up the `FormValidityObserver` (onMount) and cleans it up (onUnmount)", async () => {
+        /* ---------- Setup ---------- */
+        const message = "Only numbers are allowed!";
         vi.spyOn(FormValidityObserver.prototype, "observe");
         vi.spyOn(FormValidityObserver.prototype, "unobserve");
-        const { autoObserve } = createFormValidityObserver(types[0]);
 
-        // Simulate `Mount`
-        const form = document.createElement("form");
-        const actionConfig = autoObserve(form);
+        /* ---------- Assertions ---------- */
+        const { unmount } = render(SmallTestForm, { message });
+
+        /* ----- After `mount` ----- */
+        const form = screen.getByRole<HTMLFormElement>("form", { name: "Test Form" });
         expect(FormValidityObserver.prototype.observe).toHaveBeenCalledWith(form);
 
-        // Simulate `Unmount`
-        actionConfig.destroy?.();
+        // Try some automated validation
+        const input = screen.getByRole<HTMLInputElement>("textbox");
+        await userEvent.type(input, "abcde");
+        expect(input).toHaveAttribute("aria-invalid", String(true));
+        expect(input.validationMessage).toBe(message);
+
+        await userEvent.clear(input);
+        expect(input).toHaveAttribute("aria-invalid", String(false));
+        expect(input.validationMessage).toBe("");
+
+        await userEvent.type(input, "12345");
+        expect(input).toHaveAttribute("aria-invalid", String(false));
+        expect(input.validationMessage).toBe("");
+
+        /* ----- After `unount` ----- */
+        unmount();
         expect(FormValidityObserver.prototype.unobserve).toHaveBeenCalledWith(form);
       });
 
       it("Configures the `novalidate` attribute of the observed `form` (defaults to `true`)", () => {
-        const { autoObserve } = createFormValidityObserver(types[0]);
+        // Setup
+        const novalidate = "novalidate";
+        const labels = { default: "Default Config", true: "Explicit True Option", false: "Explicit False Option" };
+        render(SmallTestForm, { message: "Irrelevant", labels });
 
-        // Default Setting
-        const formDefault = document.createElement("form");
-        const actionConfigDefault = autoObserve(formDefault);
-        expect(formDefault).toHaveAttribute("novalidate", "");
-
-        // Explicit `true` for `novalidate`
-        actionConfigDefault.destroy?.();
-
-        const formTrue = document.createElement("form");
-        const actionConfigTrue = autoObserve(formTrue, true);
-        expect(formTrue).toHaveAttribute("novalidate", "");
-
-        // Explicit `false` for `novalidate`
-        actionConfigTrue.destroy?.();
-
-        const formFalse = document.createElement("form");
-        autoObserve(formFalse, false);
-        expect(formFalse).not.toHaveAttribute("novalidate");
+        // Assertions
+        expect(screen.getByRole("form", { name: labels.default })).toHaveAttribute(novalidate, "");
+        expect(screen.getByRole("form", { name: labels.true })).toHaveAttribute(novalidate, "");
+        expect(screen.getByRole("form", { name: labels.false })).not.toHaveAttribute(novalidate);
       });
     });
 

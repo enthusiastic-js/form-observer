@@ -28,6 +28,7 @@
     "@form-observer/core": "*"
   },
   "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^2.4.6",
     "@testing-library/svelte": "^4.0.3",
     "svelte": "4.2.0"
   },

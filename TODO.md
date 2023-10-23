@@ -45,7 +45,6 @@
 
 ## Testing
 
-- [ ] Use a Svelte component for testing the `autoObserve` action in `@form-observer/svelte` with `Vitest`. When we do this, we want to make sure that we have proper TypeScript/compiler support as well.
 - [ ] It's weird that `beforeEach(vi.restoreAllMocks)` causes an error in TS. Maybe that ought to be a GitHub issue?
 - [ ] Temporarily, we have to change `userEvent` to a named import because of https://github.com/testing-library/user-event/issues/1146. Hopefully this gets fixed soon. Maybe we can contribute something if we figure out this `NodeNext` headache on our own end.
 - [ ] Replace "Pure TypeScript Type Tests" with the equivalent in Vitest. It sounds like Vitest has something [designed for this](https://vitest.dev/guide/testing-types.html)?
