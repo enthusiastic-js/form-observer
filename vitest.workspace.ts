@@ -6,6 +6,7 @@ export default defineWorkspace([
   { test: createProjectConfig("core") },
   { test: createProjectConfig("react", ["ts", "tsx"]) },
   { test: createProjectConfig("svelte"), plugins: [svelte({ preprocess: vitePreprocess() })] },
+  { test: createProjectConfig("vue") },
 ]);
 
 function createProjectConfig(name: string, extensions = ["ts"]): Required<UserWorkspaceConfig>["test"] {

@@ -238,11 +238,10 @@ Just as there isn't much of a benefit to wrapping the [`MutationObserver`](https
 
 That said, we _do_ provide framework-specific wrappers for the `FormValidityObserver`. These wrappers technically aren't necessary since the full power of the `FormValidityObserver` is available to you in any JS framework as is. However, the big selling point of these wrappers is that they take advantage of the features in your framework (particularly, features like props spreading) to reduce the amount of code that you need to write to leverage the `FormValidityObserver`'s advanced features; so it's worth considering using them. We currently provide `FormValidityObserver` wrappers for the following frameworks:
 
-<!-- TODO: For the READMEs that will go on NPM, we need to use absolute URLs instead of relative ones -->
-
 - [Svelte](https://github.com/enthusiastic-js/form-observer/tree/main/docs/form-validity-observer/integrations/svelte.md) (`@form-observer/svelte`)
 - [React](https://github.com/enthusiastic-js/form-observer/tree/main/docs/form-validity-observer/integrations/react.md) (`@form-observer/react`)
+- [Vue](https://github.com/enthusiastic-js/form-observer/tree/main/docs/form-validity-observer/integrations/vue.md) (`@form-observer/vue`)
 
-Support for [Vue](https://vuejs.org/) and [Solid](https://www.solidjs.com/) will be coming soon. :&rpar; For your convenience, these libraries re-export the tools provided by `@form-observer/core` -- allowing you to consolidate your imports. For instance, you can import the `FormObserver`, the `FormStorageObserver`, the `FormValidityObserver`, and the _Svelte-specific_ version of the `FormValidityObserver` all from `@form-observer/svelte` if you like.
+Support for [Solid](https://www.solidjs.com/) will be coming soon. :&rpar; For your convenience, these libraries re-export the tools provided by `@form-observer/core` -- allowing you to consolidate your imports. For instance, you can import the `FormObserver`, the `FormStorageObserver`, the `FormValidityObserver`, and the _Svelte-specific_ version of the `FormValidityObserver` all from `@form-observer/svelte` if you like.
 
 To learn more about _how_ these wrappers minimize your code, see our general documentation on [framework integrations](https://github.com/enthusiastic-js/form-observer/tree/main/docs/form-validity-observer/integrations/README.md).

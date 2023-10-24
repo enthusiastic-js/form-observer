@@ -1,0 +1,52 @@
+{
+  "name": "@form-observer/vue",
+  "type": "module",
+  "version": "0.0.0-experimental-2",
+  "description": "Convenience functions for the `@form-observer/core` package, designed for Vue apps",
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./index.d.cts",
+        "default": "./index.cjs"
+      },
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./createFormValidityObserver": {
+      "require": {
+        "types": "./createFormValidityObserver.d.cts",
+        "default": "./createFormValidityObserver.cjs"
+      },
+      "types": "./createFormValidityObserver.d.ts",
+      "default": "./createFormValidityObserver.js"
+    },
+    "./types": {
+      "types": "./types.d.ts"
+    }
+  },
+  "peerDependencies": {
+    "@form-observer/core": "*"
+  },
+  "devDependencies": {
+    "@testing-library/vue": "^7.0.0",
+    "@vitejs/plugin-vue": "^4.4.0",
+    "vue": "^3.3.6"
+  },
+  "author": "Isaiah Thomason",
+  "license": "MIT",
+  "keywords": [
+    "form",
+    "observer",
+    "web",
+    "validation",
+    "vue"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enthusiastic-js/form-observer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/enthusiastic-js/form-observer/issues"
+  },
+  "homepage": "https://github.com/enthusiastic-js/form-observer#readme"
+}

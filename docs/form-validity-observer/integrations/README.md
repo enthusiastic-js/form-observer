@@ -4,8 +4,9 @@ We currently provide _convenience APIs_ for the following JS Frameworks:
 
 - [Svelte](./svelte.md) (`@form-observer/svelte`)
 - [React](./react.md) (`@form-observer/react`)
+- [Vue](./vue.md) (`@form-observer/vue`)
 
-Convenience APIs will be coming soon for [Vue](https://vuejs.org/) and [Solid](https://www.solidjs.com/). :&rpar;
+Convenience APIs will be coming soon for [Solid](https://www.solidjs.com/). :&rpar;
 
 ## Do I _Need_ a Framework Integration?
 
