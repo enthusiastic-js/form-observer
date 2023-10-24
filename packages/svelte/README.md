@@ -40,7 +40,7 @@ npm install @form-observer/svelte
     id="email"
     {...configure("email", {
       type: { value: "email", message: "Email is invalid" },
-      required: { message: "You MUST allow us to stalk you!" },
+      required: { value: true, message: "You MUST allow us to stalk you!" },
     })}
     aria-describedby="email-error"
   />
