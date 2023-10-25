@@ -168,18 +168,14 @@ export default defineComponent({
 ### [Solid](https://www.solidjs.com/)
 
 ```tsx
-import { createEffect } from "solid-js";
+import { onMount, onCleanup } from "solid-js";
 import { FormStorageObserver } from "@form-observer/core";
 
 export default function MyComponent() {
   let form;
-
-  // Note: If you like, you may use `onMount` and `onCleanup` instead.
-  createEffect(() => {
-    const observer = new FormStorageObserver("change");
-    observer.observe(form);
-    return () => observer.disconnect();
-  });
+  const observer = new FormStorageObserver("change");
+  onMount(() => observer.observe(form));
+  onCleanup(() => observer.disconnect());
 
   function handleSubmit(event) {
     event.preventDefault();
