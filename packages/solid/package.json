@@ -1,0 +1,52 @@
+{
+  "name": "@form-observer/solid",
+  "type": "module",
+  "version": "0.0.0-experimental-3",
+  "description": "Convenience functions for the `@form-observer/core` package, designed for Solid apps",
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./index.d.cts",
+        "default": "./index.cjs"
+      },
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./createFormValidityObserver": {
+      "require": {
+        "types": "./createFormValidityObserver.d.cts",
+        "default": "./createFormValidityObserver.cjs"
+      },
+      "types": "./createFormValidityObserver.d.ts",
+      "default": "./createFormValidityObserver.js"
+    },
+    "./types": {
+      "types": "./types.d.ts"
+    }
+  },
+  "peerDependencies": {
+    "@form-observer/core": "*",
+    "solid-js": ">=1.0.0"
+  },
+  "devDependencies": {
+    "@solidjs/testing-library": "^0.8.4",
+    "vite-plugin-solid": "^2.7.2"
+  },
+  "author": "Isaiah Thomason",
+  "license": "MIT",
+  "keywords": [
+    "form",
+    "observer",
+    "web",
+    "validation",
+    "solid"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enthusiastic-js/form-observer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/enthusiastic-js/form-observer/issues"
+  },
+  "homepage": "https://github.com/enthusiastic-js/form-observer#readme"
+}

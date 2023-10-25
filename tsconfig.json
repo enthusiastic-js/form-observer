@@ -8,7 +8,7 @@
     "allowJs": true,
     "checkJs": true,
     "outDir": "build",
-    "jsx": "react-jsx",
+    "jsx": "preserve",
     "declaration": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,

@@ -1,10 +1,12 @@
 import { defineWorkspace } from "vitest/config";
 import type { UserWorkspaceConfig } from "vitest/config";
+import solid from "vite-plugin-solid";
 import { svelte, vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 
 export default defineWorkspace([
   { test: createProjectConfig("core") },
   { test: createProjectConfig("react", ["ts", "tsx"]) },
+  { test: createProjectConfig("solid", ["ts", "tsx"]), plugins: [solid()] },
   { test: createProjectConfig("svelte"), plugins: [svelte({ preprocess: vitePreprocess() })] },
   { test: createProjectConfig("vue") },
 ]);
