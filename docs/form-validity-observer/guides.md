@@ -301,6 +301,10 @@ class CustomField extends HTMLElement {
     // Other Setup ...
   }
 
+  get form() {
+    return this.#internals.form;
+  }
+
   get validity() {
     return this.#internals.validity;
   }

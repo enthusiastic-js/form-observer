@@ -18,9 +18,9 @@ export type FormField =
 /** An `HTMLElement` that participates in form validation */
 export interface ValidatableField
   extends HTMLElement,
-    Pick<HTMLInputElement, "name" | "validity" | "validationMessage" | "willValidate">,
+    Pick<HTMLInputElement, "name" | "form" | "validity" | "validationMessage" | "willValidate">,
     Partial<Pick<HTMLInputElement, "type" | "setCustomValidity">>,
-    Partial<Pick<ElementInternals, "form" | "reportValidity">> {
+    Partial<Pick<ElementInternals, "reportValidity">> {
   /**
    * Returns a NodeList of all the label elements that are associated with the form control.
    *

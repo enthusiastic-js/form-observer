@@ -158,7 +158,7 @@ Because the `FormObserver` builds on top of native JS features instead of relyin
 
 The `FormObserver` (and all of its subclasses) will only observe elements that are actually recognized as form controls. If you're using regular HTML elements, this basically includes any elements that are supported by the [`HTMLFormElement.elements`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/elements) property by default. If you're using Custom Elements, this _also_ includes any elements that are _specifically identified as form controls_.
 
-To identify a Custom Element as a form control, you will need to give its `class` a static `formAssociated` property with a value of `true`. If you also want the element to participate in form submissions, you will need to use [`HTMLElement.attachInternals()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/attachInternals) in conjunction with the [`ElementInternals.setFormValue()`](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/setFormValue) method. We have an example of a simple setup below. For more information on how to create complex form controls with Web Components, see [_More Capable Form Controls_](https://web.dev/more-capable-form-controls/) by Arthur Evans.
+To identify a Custom Element as a form control, you will need to give its `class` a static `formAssociated` property with a value of `true`. You must also call [`HTMLElement.attachInternals()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/attachInternals) in your element's constructor to allow it to participate in forms. Note that the [`form`](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/form) property on the internals provided by this method must be exposed for the `FormObserver` to acknowledge your component. (This property is used to make sure that events from fields in irrelevant forms do not trigger the observer's functions.) We have an example of a simple setup below.
 
 ```js
 class CustomField extends HTMLElement {
@@ -170,6 +170,10 @@ class CustomField extends HTMLElement {
     this.#internals = this.attachInternals();
     // Any other setup ...
   }
+
+  get form() {
+    return this.#internals.form;
+  }
 }
 
 customElements.define("custom-field", CustomField);
@@ -177,7 +181,9 @@ customElements.define("custom-field", CustomField);
 
 This is the code that would be required to allow your Custom Element to participate in HTML forms in general. So the `FormObserver` isn't requiring any additional work on your part.
 
-Note: You are free to make the `ElementInternals` public, but it is highly recommended to keep this property [private](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Private_class_fields). (It is completely safe to expose the _properties_ of the `ElementInternals` interface. Only the reference to the `ElementInternals` object itself needs to be kept private.)
+Note: You are free to make the `ElementInternals` public, but it is _highly_ recommended to keep this property [private](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Private_class_fields). (It is completely safe to expose the _properties_ of the `ElementInternals` interface. Only the reference to the `ElementInternals` object itself needs to be kept private.)
+
+For more information on how to create complex form controls with Web Components (such as how to create form controls that submit their values to the server with the help of [`ElementInternals.setFormValue()`](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/setFormValue)), see [_More Capable Form Controls_](https://web.dev/more-capable-form-controls/) by Arthur Evans.
 
 ### Be Mindful of the Shadow Boundary
 
