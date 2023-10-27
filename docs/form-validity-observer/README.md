@@ -391,6 +391,12 @@ If your forms provide [accessible radio button groups](https://www.w3.org/WAI/tu
 
 </details>
 
+## What about `aria-errormessage`?
+
+If you're familiar with the [`aria-errormessage`](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-errormessage) attribute, then you'll know that it is technically "better" than the [`aria-describedby`](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-describedby) attribute when it comes to conveying error messages for invalid form fields. Although it is technically superior, the `aria-errormessage` attribute is also [far less supported](https://a11ysupport.io/tech/aria/aria-errormessage_attribute) by assistive technologies (as of 2023-10-27). Because the `aria-describedby` attribute is [accepted by the WAI](https://www.w3.org/WAI/WCAG21/Techniques/aria/ARIA21#example-2-identifying-errors-in-data-format) as a valid means to convey error messages for fields, and because the attribute is more widely supported by assistive technologies, the `FormValidityObserver` uses this attribute for conveying error messages instead.
+
+In the future, when `aria-errormessage` has better support, the `FormValidityObserver` will be updated to support it. Until then, the attribute will not be supported.
+
 ## What's Next?
 
 - Read our [guides](./guides.md) to find out how you can get the most out of the `FormValidityObserver`.
