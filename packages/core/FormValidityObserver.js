@@ -487,12 +487,12 @@ export function defaultScroller(fieldOrRadiogroup) {
  * The default render function for {@link FormValidityObserver}'s `renderer` option
  *
  * @param {HTMLElement} errorContainer
- * @param {string} error
+ * @param {string} errorMessage
  * @returns {void}
  */
-export function defaultErrorRenderer(errorContainer, error) {
-  if ("setHTML" in errorContainer && typeof errorContainer.setHTML === "function") errorContainer.setHTML(error);
-  else errorContainer.innerHTML = error; // eslint-disable-line no-param-reassign -- Required to update the DOM
+export function defaultErrorRenderer(errorContainer, errorMessage) {
+  if ("setHTML" in errorContainer && typeof errorContainer.setHTML === "function") errorContainer.setHTML(errorMessage);
+  else errorContainer.innerHTML = errorMessage; // eslint-disable-line no-param-reassign -- Required to update the DOM
 }
 
 /**

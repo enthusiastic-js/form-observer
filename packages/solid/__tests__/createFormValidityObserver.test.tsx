@@ -55,6 +55,67 @@ describe("Create Form Validity Observer (Function)", () => {
     expect(FormValidityObserver.prototype[configure].bind).not.toHaveReturnedWith(observer[configure]);
   });
 
+  it("Uses a default `renderer` that accepts `HTML String Templates` AND `Solid JSX`", () => {
+    /* ---------- Setup ---------- */
+    // TODO: Would Solid.js have ESLint settings that prevent this false-positive?
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- This directive is actually being used
+    const { autoObserve, setFieldError } = createFormValidityObserver("input");
+
+    const dispose = solidRender(
+      () => (
+        <form use:autoObserve>
+          <input name="first-name" type="text" required aria-describedby="first-name-error" />
+          <div id="first-name-error" role="alert"></div>
+        </form>
+      ),
+      document.body,
+    );
+
+    const input = screen.getByRole<HTMLInputElement>("textbox");
+    const errorContainer = screen.getByRole("alert");
+
+    /* ---------- Rendering Single JSX Elements ---------- */
+    const messageSingleJSX = (<p>Something is wrong here...</p>) as Element;
+    setFieldError(input.name, messageSingleJSX, true);
+
+    expect(input).toHaveAttribute("aria-invalid", String(true));
+    expect(input).toHaveAccessibleDescription(messageSingleJSX.textContent);
+    expect(errorContainer.innerHTML).toBe(messageSingleJSX.outerHTML);
+
+    /* ---------- Rendering Multiple JSX Elements ---------- */
+    const messageMultipleJSX = (
+      <>
+        <div>This is the first line</div> of multiple lines <p>found in this message.</p>
+      </>
+    ) as Array<string | Element>;
+    setFieldError(input.name, messageMultipleJSX, true);
+
+    expect(input).toHaveAttribute("aria-invalid", String(true));
+    expect(input).toHaveAccessibleDescription(
+      messageMultipleJSX.reduce((m, e) => `${m}${typeof e === "string" ? e : e.textContent}`, ""),
+    );
+    expect(errorContainer.innerHTML).toBe(
+      messageMultipleJSX.reduce((m, e) => `${m}${typeof e === "string" ? e : e.outerHTML}`, ""),
+    );
+
+    /* ---------- HTML String Templates ---------- */
+    const messageString = "This is the OG renderer!";
+    const messageTemplateString = `<span>${messageString}</span>`;
+    setFieldError(input.name, messageTemplateString, true);
+
+    expect(input).toHaveAttribute("aria-invalid", String(true));
+    expect(input).toHaveAccessibleDescription(messageString);
+    expect(errorContainer.innerHTML).toBe(messageTemplateString);
+
+    /* ---------- Invalid Messages are Ignored ---------- */
+    expect(() => setFieldError(input.name, 12345, true)).not.toThrow();
+    expect(input).toHaveAccessibleDescription(messageString);
+    expect(errorContainer.innerHTML).toBe(messageTemplateString);
+
+    /* ---------- Cleanup ---------- */
+    dispose();
+  });
+
   describe("Returned Interface", () => {
     describe("autoObserve (Method)", () => {
       // TODO: This test is currently broken because of issues either with `@solidjs/testing-library` or `vitest` or both.

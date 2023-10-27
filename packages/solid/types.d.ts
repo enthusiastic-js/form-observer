@@ -1,7 +1,8 @@
 import type { ErrorMessage, ValidationErrors, ValidatableField, FormValidityObserver } from "@form-observer/core";
-import type { JSX } from "solid-js/jsx-runtime";
+import type { JSX } from "solid-js";
 
-export interface SolidFormValidityObserver<M = string> extends Omit<FormValidityObserver<M>, "configure"> {
+export interface SolidFormValidityObserver<M = string | JSX.Element>
+  extends Omit<FormValidityObserver<M>, "configure"> {
   /**
    * An enhanced version of {@link FormValidityObserver.configure} for `Solid`. In addition to configuring a field's
    * error messages, it generates the props that should be applied to the field based on the provided arguments.

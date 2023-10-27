@@ -1,20 +1,20 @@
-import FormValidityObserver from "@form-observer/core/FormValidityObserver";
+import FormValidityObserver, { defaultErrorRenderer } from "@form-observer/core/FormValidityObserver";
 import { onCleanup } from "solid-js";
-
-// TODO: Consider supporting a custom renderer that accepts Solid's JSX? This should be doable, I think.
 
 /**
  * Creates an enhanced version of the {@link FormValidityObserver} that's more convenient for `Solid` apps
  *
  * @template {import("./index.d.ts").OneOrMany<import("./index.d.ts").EventType>} T
- * @template [M=string]
+ * @template [M=string | import("solid-js").JSX.Element]
  * @param {T} types
  * @param {import("./index.d.ts").FormValidityObserverOptions<M>} [options]
  * @returns {import("./types.d.ts").SolidFormValidityObserver<M>}
  */
 export default function createFormValidityObserver(types, options) {
+  const augmentedOptions = /** @type {typeof options} */ ({ renderer: defaultErrorRendererSolid, ...options });
+
   const observer = /** @type {import("./types.d.ts").SolidFormValidityObserver<M>} */ (
-    /** @type {unknown} */ (new FormValidityObserver(types, options))
+    /** @type {unknown} */ (new FormValidityObserver(types, augmentedOptions))
   );
 
   /* -------------------- Bindings -------------------- */
@@ -84,4 +84,20 @@ export default function createFormValidityObserver(types, options) {
   };
 
   return observer;
+}
+
+/**
+ * The default render function used for the {@link FormValidityObserver}'s `renderer` option in Solid applications.
+ *
+ * @param {HTMLElement} errorContainer
+ * @param {string | import("solid-js").JSX.Element} errorMessage
+ * @returns {void}
+ */
+export function defaultErrorRendererSolid(errorContainer, errorMessage) {
+  if (typeof errorMessage === "string") return defaultErrorRenderer(errorContainer, errorMessage);
+  if (errorMessage instanceof Node) return errorContainer.replaceChildren(errorMessage);
+  if (errorMessage instanceof Array) {
+    const nodes = errorMessage.filter((e) => typeof e === "string" || e instanceof Node);
+    return errorContainer.replaceChildren(.../** @type {string | Node[]} */ (nodes));
+  }
 }

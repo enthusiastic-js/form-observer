@@ -87,6 +87,47 @@ function MyForm() {
 }
 ```
 
+## JSX Support
+
+`@form-observer/solid` supports rendering error messages with JSX if desired:
+
+```jsx
+function MyForm() {
+  // Setup ...
+
+  return (
+    <>
+      <form id="example" use:autoObserve>
+        {/* Other Internal Fields ... */}
+
+        <label for="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          aria-describedby="password-error"
+          {...configure("password", {
+            pattern: {
+              value: "SOME_VALID_REGEX",
+              render: true,
+              message: (input) => (
+                <ul>
+                  <li data-use-red-text={!/\d/.test(input.value)}>Password must include at least 1 number</li>
+                  <li data-use-red-text={!/[a-zA-Z]/.test(input.value)}>Password must include at least 1 letter</li>
+                  {/* Other Requirements ... */}
+                </ul>
+              ),
+            },
+          })}
+        />
+        <div id="password-error" />
+      </form>
+
+      {/* External Fields */}
+    </>
+  );
+}
+```
+
 For more details on what `createFormValidityObserver` can do (like custom validation, manual error handling, and more), see our [documentation](https://github.com/enthusiastic-js/form-observer/blob/main/docs/form-validity-observer/integrations/solid.md).
 
 ## Other Uses

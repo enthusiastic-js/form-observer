@@ -172,6 +172,60 @@ function MyForm() {
 }
 ```
 
-#### The `SolidFieldProps` Return Type of `configure`
+##### The `SolidFieldProps` Return Type of `configure`
 
 The return type of `configure` is simply an object containing the props that should be applied to the configured field. In addition to the field's `name`, this object will include any validation props that were configured by the function (e.g., `required`, `min`, `pattern`, etc.).
+
+### JSX Support
+
+The `SolidFormValidityObserver` replaces the default error [`renderer`](../README.md#form-validity-observer-options-renderer) with a function that can render Solid JSX _or_ HTML Template Strings to the DOM.
+
+```tsx
+import { createFormValidityObserver } from "@form-observer/solid";
+
+function MyForm() {
+  const { autoObserve, configure } = createFormValidityObserver("focusout");
+  // Other Setup ...
+
+  return (
+    <>
+      <form id="example" use:autoObserve>
+        {/* Other Internal Fields ... */}
+
+        <label for="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          aria-describedby="password-error"
+          {...configure("password", {
+            pattern: {
+              value: "SOME_VALID_REGEX",
+              render: true,
+              message: (input: HTMLInputElement) => (
+                <ul>
+                  <li data-use-red-text={!/\d/.test(input.value)}>Password must include at least 1 number</li>
+                  <li data-use-red-text={!/[a-zA-Z]/.test(input.value)}>Password must include at least 1 letter</li>
+                  {/* Other Requirements ... */}
+                </ul>
+              ),
+            },
+          })}
+        />
+        <div id="password-error" />
+
+        <label for="complaints">Complaints</label>
+        <textarea
+          id="complaints"
+          aria-describedby="complaints-error"
+          {...configure("complaints", { minlength: { value: 300, message: "<p>Come on! Give us a REAL rant!</p>" } })}
+        />
+        <div id="complaints-error" />
+      </form>
+
+      {/* External Fields */}
+    </>
+  );
+}
+```
+
+> Note: We recommend using JSX whenever you need to render error messages to the DOM as HTML because doing so makes it easier to write valid, formattable markup. HTML Template Strings are only supported because the core `FormValidityObserver` supports them.
