@@ -162,6 +162,6 @@ This syntax only exists for convenience. You are free to use the regular HTML at
 </script>
 ```
 
-#### The `SvelteFieldProps` Return Type of `configure`
+##### The `SvelteFieldProps` Return Type of `configure`
 
 The return type of `configure` is simply an object containing the props that should be applied to the configured field. In addition to the field's `name`, this object will include any validation props that were configured by the function (e.g., `required`, `min`, `pattern`, etc.).
