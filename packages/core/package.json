@@ -45,6 +45,9 @@
       "default": "./utils/assertions.js"
     },
     "./types": {
+      "require": {
+        "types": "./types.d.cts"
+      },
       "types": "./types.d.ts"
     }
   },
