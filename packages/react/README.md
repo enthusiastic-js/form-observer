@@ -48,12 +48,12 @@ function MyForm() {
         <h1>Feedback Form</h1>
 
         {/* The browser's default error messages for `#name` will be accessibly displayed inside `#name-error` */}
-        <label for="name">Full Name</label>
+        <label htmlFor="name">Full Name</label>
         <input id="name" name="name" type="text" required aria-describedby="name-error" />
         <div id="name-error" />
 
         {/* Custom error messages for `#email` will be accessibly displayed inside `#email-error` */}
-        <label for="email">Email</label>
+        <label htmlFor="email">Email</label>
         <input
           id="email"
           {...configure("email", {
@@ -66,7 +66,7 @@ function MyForm() {
 
         {/* A custom error message will be accessibly displayed for the `pattern` constraint. */}
         {/* The browser's default error message will be accessibly displayed for the `required` constraint. */}
-        <label for="donation">Donation</label>
+        <label htmlFor="donation">Donation</label>
         <input
           id="donation"
           {...configure("donation", { pattern: { value: "\\d+", message: "Please provide a valid number" } })}
@@ -77,7 +77,7 @@ function MyForm() {
         <div id="donation-error" />
       </form>
 
-      <label for="comments">Comments</label>
+      <label htmlFor="comments">Comments</label>
       <textarea id="comments" name="comments" form="example" minLength={30} aria-describedby="comments-error" />
       <div id="comments-error" />
 
