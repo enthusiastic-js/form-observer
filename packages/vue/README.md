@@ -27,7 +27,7 @@ npm install @form-observer/vue
 
 ```vue
 <template>
-  <form id="example" :ref="autoObserve()">
+  <form id="example" :ref="autoObserve()" @submit="handleSubmit">
     <h1>Feedback Form</h1>
 
     <!-- The browser's default error messages for `#name` will be accessibly displayed inside `#name-error` -->

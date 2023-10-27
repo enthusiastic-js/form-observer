@@ -44,7 +44,7 @@ function MyForm() {
 
   return (
     <>
-      <form id="example" ref={autoObserve()}>
+      <form id="example" ref={autoObserve()} onSubmit={handleSubmit}>
         <h1>Feedback Form</h1>
 
         {/* The browser's default error messages for `#name` will be accessibly displayed inside `#name-error` */}
