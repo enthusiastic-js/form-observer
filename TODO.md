@@ -9,6 +9,7 @@
 ## Documentation
 
 - [ ] In the interest of time, we're probably going to have to do the bare minimum when it comes to the documentation. Make the API clear, give some helpful examples, etc. After we've release the first draft of the project, we can start thinking about how to "perfect" the docs. But for now, don't get too paranoid about the wording.
+- [ ] Adding demos somewhere in this repo (or in something like a CodeSandbox) would likely be helpful for developers.
 
 ## `FormValidityObserver`
 
@@ -45,6 +46,7 @@
 
 ## Testing
 
+- [ ] Figure out why `@solidjs/testing-library` isn't able to render raw elements correctly for testing.
 - [ ] It's weird that `beforeEach(vi.restoreAllMocks)` causes an error in TS. Maybe that ought to be a GitHub issue?
 - [ ] Temporarily, we have to change `userEvent` to a named import because of https://github.com/testing-library/user-event/issues/1146. Hopefully this gets fixed soon. Maybe we can contribute something if we figure out this `NodeNext` headache on our own end.
 - [ ] Replace "Pure TypeScript Type Tests" with the equivalent in Vitest. It sounds like Vitest has something [designed for this](https://vitest.dev/guide/testing-types.html)?
