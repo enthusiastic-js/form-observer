@@ -1,5 +1,5 @@
 import FormValidityObserver, { defaultErrorRenderer } from "@form-observer/core/FormValidityObserver";
-import { onCleanup } from "solid-js";
+import { onMount, onCleanup } from "solid-js";
 
 /**
  * Creates an enhanced version of the {@link FormValidityObserver} that's more convenient for `Solid` apps
@@ -35,8 +35,8 @@ export default function createFormValidityObserver(types, options) {
   /* -------------------- Enhancements -------------------- */
   // Add automatic setup/teardown
   observer.autoObserve = function autoObserve(form, novalidate) {
-    observer.observe(form);
     if (novalidate()) form.setAttribute("novalidate", "");
+    onMount(() => observer.observe(form));
     onCleanup(() => observer.unobserve(form));
   };
 
