@@ -13,8 +13,6 @@ TODO: Some `Guides` that could be helpful:
 1) MAYBE something on how to work with accessible error messages? (Should we also mention `aria-errormessage` vs. `aria-describedby` too and the lack of support for `aria-errormessage` too? Or does that belong somewhere else in the docs?)
 
 2) Notes on how to handle fields that are toggled via CSS would probably be helpful. More than likely, a wrapping `fieldset` that could be `disabled` would be the "path of least resistance". `disabled` fields don't partake in field validation or form submission, and the `:disabled` CSS pseudo-class could be used to visually hide a group of elements from users whenever needed. That said, this approach requires JavaScript. Conditionally displayed fields are a bit more complicated for forms that want to support users lacking JS. But this is true regardless of whether or not someone uses our library.
-
-Extra: Should we include a `Philosphy` document/page? Perhaps _additionally_ including why it's likely unnecessary to store things like error messages, touched fields, and/or dirty fields in application state?
 -->
 
 ## Enabling Accessible Error Messages during Form Submissions
