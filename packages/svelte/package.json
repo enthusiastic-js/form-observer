@@ -1,7 +1,7 @@
 {
   "name": "@form-observer/svelte",
   "type": "module",
-  "version": "0.0.0-experimental-4",
+  "version": "0.0.0-experimental-5",
   "description": "Convenience functions for the `@form-observer/core` package, designed for Svelte apps",
   "exports": {
     ".": {
@@ -42,7 +42,8 @@
     "observer",
     "web",
     "validation",
-    "svelte"
+    "svelte",
+    "progressive-enhancement"
   ],
   "repository": {
     "type": "git",

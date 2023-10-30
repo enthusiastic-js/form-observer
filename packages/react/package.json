@@ -1,7 +1,7 @@
 {
   "name": "@form-observer/react",
   "type": "module",
-  "version": "0.0.0-experimental-4",
+  "version": "0.0.0-experimental-5",
   "description": "Convenience functions for the `@form-observer/core` package, designed for React apps",
   "exports": {
     ".": {
@@ -50,7 +50,8 @@
     "observer",
     "web",
     "validation",
-    "react"
+    "react",
+    "progressive-enhancement"
   ],
   "repository": {
     "type": "git",

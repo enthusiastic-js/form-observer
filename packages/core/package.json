@@ -1,7 +1,7 @@
 {
   "name": "@form-observer/core",
   "type": "module",
-  "version": "0.0.0-experimental-4",
+  "version": "0.0.0-experimental-5",
   "description": "A simple utility for reacting to events from a form's fields",
   "exports": {
     ".": {
@@ -60,7 +60,10 @@
     "form",
     "observer",
     "web",
-    "validation"
+    "validation",
+    "html",
+    "js",
+    "progressive-enhancement"
   ],
   "repository": {
     "type": "git",

@@ -1,7 +1,7 @@
 {
   "name": "@form-observer/solid",
   "type": "module",
-  "version": "0.0.0-experimental-5",
+  "version": "0.0.0-experimental-6",
   "description": "Convenience functions for the `@form-observer/core` package, designed for Solid apps",
   "exports": {
     ".": {
@@ -42,7 +42,8 @@
     "observer",
     "web",
     "validation",
-    "solid"
+    "solid",
+    "progressive-enhancement"
   ],
   "repository": {
     "type": "git",
