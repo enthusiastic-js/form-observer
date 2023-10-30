@@ -5,7 +5,7 @@ A simple utility for reacting to events from a form's fields.
 ## Features and Benefits
 
 - **Performant**: The `Form Observer` leverages [event delegation](https://gomakethings.com/why-is-javascript-event-delegation-better-than-attaching-events-to-each-element/) to minimize memory usage. Moreover, it easily integrates into _any_ JS framework _without_ requiring state -- giving your app a significant boost in speed.
-- **No Dependencies**: The `Form Observer` packs _a lot_ of power into a _tiny_ bundle to give your users the best experience.
+- **No Dependencies**: The `Form Observer` packs _a lot_ of power into a _tiny_ bundle to give your users the best experience. The **entire `@form-observer/core` library** is only 4.32kb gzipped (without minification) when all comments are removed (JSDocs, etc.).
 - **Simple and Familiar API**: The `Form Observer` gives you a clear, easy-to-use API that has a similar feel to the standardized observers, such as the [`Mutation Observer`](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver) and the [`Intersection Observer`](https://developer.mozilla.org/en-US/docs/Web/API/IntersectionObserver).
 - **Framework Agnostic**: You can easily use this tool in a pure-JS application or in the JS framework of your choice. The simple API and great Developer Experience remain the same regardless of the tooling you use.
 - [**Web Component Support**](https://developer.mozilla.org/en-US/docs/Web/API/Web_components): Because the `Form Observer` is written with pure JS, it works with Web Components out of the box.
