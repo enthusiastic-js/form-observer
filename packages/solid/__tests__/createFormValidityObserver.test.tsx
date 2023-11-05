@@ -118,10 +118,7 @@ describe("Create Form Validity Observer (Function)", () => {
 
   describe("Returned Interface", () => {
     describe("autoObserve (Method)", () => {
-      // TODO: This test is currently broken because of issues either with `@solidjs/testing-library` or `vitest` or both.
-      // This test is important, but unfortunately it's impossible right now. Let's see what we can do in the future.
-      // eslint-disable-next-line vitest/no-disabled-tests
-      it.skip("Automatically sets up the `FormValidityObserver` (onMount) and cleans it up (onUnmount)", async () => {
+      it("Automatically sets up the `FormValidityObserver` (onMount) and cleans it up (onUnmount)", async () => {
         /* ---------- Setup ---------- */
         const message = "Only numbers are allowed!";
         vi.spyOn(FormValidityObserver.prototype, "observe");
