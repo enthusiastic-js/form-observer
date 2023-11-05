@@ -32,8 +32,7 @@ class FormStorageObserver extends FormObserver {
    */
 
   /**
-   * @param {import("./types.d.ts").OneOrMany<import("./types.d.ts").EventType>} types The type(s) of event(s)
-   * that trigger(s) updates to `localStorage`.
+   * @param {import("./types.d.ts").OneOrMany<import("./types.d.ts").EventType>} types
    * @param {FormStorageObserverOptions} [options]
    */
   constructor(types, options) {
