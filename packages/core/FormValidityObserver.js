@@ -491,8 +491,8 @@ export function defaultScroller(fieldOrRadiogroup) {
  * @returns {void}
  */
 export function defaultErrorRenderer(errorContainer, errorMessage) {
-  if ("setHTML" in errorContainer && typeof errorContainer.setHTML === "function") errorContainer.setHTML(errorMessage);
-  else errorContainer.innerHTML = errorMessage; // eslint-disable-line no-param-reassign -- Required to update the DOM
+  // TODO: Try using `setHTML` when it has better browser support.
+  errorContainer.innerHTML = errorMessage; // eslint-disable-line no-param-reassign -- Required to update the DOM
 }
 
 /**

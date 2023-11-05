@@ -617,7 +617,8 @@ describe("Form Validity Observer (Class)", () => {
       });
 
       // See https://developer.mozilla.org/en-US/docs/Web/API/Element/setHTML
-      it("SECURELY renders error messages to the DOM as HTML whenever possible (default renderer)", () => {
+      // eslint-disable-next-line vitest/no-disabled-tests -- TODO: Bring this test back when browser support is better.
+      it.skip("SECURELY renders error messages to the DOM as HTML whenever possible (default renderer)", () => {
         const errorFunc = (field: FormField) => `<div>Element "${field.tagName}" of type "${field.type}" is bad!</div>`;
         const formValidityObserver = new FormValidityObserver(types);
         const setHTML = vi.fn(function setHTML(this: HTMLElement, htmlString: string) {
