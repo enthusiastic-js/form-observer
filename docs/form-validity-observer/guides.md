@@ -103,7 +103,7 @@ const observer = new FormObserver(
 
       // Note: This approach requires you to explicitly set the `selected` attribute for your `option`s
       if (field instanceof HTMLSelectElement) {
-        const dirtyValue = Array.from(field.options).some((o) => o.selected !== o.defaultSelected);
+        const dirtyValue = Array.prototype.some.call(field.options, (o) => o.selected !== o.defaultSelected);
         return field.setAttribute(dirtyAttr, String(dirtyValue));
       }
 
