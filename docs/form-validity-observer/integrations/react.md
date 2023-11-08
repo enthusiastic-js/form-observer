@@ -52,6 +52,29 @@ function MyForm() {
 }
 ```
 
+Because of React's unique re-rendering system, if you're using the `autoObserve` utility in a component that is expected to re-render, then you might need to memoize its returned `ref` callback to have consistent results. In functional components, you can memoize the callback with `useMemo` (or `useCallback`). In class components, you can effectively "memoize" the callback by assigning it to the class instance during its instantiation.
+
+```tsx
+import { useMemo, Component } from "react";
+import { useFormValidityObserver, createFormValidityObserver } from "@form-observer/react";
+
+function MyFormFunction() {
+  const { autoObserve } = useFormValidityObserver("focusout");
+  const formRef = useMemo(autoObserve, [autoObserve]);
+  return <form ref={formRef}>{/* Other Elements */}</form>;
+}
+
+class MyFormClass extends Component {
+  #observer = createFormValidityObserver("focusout");
+  #formRef = this.#observer.autoObserve();
+  render() {
+    return <form ref={formRef}>{/* Other Elements */}</form>;
+  }
+}
+```
+
+Remember that `autoObserve` is simply a convenience function. You're free to setup and teardown the `FormValidityObserver` manually if you prefer.
+
 #### Function: `configure<E>(name: string, errorMessages: ReactValidationErrors<M, E>): ReactFieldProps`
 
 An enhanced version of [`FormValidityObserver.configure`](../README.md#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-void) for `React`. In addition to configuring a field's error messages, it generates the props that should be applied to the field based on the provided arguments.

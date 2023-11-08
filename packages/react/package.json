@@ -1,7 +1,7 @@
 {
   "name": "@form-observer/react",
   "type": "module",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Convenience functions for the `@form-observer/core` package, designed for React apps",
   "exports": {
     ".": {

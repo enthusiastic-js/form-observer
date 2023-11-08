@@ -25,7 +25,13 @@ export interface ReactFormValidityObserver<M = string> extends Omit<FormValidity
   /**
    * Creates a React `ref` callback used to automatically setup and cleanup a form's observer.
    *
-   * **Note**: If you use this `ref`, you should **not** call `observe`, `unobserve`, or `disconnect` directly.
+   * If you use this `ref`, you should **not** call `observe`, `unobserve`, or `disconnect` directly.
+   *
+   * **Note**: Because of React's aggressive re-rendering model, you may need to memoize the `ref` returned from
+   * this utility if you're using it in a component that re-renders. In functional components, that means
+   * calling `useMemo(autoObserve, [autoObserve])`. In class components, that means assigning the returned
+   * `ref` to the class instance during instantiation.
+   *
    *
    * @param novalidate Indicates that the
    * {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#novalidate novalidate} attribute should
