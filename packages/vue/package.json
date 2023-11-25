@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "@testing-library/vue": "^7.0.0",
-    "@vitejs/plugin-vue": "^4.4.0",
+    "@vitejs/plugin-vue": "^4.5.0",
     "vue": "^3.3.6"
   },
   "author": "Isaiah Thomason",
