@@ -4,6 +4,9 @@
 !/packages/*/index.d.ts
 !/packages/*/types.d.ts
 
+# TODO: Remove this line when these files stop being maintained manually (i.e., after generic constructor support).
+!/packages/core/Form*Observer.d.ts
+
 # Auto-generated CJS Files
 packages/**/*.cjs
 packages/**/*.cts

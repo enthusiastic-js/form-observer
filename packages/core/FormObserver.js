@@ -71,7 +71,7 @@ class FormObserver {
    * in the `options` array for its configuration.
    *
    * If `options` is a single value instead of an array, then that value will be used to configure all of
-   * the listeners.)
+   * the listeners.
    *
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener addEventListener}.
    * @returns {FormObserver}

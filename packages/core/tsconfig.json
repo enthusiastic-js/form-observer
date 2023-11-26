@@ -11,5 +11,5 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": ["./**/*.js"],
-  "exclude": ["./index.js"]
+  "exclude": ["./index.js", "./Form*Observer.js"]
 }
