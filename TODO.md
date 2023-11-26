@@ -5,7 +5,7 @@
 - [ ] Consider adding a [Qwik](https://qwik.builder.io/) integration for the `FormValidityObserver`.
 - [ ] Consider adding a [Preact](https://preactjs.com/) integration for the `FormValidityObserver`.
 - [ ] Consider adding some GitHub CI Actions to lint our code and run our tests.
-- [ ] Consider adding some tags to our Repository's homepage (e.g., Test Coverage).
+- [ ] Consider adding some badges to our Repository's homepage (e.g., Test Coverage).
 
 ## Documentation
 
