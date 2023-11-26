@@ -116,7 +116,7 @@ const form = document.getElementById("my-form");
 observer.observe(form);
 
 // Later, when some logic needs to know the visited/dirty fields
-fields = Array.from(form.elements);
+const fields = Array.from(form.elements);
 const visitedFields = fields.filter((f) => f.hasAttribute("data-visited"));
 const dirtyFields = fields.filter((f) => f.getAttribute("data-dirty") === String(true));
 
