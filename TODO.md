@@ -1,5 +1,11 @@
 # TODO
 
+## IMMEDIATE
+
+- [ ] Consider adding a [Qwik](https://qwik.builder.io/) integration for the `FormValidityObserver`.
+- [ ] Consider adding a [Preact](https://preactjs.com/) integration for the `FormValidityObserver`.
+- [ ] Consider adding some GitHub CI Actions to lint our code and run our tests.
+
 ## Documentation
 
 - [ ] Figure out a Logo for the `enthusiastic-js` Organization and maybe the Form Observer package?
