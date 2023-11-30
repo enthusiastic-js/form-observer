@@ -2,6 +2,7 @@
 
 ## IMMEDIATE
 
+- [ ] Indicate in the React Package README when memoization of `autoObserve` is required. (Include this in any other framework that requires this information... though it's possible that none of the other frameworks need this. Solid.js definitely should not.)
 - [ ] Consider adding a [Qwik](https://qwik.builder.io/) integration for the `FormValidityObserver`.
 - [ ] Consider adding a [Preact](https://preactjs.com/) integration for the `FormValidityObserver`.
 - [ ] Consider adding some GitHub CI Actions to lint our code and run our tests.
