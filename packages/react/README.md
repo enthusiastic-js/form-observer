@@ -28,6 +28,7 @@ npm install @form-observer/react
 Here's an example of how to automatically validate your form fields when a user interacts with them.
 
 ```jsx
+import { useMemo } from "react";
 import { useFormValidityObserver } from "@form-observer/react";
 
 function MyForm() {
@@ -43,8 +44,9 @@ function MyForm() {
   }
 
   return (
+    // If your component does not re-render, you don't need to memoize `autoObserve`'s return value. (See Docs)
     <>
-      <form id="example" ref={autoObserve()} onSubmit={handleSubmit}>
+      <form id="example" ref={useMemo(autoObserve, [autoObserve])} onSubmit={handleSubmit}>
         <h1>Feedback Form</h1>
 
         {/* The browser's default error messages for `#name` will be accessibly displayed inside `#name-error` */}
@@ -96,8 +98,8 @@ import { Component } from "react";
 import { createFormValidityObserver } from "@form-observer/react";
 
 class MyForm extends Component {
-  /** @readonly */
-  #observer = createFormValidityObserver("focusout");
+  /** @readonly */ #observer = createFormValidityObserver("focusout");
+  /** @readonly */ #formRef = this.#observer.autoObserve();
 
   #handleSubmit = (event) => {
     event.preventDefault();
@@ -109,11 +111,13 @@ class MyForm extends Component {
   };
 
   render() {
-    const { autoObserve, configure, validateFields } = this.#observer;
+    const { configure, validateFields } = this.#observer;
 
     return (
+      // If your component does not re-render:
+      // You can destructure `autoObserve` and do `<form ref={autoObserve()}>` directly. (See Docs)
       <>
-        <form id="example" ref={autoObserve()} onSubmit={this.#handleSubmit}>
+        <form id="example" ref={this.#formRef} onSubmit={this.#handleSubmit}>
           {/* Internal Fields */}
         </form>
 

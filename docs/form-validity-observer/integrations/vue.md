@@ -24,7 +24,7 @@ The following methods on the `VueFormValidityObserver` are the exact same as the
 
 #### Function: `autoObserve(novalidate?: boolean): (formRef: HTMLFormElement) => void`
 
-A utility function used to simplify the process of setting up and cleaning up a form's `FormValidityObserver`. Pass its return value as a [`ref`](https://vuejs.org/guide/essentials/template-refs.html#function-refs) to the form you're validating to automate setup/teardown.
+A utility function used to simplify the process of setting up and cleaning up a form's `FormValidityObserver`. Pass its return value as a [`ref`](https://vuejs.org/guide/essentials/template-refs.html#function-refs) to the form that you're validating to automate setup (i.e., the call to [`observe`](../README.md#method-formvalidityobserverobserveform-htmlformelement-boolean)) and teardown (i.e., the call to [`unobserve`](../README.md#method-formvalidityobserverunobserveform-htmlformelement-boolean)).
 
 The `novalidate` parameter indicates that the [novalidate](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#novalidate) attribute should be applied to the `form` element when JavaScript is available to the client. By default, its value is `true`. (For details on why this attribute is significant, see [_Enabling Accessible Error Messages during Form Submissions_](../guides.md#enabling-accessible-error-messages-during-form-submissions).)
 
@@ -44,6 +44,8 @@ import { createFormValidityObserver } from "@form-observer/vue";
 const { autoObserve } = createFormValidityObserver("focusout");
 </script>
 ```
+
+Remember that `autoObserve` is simply a convenience utility for calling `observe` and `unobserve` automatically. You're free to setup and teardown the `FormValidityObserver` manually if you prefer.
 
 #### Function: `configure<E>(name: string, errorMessages: VueValidationErrors<M, E>): VueFieldProps`
 

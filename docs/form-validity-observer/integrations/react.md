@@ -35,7 +35,7 @@ The following methods on the `ReactFormValidityObserver` are the exact same as t
 
 #### Function: `autoObserve(novalidate?: boolean): (formRef: HTMLFormElement) => void`
 
-A "[React Action](https://thomason-isaiah.medium.com/do-you-really-need-react-state-to-format-inputs-9d17f5f837fd?source=user_profile---------0----------------------------)" used to simplify the process of setting up and cleaning up a form's `FormValidityObserver`.
+A "[React Action](https://thomason-isaiah.medium.com/do-you-really-need-react-state-to-format-inputs-9d17f5f837fd?source=user_profile---------0----------------------------)" used to simplify the process of setting up and cleaning up a form's `FormValidityObserver`. It does this by calling [`observe`](../README.md#method-formvalidityobserverobserveform-htmlformelement-boolean) and [`unobserve`](../README.md#method-formvalidityobserverunobserveform-htmlformelement-boolean) automatically with the form on which it is used.
 
 The `novalidate` parameter indicates that the [novalidate](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#novalidate) attribute should be applied to the `form` element when JavaScript is available to the client. By default, its value is `true`. (For details on why this attribute is significant, see [_Enabling Accessible Error Messages during Form Submissions_](../guides.md#enabling-accessible-error-messages-during-form-submissions).)
 
@@ -44,23 +44,35 @@ The `novalidate` parameter indicates that the [novalidate](https://developer.moz
 **Example**
 
 ```tsx
+import { Component } from "react";
 import { createFormValidityObserver } from "@form-observer/react";
 
-function MyForm() {
+// Function Components
+function MyFormFunction() {
   const { autoObserve } = createFormValidityObserver("focusout");
   return <form ref={autoObserve()}>{/* Other Elements */}</form>;
 }
+
+// Class Components
+class MyFormClass extends Component {
+  #observer = createFormValidityObserver("focusout");
+  render() {
+    const { autoObserve } = this.#observer;
+    return <form ref={autoObserve()}>{/* Other Elements */}</form>;
+  }
+}
 ```
 
-Because of React's unique re-rendering system, if you're using the `autoObserve` utility in a component that is expected to re-render, then you might need to memoize its returned `ref` callback to have consistent results. In functional components, you can memoize the callback with `useMemo` (or `useCallback`). In class components, you can effectively "memoize" the callback by assigning it to the class instance during its instantiation.
+Due to React's unique re-rendering system, if you're using the `autoObserve` utility in a component that is expected to re-render, then you might need to memoize its returned `ref` callback to have consistent results. In functional components, you can memoize the callback with `useMemo` (or `useCallback`). In class components, you can effectively "memoize" the callback by assigning it to the class instance during its instantiation.
 
 ```tsx
 import { useMemo, Component } from "react";
-import { useFormValidityObserver, createFormValidityObserver } from "@form-observer/react";
+import { createFormValidityObserver } from "@form-observer/react";
 
 function MyFormFunction() {
-  const { autoObserve } = useFormValidityObserver("focusout");
+  const { autoObserve } = useMemo(() => createFormValidityObserver("focusout"), []);
   const formRef = useMemo(autoObserve, [autoObserve]);
+  // or formRef = useCallback(() => autoObserve(), [autoObserve]);
   return <form ref={formRef}>{/* Other Elements */}</form>;
 }
 
@@ -68,12 +80,12 @@ class MyFormClass extends Component {
   #observer = createFormValidityObserver("focusout");
   #formRef = this.#observer.autoObserve();
   render() {
-    return <form ref={formRef}>{/* Other Elements */}</form>;
+    return <form ref={this.#formRef}>{/* Other Elements */}</form>;
   }
 }
 ```
 
-Remember that `autoObserve` is simply a convenience function. You're free to setup and teardown the `FormValidityObserver` manually if you prefer.
+Remember that `autoObserve` is simply a convenience utility for calling `observe` and `unobserve` automatically. You're free to setup and teardown the `FormValidityObserver` manually if you prefer.
 
 #### Function: `configure<E>(name: string, errorMessages: ReactValidationErrors<M, E>): ReactFieldProps`
 
@@ -213,13 +225,15 @@ The return type of `configure` is simply an object containing the props that sho
 A custom React Hook that creates an enhanced version of the `FormValidityObserver` and [memoizes](https://react.dev/reference/react/useMemo) its value.
 
 ```tsx
+import { useMemo } from "react";
 import { useFormValidityObserver } from "@form-observer/react";
 
 function MyForm() {
   const { autoObserve, configure } = useFormValidityObserver("focusout");
 
   return (
-    <form ref={autoObserve()}>
+    // If your component does not re-render, you don't need to memoize `autoObserve`'s return value.
+    <form ref={useMemo(autoObserve, [autoObserve])}>
       <input {...configure("first-name", { required: "We need to know who you are!" })} />
     </form>
   );
@@ -282,12 +296,15 @@ import { createFormValidityObserver } from "@form-observer/react";
 
 class MyForm extends Component {
   readonly #observer = createFormValidityObserver("focusout");
+  readonly #formRef = this.#observer.autoObserve();
 
   render() {
-    const { autoObserve, configure } = this.#observer;
+    const { configure } = this.#observer;
 
     return (
-      <form ref={autoObserve()}>
+      // If your component does not re-render:
+      // You can destructure `autoObserve` and do `<form ref={autoObserve()}>` directly
+      <form ref={this.#formRef}>
         <input {...configure("first-name", { required: "We need to know who you are!" })} />
       </form>
     );

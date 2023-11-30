@@ -24,7 +24,7 @@ The following methods on the `SvelteFormValidityObserver` are the exact same as 
 
 #### Function: `autoObserve(form: HTMLFormElement, novalidate?: boolean): `[`ActionReturn`](https://svelte.dev/docs/svelte-action#types-actionreturn)
 
-A Svelte [`action`](https://learn.svelte.dev/tutorial/actions) used to simplify the process of setting up and cleaning up a form's `FormValidityObserver`.
+A Svelte [`action`](https://learn.svelte.dev/tutorial/actions) used to simplify the process of setting up and cleaning up a form's `FormValidityObserver`. It does this by calling [`observe`](../README.md#method-formvalidityobserverobserveform-htmlformelement-boolean) and [`unobserve`](../README.md#method-formvalidityobserverunobserveform-htmlformelement-boolean) automatically with the form on which it is used.
 
 The `novalidate` parameter indicates that the [novalidate](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#novalidate) attribute should be applied to the `form` element when JavaScript is available to the client. By default, its value is `true`. (For details on why this attribute is significant, see [_Enabling Accessible Error Messages during Form Submissions_](../guides.md#enabling-accessible-error-messages-during-form-submissions).)
 
@@ -42,6 +42,8 @@ The `novalidate` parameter indicates that the [novalidate](https://developer.moz
   const { autoObserve } = createFormValidityObserver("focusout");
 </script>
 ```
+
+Remember that `autoObserve` is simply a convenience utility for calling `observe` and `unobserve` automatically. You're free to setup and teardown the `FormValidityObserver` manually if you prefer.
 
 #### Function: `configure<E>(name: string, errorMessages: SvelteValidationErrors<M, E>): SvelteFieldProps`
 
