@@ -1,5 +1,6 @@
 // TODO: Vitest ESLint doesn't seem to be able to handle helper `expect` functions yet... Maybe in the future?
 /* eslint vitest/expect-expect: "off" */
+/* eslint-disable max-classes-per-file */
 /* eslint-disable testing-library/no-node-access -- We need node access to make these tests more clear and reliable */
 import { vi, beforeAll, beforeEach, describe, it, expect } from "vitest";
 import type { Mock } from "vitest";
@@ -363,7 +364,9 @@ describe("Form Validity Observer (Class)", () => {
     function renderErrorContainerForField(field: NativeFormField | HTMLFieldSetElement): HTMLDivElement {
       const errorId = `${field instanceof HTMLFieldSetElement && !field.name ? "fieldset" : field.name}-error`;
       field.setAttribute(attrs["aria-describedby"], errorId);
-      return document.body.appendChild(createElementWithProps("div", { id: errorId }));
+
+      const root = field.getRootNode();
+      return (root instanceof Document ? root.body : root).appendChild(createElementWithProps("div", { id: errorId }));
     }
 
     /**
@@ -2298,6 +2301,63 @@ describe("Form Validity Observer (Class)", () => {
        * a user supplies an incomplete date, the input itself will only have an empty string for its `value` prop.)
        * Thus, we also won't be testing the `badinput` constraint here.
        */
+      describe("Shadow DOM Support", () => {
+        /**
+         * Contains the {@link ShadowRoot} of the _most recently instantiated_ {@link ClosedShadowContainer}.
+         * Used to test `form`s inside of a `closed` ShadowDOM.
+         */
+        let closedRoot: ShadowRoot;
+        class ClosedShadowContainer extends HTMLElement {
+          // eslint-disable-next-line no-multi-assign -- This just faster
+          #shadow = (closedRoot = this.attachShadow({ mode: "closed" }));
+        }
+
+        class OpenShadowContainer extends HTMLElement {
+          #shadow = this.attachShadow({ mode: "open" });
+        }
+
+        beforeAll(() => {
+          customElements.define("closed-shadow-container", ClosedShadowContainer);
+          customElements.define("open-shadow-container", OpenShadowContainer);
+        });
+
+        it.each(["closed", "open"] as const)("Works with `%s` Shadow DOMs", (mode) => {
+          /* ---------- Setup ---------- */
+          // Render Form
+          const { form, fields } = renderEmptyFields();
+
+          // Place Form in Shadow DOM
+          const component = document.createElement(`${mode}-shadow-container`);
+          const root = mode === "closed" ? closedRoot : (component.shadowRoot as ShadowRoot);
+          expect(root.mode).toBe(mode);
+
+          document.body.appendChild(root);
+          root.appendChild(form);
+
+          // Observe Form
+          const formValidityObserver = new FormValidityObserver(types[0]);
+          formValidityObserver.observe(form);
+
+          /* ---------- Run Assertions ---------- */
+          const error = "This field is not valid...";
+
+          fields.forEach((f) => {
+            renderErrorContainerForField(f);
+            formValidityObserver.configure(f.name, { required: error });
+
+            // Accessible error appears when validation fails
+            f.setAttribute("required", "");
+            expect(formValidityObserver.validateField(f.name)).toBe(false);
+            expectErrorFor(f, error, "a11y");
+
+            // Accessible error message is removed when validation succeeds
+            f.removeAttribute("required");
+            expect(formValidityObserver.validateField(f.name)).toBe(true);
+            expectNoErrorsFor(f);
+          });
+        });
+      });
+
       describe("Automated Field Validation", () => {
         /* -------------------- Constants for Automated Field Validation Tests -------------------- */
         // Provide categories for the various scenarios in which we want to verify that Automated Field Validation works

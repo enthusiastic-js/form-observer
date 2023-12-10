@@ -392,7 +392,9 @@ class FormValidityObserver extends FormObserver {
 
     const errorOwner = getErrorOwningControl(field);
     errorOwner.setAttribute(attrs["aria-invalid"], String(true));
-    const errorElement = document.getElementById(
+
+    const root = /** @type {Document | ShadowRoot} */ (field.getRootNode());
+    const errorElement = root.getElementById(
       /** @type {string} */ (errorOwner.getAttribute(attrs["aria-describedby"])),
     );
 
@@ -423,7 +425,9 @@ class FormValidityObserver extends FormObserver {
 
     const errorOwner = getErrorOwningControl(field);
     errorOwner.setAttribute(attrs["aria-invalid"], String(false));
-    const errorElement = document.getElementById(
+
+    const root = /** @type {Document | ShadowRoot} */ (field.getRootNode());
+    const errorElement = root.getElementById(
       /** @type {string} */ (errorOwner.getAttribute(attrs["aria-describedby"])),
     );
 
