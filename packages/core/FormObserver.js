@@ -1,7 +1,7 @@
 import { assertElementIsForm } from "./utils/assertions.js";
 
 class FormObserver {
-  /* ---------- Constructor-related Fields. (Must be compatible with `document.addEventListener`.) ---------- */
+  /* ---------- Constructor-related Fields. (Must be compatible with `Node.addEventListener`.) ---------- */
   /** @readonly @type {ReadonlyArray<import("./types.d.ts").EventType>} */
   #types;
 
@@ -13,10 +13,10 @@ class FormObserver {
 
   /* ---------------------------------------- Other Fields ---------------------------------------- */
   /**
-   * @readonly @type {Set<HTMLFormElement>}
-   * Contains references to all of the `HTMLFormElement`s which are currently being observed.
+   * @readonly @type {Map<Node, Set<HTMLFormElement>>} Tracks the observed `HTMLFormElement`s **_and_** their
+   * corresponding [Roots](https://developer.mozilla.org/en-US/docs/Web/API/Node/getRootNode).
    */
-  #observedForms = new Set();
+  #roots = new Map();
 
   /* ---------------------------------------- Constructor Setup ---------------------------------------- */
   /**
@@ -93,7 +93,8 @@ class FormObserver {
 
       return array.map((listener) => {
         return (event) => {
-          if (!this.#observedForms.has(/** @type {HTMLFormElement} */ (event.target.form))) return;
+          const field = event.target;
+          if (!this.#roots.get(field.getRootNode())?.has(/** @type {HTMLFormElement} */ (field.form))) return;
           return listener(event);
         };
       });
@@ -135,22 +136,31 @@ class FormObserver {
    */
   observe(form) {
     assertElementIsForm(form);
-    if (this.#observedForms.has(form)) return false; // Nothing to do
-    this.#observedForms.add(form);
+    const root = form.getRootNode();
+    let observedForms = this.#roots.get(root);
+    if (observedForms?.has(form)) return false; // Nothing to do
 
-    if (this.#observedForms.size > 1) return true; // Listeners have already been attached
+    // Track the new form
+    if (observedForms) observedForms.add(form);
+    else {
+      observedForms = new Set();
+      observedForms.add(form);
+      this.#roots.set(root, observedForms);
+    }
+
+    if (observedForms.size > 1) return true; // Listeners have already been attached to this root
 
     // First OR Second constructor overload was used
     if (this.#listeners.length === 1) {
       const listener = /** @type {EventListener} */ (this.#listeners[0]);
       const options = this.#options?.[0];
 
-      this.#types.forEach((t) => form.ownerDocument.addEventListener(t, listener, options));
+      this.#types.forEach((t) => root.addEventListener(t, listener, options));
     }
     // Third constructor overload was used
     else {
       this.#types.forEach((t, i) => {
-        form.ownerDocument.addEventListener(t, /** @type {EventListener} */ (this.#listeners[i]), this.#options?.[i]);
+        root.addEventListener(t, /** @type {EventListener} */ (this.#listeners[i]), this.#options?.[i]);
       });
     }
 
@@ -165,26 +175,27 @@ class FormObserver {
    */
   unobserve(form) {
     assertElementIsForm(form);
-    if (!this.#observedForms.has(form)) return false; // Nothing to do
-    this.#observedForms.delete(form);
+    const root = form.getRootNode();
+    const observedForms = this.#roots.get(root);
+    if (!observedForms?.has(form)) return false; // Nothing to do
 
-    if (this.#observedForms.size !== 0) return true; // Some `form`s still need the attached listeners
+    // Stop tracking the form
+    observedForms.delete(form);
+    if (observedForms.size !== 0) return true; // Some `form`s still need the listeners attached to this root
+
+    this.#roots.delete(root); // Remove obsolete root
 
     // First OR Second constructor overload was used
     if (this.#listeners.length === 1) {
       const listener = /** @type {EventListener} */ (this.#listeners[0]);
       const options = this.#options?.[0];
 
-      this.#types.forEach((t) => form.ownerDocument.removeEventListener(t, listener, options));
+      this.#types.forEach((t) => root.removeEventListener(t, listener, options));
     }
     // Third constructor overload was used
     else {
       this.#types.forEach((t, i) => {
-        form.ownerDocument.removeEventListener(
-          t,
-          /** @type {EventListener} */ (this.#listeners[i]),
-          this.#options?.[i],
-        );
+        root.removeEventListener(t, /** @type {EventListener} */ (this.#listeners[i]), this.#options?.[i]);
       });
     }
 
@@ -193,7 +204,10 @@ class FormObserver {
 
   /** Stops the observer from listening for any events emitted from all `form` fields. @returns {void} */
   disconnect() {
-    this.#observedForms.forEach((form) => this.unobserve(form));
+    const iterator = this.#roots.values();
+    for (let forms = iterator.next().value; forms; forms = iterator.next().value) {
+      forms.forEach(/** @param {HTMLFormElement} form */ (form) => this.unobserve(form));
+    }
   }
 }
 

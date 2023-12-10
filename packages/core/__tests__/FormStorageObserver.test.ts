@@ -24,7 +24,7 @@ describe("Form Storage Observer (Class)", () => {
     vi.restoreAllMocks();
 
     // Reset anything that we've rendered to the DOM. (Without a JS framework implementation, we must do this manually.)
-    document.body.textContent = "";
+    document.body.replaceChildren();
   });
 
   it("Is a child of the base `FormObserver` class", () => {
@@ -35,7 +35,7 @@ describe("Form Storage Observer (Class)", () => {
     /* ---------- Setup ---------- */
     const formStorageObserverCapture = new FormStorageObserver(types[0], { useEventCapturing: true });
     const formStorageObserverBubble = new FormStorageObserver(types[0]);
-    const form = document.createElement("form");
+    const form = document.body.appendChild(document.createElement("form"));
 
     const addEventListener = vi.spyOn(form.ownerDocument, "addEventListener");
     const removeEventListener = vi.spyOn(form.ownerDocument, "removeEventListener");

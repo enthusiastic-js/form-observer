@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file */
 import { vi, beforeAll, beforeEach, describe, it, expect } from "vitest";
 import { screen } from "@testing-library/dom";
 import { userEvent } from "@testing-library/user-event";
@@ -21,6 +22,21 @@ describe("Form Observer (Class)", () => {
 
   /** Events corresponding to the test event `types`. @see {@link types} */
   const events = { [types[0]]: FocusEvent, [types[1]]: MouseEvent } as const;
+
+  /* ---------------------------------------- Custom Elements ---------------------------------------- */
+  /**
+   * Contains the {@link ShadowRoot} of the _most recently instantiated_ {@link ClosedShadowContainer}.
+   * Used to test `form`s inside of a `closed` ShadowDOM.
+   */
+  let closedRoot: ShadowRoot;
+  class ClosedShadowContainer extends HTMLElement {
+    // eslint-disable-next-line no-multi-assign -- This just faster
+    #shadow = (closedRoot = this.attachShadow({ mode: "closed" }));
+  }
+
+  class OpenShadowContainer extends HTMLElement {
+    #shadow = this.attachShadow({ mode: "open" });
+  }
 
   /* ---------------------------------------- Global Helpers ---------------------------------------- */
   /**
@@ -47,10 +63,21 @@ describe("Form Observer (Class)", () => {
     return new FormObserver(types, listeners, options);
   }
 
+  /** Creates an HTMLElement with the provided `properties` and `attributes`. */
+  function createElement<K extends keyof HTMLElementTagNameMap>(
+    tagName: K,
+    properties: Partial<HTMLElementTagNameMap[K]>,
+    attributes?: Record<string, string>,
+  ): HTMLElementTagNameMap[K] {
+    const element = document.createElement(tagName);
+    if (attributes) Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, value));
+    return Object.assign(element, properties);
+  }
+
   /**
-   * Renders a `Primary Form`, a `Secondary Form` and an element that is not a form to the DOM for testing.
-   * References to these elements are returned to the caller. Prefer the `Primary Form` for **ALL** tests.
-   * Only use the other elements as needed.
+   * Renders a `Primary Form`, a `Secondary Form`, a `Closed Shadow Form`, two `Open Shadow Form`s,
+   * and an element that is not a form to the DOM for testing. References to these elements are returned to the caller.
+   * Prefer the `Primary Form` for **ALL** tests. Only use the other elements as needed.
    */
   function renderForms() {
     const labels = { primaryForm: "Primary Form", secondaryForm: "Secondary Form", nonForm: "Not a Form" } as const;
@@ -74,33 +101,52 @@ describe("Form Observer (Class)", () => {
       </form>
 
       <section aria-label="${labels.nonForm}">This is not a form!!!</section>
+      <closed-shadow-container></closed-shadow-container>
+      <open-shadow-container></open-shadow-container>
     `;
 
-    // Assert that BOTH `form`s own fields that are outside of themselves AND that are inside of themselves
+    /* ---------- Access the Light DOM Forms ---------- */
+    /** The **_PRIMARY_** form that should be used for **_ALL_** tests (by default)! */
     const primaryForm = screen.getByRole("form", { name: labels.primaryForm }) as HTMLFormElement;
-    const primaryFormFields = Array.from(primaryForm.elements);
-    expect(primaryFormFields.some((el) => !primaryForm.contains(el))).toBe(true);
-    expect(primaryFormFields.some((el) => primaryForm.contains(el) && !el.getAttribute("form"))).toBe(true);
-
     const secondaryForm = screen.getByRole("form", { name: labels.secondaryForm }) as HTMLFormElement;
-    const secondaryFormFields = Array.from(secondaryForm.elements);
-    expect(secondaryFormFields.some((el) => !secondaryForm.contains(el))).toBe(true);
-    expect(secondaryFormFields.some((el) => secondaryForm.contains(el) && !el.getAttribute("form"))).toBe(true);
-
     expect(secondaryForm).not.toBe(primaryForm);
 
     // Assert that an element which is COMPLETELY UNRELATED to `form`s is present
     const nonForm = screen.getByRole("region", { name: labels.nonForm });
-    expect(nonForm).not.toBeEmptyDOMElement();
-    expect(primaryForm).not.toContainElement(nonForm);
-    expect(secondaryForm).not.toContainElement(nonForm);
+    expect(nonForm).not.toEqual(expect.any(HTMLFormElement));
+    expect(nonForm.closest("form")).toBe(null); // eslint-disable-line testing-library/no-node-access
 
-    return { primaryForm, secondaryForm, nonForm };
+    /* ---------- Setup the Shadow DOM Forms ---------- */
+    expect(closedRoot.mode).toBe("closed");
+    // Note: The `open` ShadowRoot is implicitly open if we can successfully access it from the outside.
+    // eslint-disable-next-line testing-library/no-node-access -- This is the best way to access the Shadow Root
+    const openRoot = document.querySelector("open-shadow-container")?.shadowRoot as ShadowRoot;
+
+    const closedShadowForm = createElement("form", { id: "closed-shadow-form" });
+    closedRoot.append(closedShadowForm, createElement("input", { type: "checkbox" }, { form: closedShadowForm.id }));
+    closedShadowForm.appendChild(document.createElement("textarea"));
+
+    const openShadowForm1 = createElement("form", { id: "open-shadow-form-1" });
+    openRoot.append(openShadowForm1, createElement("input", { type: "radio" }, { form: openShadowForm1.id }));
+    openShadowForm1.appendChild(createElement("select", { name: "shadow-multi", multiple: true }));
+
+    const openShadowForm2 = createElement("form", { id: "open-shadow-form-2" });
+    openRoot.append(openShadowForm2, createElement("input", { name: "shadowed-text" }, { form: openShadowForm2.id }));
+    openShadowForm2.appendChild(createElement("button", { name: "shadow-button", type: "button" }));
+
+    // Assert that ALL `form`s own fields that are outside of themselves AND that are inside of themselves
+    [primaryForm, secondaryForm, closedShadowForm, openShadowForm1, openShadowForm2].forEach((form) => {
+      const fields = Array.from(form.elements);
+      expect(fields.some((el) => !form.contains(el))).toBe(true);
+      expect(fields.some((el) => form.contains(el) && !el.getAttribute("form"))).toBe(true);
+    });
+
+    return { primaryForm, secondaryForm, closedShadowForm, openShadowForm1, openShadowForm2, nonForm };
   }
 
   /* ---------------------------------------- Test Setup ---------------------------------------- */
-  // General assertions that the test constants were set up correctly
   beforeAll(() => {
+    /* ---------- General assertions that the test constants were set up correctly ---------- */
     // Types
     expect(types.length).toBeGreaterThan(1); // Correct `types` count
     expect(types).toHaveLength(new Set(types).size); // Unique types
@@ -121,6 +167,10 @@ describe("Form Observer (Class)", () => {
     expect(eventsArray).toHaveLength(types.length); // Correct Events count
     expect(eventsArray).toHaveLength(new Set(eventsArray).size); // Unique Events (by Class)
     expect(eventsArray.every((E, i) => new E(types[i]) instanceof Event)).toBe(true); // All items are truly `Event`s
+
+    /* -------------------- Define Shadow DOM Web Components -------------------- */
+    customElements.define("closed-shadow-container", ClosedShadowContainer);
+    customElements.define("open-shadow-container", OpenShadowContainer);
   });
 
   beforeEach(() => {
@@ -128,7 +178,7 @@ describe("Form Observer (Class)", () => {
     vi.restoreAllMocks(); // For any `spies` on `document.*EventListener` or the Assertion Utilities
 
     // Reset anything that we've rendered to the DOM. (Without a JS framework implementation, we must do this manually.)
-    document.body.textContent = "";
+    document.body.replaceChildren();
   });
 
   /* ---------------------------------------- Run Tests ---------------------------------------- */
@@ -216,16 +266,17 @@ describe("Form Observer (Class)", () => {
        * NOTE: The `FormObserver` must AUTOMATICALLY listen for events from fields that BELONG to the
        * observed `form`. This includes 1) Relevant fields inside the `form`, 2) Relevant fields OUTSIDE
        * the `form`, and most importantly 3) Fields added to the `form` AFTER it has already been observed.
-       * This test MUST account for ALL of these scenarios. (Note that `renderForms` already prepares
-       * #1 and #2 for testing. By nature, #3 must be prepared by the test locally.)
+       * This test MUST account for ALL of these scenarios. AND it MUST account for `form`s in the ShadowDOM.
+       * (Note that `renderForms` already prepares #1 and #2 for testing. `renderForms` also prepares the ShadowDOMs.
+       * By nature, #3 must be prepared by the test locally.)
        */
       it("Listens for the specified event(s) from ALL of a `form`'s fields", async () => {
         const formObserver = getFormObserverByTestCase(testCase);
 
-        // Render Form
-        const { primaryForm, secondaryForm } = renderForms();
-        formObserver.observe(primaryForm);
-        formObserver.observe(secondaryForm);
+        // Render Forms
+        const { primaryForm, secondaryForm, closedShadowForm, openShadowForm1, openShadowForm2 } = renderForms();
+        const forms = [primaryForm, secondaryForm, closedShadowForm, openShadowForm1, openShadowForm2];
+        forms.forEach((f) => formObserver.observe(f));
 
         // Assert that the `primaryForm` obtained a new field AFTER being observed
         const newField = document.createElement("input");
@@ -236,43 +287,41 @@ describe("Form Observer (Class)", () => {
         expect(primaryForm.elements).toContain(newField);
 
         // Run Tests for Each Test Case
-        for (const form of [primaryForm, secondaryForm]) {
-          for (const field of form.elements) {
+        for (let i = 0; i < forms.length; i++) {
+          const form = forms[i];
+
+          for (let J = 0; J < form.elements.length; J++) {
+            const field = form.elements[J];
+            listeners.forEach((l) => l.mockImplementation((e) => expect(e.target).toBe(field)));
             await userEvent.click(field);
 
             // Single Type, Single Listener, Single Options
             if (testCase === testCases[0]) {
               expect(listeners[0]).toHaveBeenCalledWith(expect.any(events[types[0]]));
-              expect(listeners[0]).toHaveBeenCalledWith(expect.objectContaining({ target: field }));
               expect(listeners[0]).toHaveBeenCalledTimes(1);
-
               expect(listeners[1]).not.toHaveBeenCalled(); // Shouldn't have been setup
 
-              listeners[0].mockClear();
+              listeners.forEach((l) => l.mockReset());
             }
             // Multiple Types, Single Listener, Single Options
             else if (testCase === testCases[1]) {
               expect(listeners[0]).toHaveBeenCalledWith(expect.any(events[types[0]]));
               expect(listeners[0]).toHaveBeenCalledWith(expect.any(events[types[1]]));
               expect(listeners[0]).toHaveBeenCalledTimes(2);
-              expect(listeners[0]).not.toHaveBeenCalledWith(expect.not.objectContaining({ target: field }));
-
               expect(listeners[1]).not.toHaveBeenCalled(); // Shouldn't have been setup
 
-              listeners[0].mockClear();
+              listeners.forEach((l) => l.mockReset());
             }
             // Multiple Types, Multiple Listeners, Multiple Options
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             else if (testCase === testCases[2]) {
               expect(listeners[0]).toHaveBeenCalledWith(expect.any(events[types[0]]));
-              expect(listeners[0]).toHaveBeenCalledWith(expect.objectContaining({ target: field }));
               expect(listeners[0]).toHaveBeenCalledTimes(1);
 
               expect(listeners[1]).toHaveBeenCalledWith(expect.any(events[types[1]]));
-              expect(listeners[1]).toHaveBeenCalledWith(expect.objectContaining({ target: field }));
               expect(listeners[1]).toHaveBeenCalledTimes(1);
 
-              listeners.forEach((l) => l.mockClear());
+              listeners.forEach((l) => l.mockReset());
             }
             // Guard against invalid test cases
             else throwUnsupportedTestCaseError(testCase);
@@ -315,57 +364,75 @@ describe("Form Observer (Class)", () => {
 
       it("Returns `true` if the received `form` was NOT already being observed (and `false` otherwise)", () => {
         const formObserver = getFormObserverByTestCase(testCase);
-        const { primaryForm, secondaryForm } = renderForms();
+        const { primaryForm, openShadowForm1 } = renderForms();
 
         // Returns `true` because the `form`s were not originally being observed
         expect(formObserver.observe(primaryForm)).toBe(true);
-        expect(formObserver.observe(secondaryForm)).toBe(true);
+        expect(formObserver.observe(openShadowForm1)).toBe(true);
 
         // Returns `false` because the `form`s were already being observed
         expect(formObserver.observe(primaryForm)).toBe(false);
-        expect(formObserver.observe(secondaryForm)).toBe(false);
+        expect(formObserver.observe(openShadowForm1)).toBe(false);
 
         // Resets are also handled correctly.
         formObserver.unobserve(primaryForm);
         expect(formObserver.observe(primaryForm)).toBe(true);
       });
 
-      // Proof: `document.addEventListener` is not re-called when a `form` is already being observed
-      it("Uses the same event listener(s) for all observed `form`s via `event delegation`", () => {
+      it("Reuses event listener(s) for observed `form`s that share the same root", () => {
         const formObserver = getFormObserverByTestCase(testCase);
 
         // Render Form
-        const { primaryForm, secondaryForm } = renderForms();
-        expect(primaryForm.ownerDocument).toBe(secondaryForm.ownerDocument);
-        const addEventListener = vi.spyOn(primaryForm.ownerDocument, "addEventListener");
+        const { primaryForm, secondaryForm, openShadowForm1, openShadowForm2 } = renderForms();
 
+        expect(primaryForm.ownerDocument).toBe(secondaryForm.ownerDocument);
+        const lightAddEventListener = vi.spyOn(primaryForm.ownerDocument, "addEventListener");
         formObserver.observe(primaryForm);
+
+        expect(openShadowForm1.getRootNode()).toBe(openShadowForm2.getRootNode());
+        const shadowAddEventListener = vi.spyOn(openShadowForm1.getRootNode(), "addEventListener");
+        formObserver.observe(openShadowForm1);
 
         // Single Type, Single Listener, Single Options
         if (testCase === testCases[0]) {
-          expect(addEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
-          expect(addEventListener).toHaveBeenCalledTimes(1);
+          expect(lightAddEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(lightAddEventListener).toHaveBeenCalledTimes(1);
+
+          expect(shadowAddEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(shadowAddEventListener).toHaveBeenCalledTimes(1);
         }
         // Multiple Types, Single Listener, Single Options
         else if (testCase === testCases[1]) {
-          expect(addEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
-          expect(addEventListener).toHaveBeenCalledWith(types[1], expect.any(Function), options[0]);
-          expect(addEventListener).toHaveBeenCalledTimes(2);
+          expect(lightAddEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(lightAddEventListener).toHaveBeenCalledWith(types[1], expect.any(Function), options[0]);
+          expect(lightAddEventListener).toHaveBeenCalledTimes(2);
+
+          expect(shadowAddEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(shadowAddEventListener).toHaveBeenCalledWith(types[1], expect.any(Function), options[0]);
+          expect(shadowAddEventListener).toHaveBeenCalledTimes(2);
         }
         // Multiple Types, Multiple Listeners, Multiple Options
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         else if (testCase === testCases[2]) {
-          expect(addEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
-          expect(addEventListener).toHaveBeenCalledWith(types[1], expect.any(Function), options[1]);
-          expect(addEventListener).toHaveBeenCalledTimes(2);
+          expect(lightAddEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(lightAddEventListener).toHaveBeenCalledWith(types[1], expect.any(Function), options[1]);
+          expect(lightAddEventListener).toHaveBeenCalledTimes(2);
+
+          expect(shadowAddEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(shadowAddEventListener).toHaveBeenCalledWith(types[1], expect.any(Function), options[1]);
+          expect(shadowAddEventListener).toHaveBeenCalledTimes(2);
         }
         // Guard against invalid test cases
         else throwUnsupportedTestCaseError(testCase);
 
-        // Duplicate listeners are NOT attached/created when observing ANOTHER form
-        addEventListener.mockClear();
+        // Duplicate listeners are NOT attached/created when observing ANOTHER form in the SAME root
+        lightAddEventListener.mockClear();
+        shadowAddEventListener.mockClear();
+
         formObserver.observe(secondaryForm);
-        expect(addEventListener).not.toHaveBeenCalled();
+        formObserver.observe(openShadowForm2);
+        expect(lightAddEventListener).not.toHaveBeenCalled();
+        expect(shadowAddEventListener).not.toHaveBeenCalled();
       });
     });
 
@@ -391,19 +458,21 @@ describe("Form Observer (Class)", () => {
 
       it("Stops listening for events from a `form`'s fields", async () => {
         const formObserver = getFormObserverByTestCase(testCase);
-        const { primaryForm, secondaryForm } = renderForms();
+        const { primaryForm, secondaryForm, closedShadowForm, openShadowForm1, openShadowForm2 } = renderForms();
 
-        // Observe forms
-        formObserver.observe(primaryForm);
-        formObserver.observe(secondaryForm);
-
-        // Unobserve forms
-        formObserver.unobserve(primaryForm);
-        formObserver.unobserve(secondaryForm);
+        // `observe` all forms. Then `unobserve` them.
+        const forms = [primaryForm, secondaryForm, closedShadowForm, openShadowForm1, openShadowForm2];
+        forms.forEach((f) => {
+          formObserver.observe(f);
+          formObserver.unobserve(f);
+        });
 
         // Regardless of the `testCase`, NOTHING should be called
-        for (const form of [primaryForm, secondaryForm]) {
-          for (const field of form.elements) {
+        for (let i = 0; i < forms.length; i++) {
+          const form = forms[i];
+
+          for (let J = 0; J < form.elements.length; J++) {
+            const field = form.elements[J];
             await userEvent.click(field);
             listeners.forEach((l) => expect(l).not.toHaveBeenCalled());
           }
@@ -412,55 +481,75 @@ describe("Form Observer (Class)", () => {
 
       it("Returns `true` if the received `form` WAS already being observed (and `false` otherwise)", () => {
         const formObserver = getFormObserverByTestCase(testCase);
-        const { primaryForm, secondaryForm } = renderForms();
+        const { primaryForm, openShadowForm1 } = renderForms();
 
         // Returns `false` because the `form`s were not originally being observed
         expect(formObserver.unobserve(primaryForm)).toBe(false);
-        expect(formObserver.unobserve(secondaryForm)).toBe(false);
+        expect(formObserver.unobserve(openShadowForm1)).toBe(false);
 
         // Returns `true` because the `form`s were already being observed
         formObserver.observe(primaryForm);
         expect(formObserver.unobserve(primaryForm)).toBe(true);
 
-        formObserver.observe(secondaryForm);
-        expect(formObserver.unobserve(secondaryForm)).toBe(true);
+        formObserver.observe(openShadowForm1);
+        expect(formObserver.unobserve(openShadowForm1)).toBe(true);
       });
 
-      it("Does not remove the `delegated` event listener(s) until ALL `form`s are unobserved", () => {
+      it("Does not remove a root's event listener(s) until ALL `form`s belonging to that root are unobserved", () => {
         const formObserver = getFormObserverByTestCase(testCase);
 
         // Render Form
-        const { primaryForm, secondaryForm } = renderForms();
-        expect(primaryForm.ownerDocument).toBe(secondaryForm.ownerDocument);
-        const removeEventListener = vi.spyOn(primaryForm.ownerDocument, "removeEventListener");
+        const { primaryForm, secondaryForm, openShadowForm1, openShadowForm2 } = renderForms();
 
+        expect(primaryForm.ownerDocument).toBe(secondaryForm.ownerDocument);
+        const lightRemoveEventListener = vi.spyOn(primaryForm.ownerDocument, "removeEventListener");
         formObserver.observe(primaryForm);
         formObserver.observe(secondaryForm);
 
-        // `removeEventListener` is not called because other `form`s are still being observed
-        formObserver.unobserve(secondaryForm);
-        expect(removeEventListener).not.toHaveBeenCalled();
+        expect(openShadowForm1.getRootNode()).toBe(openShadowForm2.getRootNode());
+        const shadowRemoveEventListener = vi.spyOn(openShadowForm1.getRootNode(), "removeEventListener");
+        formObserver.observe(openShadowForm1);
+        formObserver.observe(openShadowForm2);
 
-        // `removeEventListener` is called after ALL `form`s are unobserved
+        // `removeEventListener` is not called because other `form`s in the same root are still being observed
+        formObserver.unobserve(secondaryForm);
+        expect(lightRemoveEventListener).not.toHaveBeenCalled();
+
+        formObserver.unobserve(openShadowForm2);
+        expect(shadowRemoveEventListener).not.toHaveBeenCalled();
+
+        // `removeEventListener` is called after ALL `form`s for a given `root` are unobserved
         formObserver.unobserve(primaryForm);
+        formObserver.unobserve(openShadowForm1);
 
         // Single Type, Single Listener, Single Options
         if (testCase === testCases[0]) {
-          expect(removeEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
-          expect(removeEventListener).toHaveBeenCalledTimes(1);
+          expect(lightRemoveEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(lightRemoveEventListener).toHaveBeenCalledTimes(1);
+
+          expect(shadowRemoveEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(shadowRemoveEventListener).toHaveBeenCalledTimes(1);
         }
         // Multiple Types, Single Listener, Single Options
         else if (testCase === testCases[1]) {
-          expect(removeEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
-          expect(removeEventListener).toHaveBeenCalledWith(types[1], expect.any(Function), options[0]);
-          expect(removeEventListener).toHaveBeenCalledTimes(2);
+          expect(lightRemoveEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(lightRemoveEventListener).toHaveBeenCalledWith(types[1], expect.any(Function), options[0]);
+          expect(lightRemoveEventListener).toHaveBeenCalledTimes(2);
+
+          expect(shadowRemoveEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(shadowRemoveEventListener).toHaveBeenCalledWith(types[1], expect.any(Function), options[0]);
+          expect(shadowRemoveEventListener).toHaveBeenCalledTimes(2);
         }
         // Multiple Types, Multiple Listeners, Multiple Options
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         else if (testCase === testCases[2]) {
-          expect(removeEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
-          expect(removeEventListener).toHaveBeenCalledWith(types[1], expect.any(Function), options[1]);
-          expect(removeEventListener).toHaveBeenCalledTimes(2);
+          expect(lightRemoveEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(lightRemoveEventListener).toHaveBeenCalledWith(types[1], expect.any(Function), options[1]);
+          expect(lightRemoveEventListener).toHaveBeenCalledTimes(2);
+
+          expect(shadowRemoveEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(shadowRemoveEventListener).toHaveBeenCalledWith(types[1], expect.any(Function), options[1]);
+          expect(shadowRemoveEventListener).toHaveBeenCalledTimes(2);
         }
         // Guard against invalid test cases
         else throwUnsupportedTestCaseError(testCase);
@@ -473,15 +562,14 @@ describe("Form Observer (Class)", () => {
         vi.spyOn(formObserver, "unobserve");
 
         // Render Form
-        const { primaryForm, secondaryForm } = renderForms();
-        formObserver.observe(primaryForm);
-        formObserver.observe(secondaryForm);
+        const { primaryForm, secondaryForm, closedShadowForm, openShadowForm1, openShadowForm2 } = renderForms();
+        const forms = [primaryForm, secondaryForm, closedShadowForm, openShadowForm1, openShadowForm2];
+        forms.forEach((f) => formObserver.observe(f));
 
         // Disconnect
         formObserver.disconnect();
-        expect(formObserver.unobserve).toHaveBeenCalledTimes(2);
-        expect(formObserver.unobserve).toHaveBeenCalledWith(primaryForm);
-        expect(formObserver.unobserve).toHaveBeenCalledWith(secondaryForm);
+        expect(formObserver.unobserve).toHaveBeenCalledTimes(forms.length);
+        forms.forEach((f) => expect(formObserver.unobserve).toHaveBeenCalledWith(f));
       });
     });
   });

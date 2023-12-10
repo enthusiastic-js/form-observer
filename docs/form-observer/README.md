@@ -204,13 +204,15 @@ form2.elements[0].dispatchEvent(new MouseEvent("click"));
 
 ## Gotchas
 
-Although we don't think these things will be an impediment to your developer experience, we do want to make sure you're aware of a few things while you use the `FormObserver`.
+Although we don't think these things will be an impediment to your developer experience, we do want to make sure that you're aware of a few things while you use the `FormObserver`.
 
-### Be Mindful of the `ownerDocument` of the Forms That You Observe
+### The Timing of When `observe` and `unobserve` Can Be Called
 
-> **Note**: If you're unfamiliar with [`Node.ownerDocument`](https://developer.mozilla.org/en-US/docs/Web/API/Node/ownerDocument), then this is likely something that you _don't_ need to worry about.
+An `HTMLFormElement` should only be `observed` _after_ it has already been mounted to the DOM. Similarly, a form must be `unobserved` _before_ it is unmounted from the DOM or moved to a different [root node](https://developer.mozilla.org/en-US/docs/Web/API/Node/getRootNode) (e.g., a different `Document` or `ShadowRoot`). **_In practice, this pretty much always happens naturally._**
 
-For performance reasons, each _instance_ of the `FormObserver` assumes that _all_ of the `form`s which it observes belong to the same `Document`. More specifically, it assumes that the `ownerDocument` of the first `form` that it observes will also be the `ownerDocument` of every other `form` that it observes. If you want to observe `form`s that belong to entirely different `Document`s on the same webpage, then you should create separate `FormObserver`s for each `Document` involved. Of course, it's highly unlikely that anyone would seek to observe multiple `form`s across different `Document`s anyway; but we figured that people should be aware of this concern just in case.
+This is really only a concern if you're writing complex logic that impacts how `HTMLFormElement`s are added to or removed from the DOM. For example, if you plan to continue observing a form that you move to a new root, then you must `unobserve` the form, move it to the new root, and then re-`observe` the form. But very likely, you will _never_ need to do this; and this isn't necessary when moving forms around within the same root node.
+
+This restriction is put in place because the `FormObserver` uses a form's Root Node as an event delegate for your fields -- resulting in a boost to your application's performance.
 
 ## What's Next?
 
