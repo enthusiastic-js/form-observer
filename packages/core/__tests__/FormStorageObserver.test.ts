@@ -1136,10 +1136,10 @@ describe("Form Storage Observer (Class)", () => {
         /* -------------------- `HTMLFormElement` + `FieldName` Overload -------------------- */
         expect(() => FormStorageObserver.load(form, correct.name)).not.toThrow();
         expect(() => FormStorageObserver.load(form, missing.id)).toThrowErrorMatchingInlineSnapshot(
-          '"Expected to find a field with name \\"missing\\", but instead found a field with name \\"\\". Did you accidentally provide your field\'s `id` instead of your field\'s `name`?"',
+          `[Error: Expected to find a field with name "missing", but instead found a field with name "". Did you accidentally provide your field's \`id\` instead of your field's \`name\`?]`,
         );
         expect(() => FormStorageObserver.load(form, mismatched.id)).toThrowErrorMatchingInlineSnapshot(
-          '"Expected to find a field with name \\"mismatched\\", but instead found a field with name \\"wrong-name\\". Did you accidentally provide your field\'s `id` instead of your field\'s `name`?"',
+          `[Error: Expected to find a field with name "mismatched", but instead found a field with name "wrong-name". Did you accidentally provide your field's \`id\` instead of your field's \`name\`?]`,
         );
       });
 

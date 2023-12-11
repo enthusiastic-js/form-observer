@@ -179,7 +179,7 @@ describe("Form Validity Observer (Class)", () => {
         expect(() => formValidityObserver.observe(originalForm)).not.toThrow();
 
         expect(() => formValidityObserver.observe(document.createElement("form"))).toThrowErrorMatchingInlineSnapshot(
-          `"A single \`FormValidityObserver\` can only watch 1 form at a time."`,
+          `[Error: A single \`FormValidityObserver\` can only watch 1 form at a time.]`,
         );
 
         formValidityObserver.unobserve(originalForm);

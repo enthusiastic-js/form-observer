@@ -29,9 +29,8 @@ describe("Create Form Validity Observer (Function)", () => {
     expect(boundMethods).toHaveLength(7); // Note: This number will change if we add more methods (unlikely).
     expect(boundMethods.length).toBe(new Set(boundMethods).size);
 
-    // TODO: We shouldn't have to cast as `never`. This is probably a bug with `vitest`. See other `never` as well.
     // Spy on the `bound` methods
-    boundMethods.forEach((method) => vi.spyOn(FormValidityObserver.prototype[method], "bind" as never));
+    boundMethods.forEach((method) => vi.spyOn(FormValidityObserver.prototype[method], "bind"));
 
     /* ---------- Run Assertions ---------- */
     const observer = createFormValidityObserver(types);
@@ -46,7 +45,7 @@ describe("Create Form Validity Observer (Function)", () => {
   it("DOES NOT expose the `FormValidityObserver`'s ORIGINAL `configure` method", () => {
     /** The name of the {@link FormValidityObserver.configure} method */
     const configure = "configure";
-    vi.spyOn(FormValidityObserver.prototype[configure], "bind" as never); // See earlier TODO TS comment
+    vi.spyOn(FormValidityObserver.prototype[configure], "bind");
 
     // Run Assertions
     const observer = createFormValidityObserver(types);

@@ -32,7 +32,7 @@
     "@form-observer/core": "^0.6.1"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^2.5.3",
+    "@sveltejs/vite-plugin-svelte": "^3.0.1",
     "@testing-library/svelte": "^4.0.5",
     "svelte": "^4.2.8"
   },
