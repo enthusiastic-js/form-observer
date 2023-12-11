@@ -56,7 +56,7 @@ The `FormObserver()` constructor creates a new observer and configures it with t
 
 #### 1&rpar; With a _Single_ `listener` Responding to a _Single_ Event `type`
 
-For the `types` argument, you may pass a single string representing the type of event that you want to listen for. The string can be one of the [commonly recognized](https://developer.mozilla.org/en-US/docs/Web/Events) event types, or it can be a custom event type of your own.
+For the `types` argument, you may pass a single string representing the type of event that you want to listen for. The string can be one of the [commonly recognized](https://developer.mozilla.org/en-US/docs/Web/Events) event types, or it can be a [custom](./guides.md#supporting-custom-event-types) event type of your own.
 
 When passing a string as the `types` argument for the `FormObserver` constructor, you _must_ provide a single event `listener` that will be called whenever a field belonging to an observed form emits an event of the specified `type`. _Optionally_, you may also specify the [event listener `options`](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#parameters) that should be used to configure the `listener`.
 

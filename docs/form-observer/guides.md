@@ -2,9 +2,28 @@
 
 Here you'll find helpful tips on how to use the `FormObserver` effectively in various situations. We hope that you find these guides useful! Here are the currently discussed topics:
 
+- [Supporting Custom Event Types](#supporting-custom-event-types)
 - [Usage with JavaScript Frameworks](#usage-with-javascript-frameworks)
 - [Usage with Web Components](#usage-with-web-components)
 - [Extending the `FormObserver` with Specialized Logic](#extending-the-formobserver-with-specialized-logic)
+
+## Supporting Custom Event Types
+
+The `FormObserver` allows you to listen for the [standardized event types](https://developer.mozilla.org/en-US/docs/Web/Events) _and_ for any custom event types that you create. If you're using TypeScript, then you'll need to register your custom event types with the global `DocumentEventMap` so that the `FormObserver` can recognize them.
+
+```ts
+// Somewhere in a `.ts` file that uses your custom event...
+const observer = new FormObserver("mycustomevent", (event) => console.log(typeof event.detail));
+
+// You should only need to do this once for each of your custom events
+declare global {
+  interface DocumentEventMap {
+    mycustomevent: CustomEvent<string>;
+  }
+}
+```
+
+This approach is similar to what [Lit](https://lit.dev/docs/components/defining/#typescript-typings) does to support custom HTMLElement tags in TypeScript.
 
 ## Usage with JavaScript Frameworks
 

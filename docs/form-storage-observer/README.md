@@ -38,7 +38,7 @@ The `FormStorageObserver()` constructor creates a new observer and configures it
 
 <dl>
   <dt><code>types</code></dt>
-  <dd>A string <em>or</em> an array of strings representing the type(s) of event(s) that should cause a form's data to be saved to <code>localStorage</code>. As with the <code>FormObserver</code>, the string(s) can be <a href="https://developer.mozilla.org/en-US/docs/Web/Events">commonly recognized</a> event types <em>or</em> your own custom event types.</dd>
+  <dd>A string <em>or</em> an array of strings representing the type(s) of event(s) that should cause a form's data to be saved to <code>localStorage</code>. As with the <code>FormObserver</code>, the string(s) can be <a href="https://developer.mozilla.org/en-US/docs/Web/Events">commonly recognized</a> event types <em>or</em> your own <a href="../form-observer/guides.md#supporting-custom-event-types">custom</a> event types.</dd>
 
   <dt><code>options</code> (Optional)</dt>
   <dd>
