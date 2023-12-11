@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@solidjs/testing-library": "^0.8.4",
-    "vite-plugin-solid": "^2.7.2"
+    "vite-plugin-solid": "^2.8.0"
   },
   "author": "Isaiah Thomason",
   "license": "MIT",
