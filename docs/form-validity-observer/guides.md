@@ -4,15 +4,15 @@ Here you'll find helpful tips on how to use the `FormValidityObserver` effective
 
 - [Enabling/Disabling Accessible Error Messages](#enabling-accessible-error-messages-during-form-submissions)
 - [Keeping Track of Visited/Dirty Fields](#keeping-track-of-visiteddirty-fields)
+- [Keeping Track of Form Data](#keeping-track-of-form-data)
+- [Recommendations for Conditionally Rendered Fields](#recommendations-for-conditionally-rendered-fields)
 - [Recommendations for Styling Form Fields and Their Error Messages](#recommendations-for-styling-form-fields-and-their-error-messages)
 - [Usage with Web Components](#usage-with-web-components)
 
 <!--
 TODO: Some `Guides` that could be helpful:
 
-1) MAYBE something on how to work with accessible error messages? (Should we also mention `aria-errormessage` vs. `aria-describedby` too and the lack of support for `aria-errormessage` too? Or does that belong somewhere else in the docs?)
-
-2) Notes on how to handle fields that are toggled via CSS would probably be helpful. More than likely, a wrapping `fieldset` that could be `disabled` would be the "path of least resistance". `disabled` fields don't partake in field validation or form submission, and the `:disabled` CSS pseudo-class could be used to visually hide a group of elements from users whenever needed. That said, this approach requires JavaScript. Conditionally displayed fields are a bit more complicated for forms that want to support users lacking JS. But this is true regardless of whether or not someone uses our library.
+1) MAYBE something on how to work with accessible error messages? (Should we also mention `aria-errormessage` vs. `aria-describedby` too? As well as the lack of support for `aria-errormessage`? Or does that belong somewhere else in the docs?)
 -->
 
 ## Enabling Accessible Error Messages during Form Submissions
@@ -126,6 +126,469 @@ const dirtyFields = fields.filter((f) => f.getAttribute("data-dirty") === String
 (The above implementation is an adaptation of [Edmund Hung's brilliant approach](https://github.com/edmundhung/conform/issues/131#issuecomment-1557892292).)
 
 To get an idea of how these event listeners would function, you can play around with them on the [MDN Playground](https://developer.mozilla.org/en-US/play?id=I15VQ64lWQShncvhr9JnLQQYWOoJQhpU1hHDLWKGF4D229TmIjON7qmRqK2mVceWNXsaP6jIjm%2FOjZ%2Bi). Feel free to alter this implementation to fit your needs.
+
+You can learn more about what can be done with forms using pure JS on our [Philosophy](../extras/philosophy.md#avoid-unnecessary-overhead-and-reinventing-the-wheel) page.
+
+## Keeping Track of Form Data
+
+Many form libraries offer stateful solutions for managing the data in your forms as JSON. But there are a few disadvantages to this approach:
+
+1. **Your application's bundle size increases.**
+2. **Your application's performance decreases.** This is especially true in React apps (or similar apps).
+3. **Applications using PureJS don't have strong state management libraries by default.** So a stateful form library may not be usable in all situations.
+4. **Progressive enhancement is often lost.** Once you start thinking of form data as JSON from a state management library (instead of using the data structure that the browser provides), you usually end up with a web form that can't work without JS. This negatively impacts the accessibility of your site.
+
+None of these problems exist when you use the browser's built-in solution for managing your form's data.
+
+### How the Browser's Form Data Works
+
+Any form control with a valid `name` that is associated with an `HTMLFormElement` automatically has its data associated with that form. Examples of form controls include `input`s, `select`s, [qualifying Web Components](https://web.dev/articles/more-capable-form-controls), and more. Consider the following code snippet:
+
+```html
+<form id="example-form">
+  <textarea name="comment"></textarea>
+  <custom-field name="some-entity"></custom-field>
+
+  <select name="choices" multiple>
+    <option value="pancakes">Pancakes</option>
+    <option value="waffles">Waffles</option>
+    <option value="cereal">Cereal</option>
+  </select>
+</form>
+
+<input name="email" type="email" form="example-form" />
+```
+
+Assuming that the `custom-field` Web Component was [properly configured](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/attachInternals), the `textarea`, the `custom-field`, the `select`, and the external `input` will all have their data associated with the `#example-form` form element. To access this form data, we can use the browser's [`FormData`](https://developer.mozilla.org/en-US/docs/Web/API/FormData/FormData) class -- which will allow us to get each part of a form's data by `name`.
+
+```js
+const form = document.querySelector("form#example-form");
+const formData = new FormData(form);
+
+const email = formData.get("email"); // Get the data from the `email` input
+const choices = formData.getAll("choices"); // Get ALL of the options chosen in the multi-select
+```
+
+See how much easier this is than relying on a state management tool? :smile: There's [_even more_](../extras/philosophy.md#avoid-unnecessary-overhead-and-reinventing-the-wheel) that you can do with the browser's native form features. But for now, let's keep focusing on the `FormData` topic.
+
+If you want a more JSON-like representation of the form data, you can also use [`Object.fromEntries()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/fromEntries).
+
+```js
+const data = Object.fromEntries(formData);
+console.log("Email: ", data.email);
+console.log("Comment: ", data.comment);
+```
+
+However, if you try to convert the `FormData` into a JSON-like structure, then you'll need to be aware of how the browser handles form data for certain inputs. For example, [only checked checkboxes have their data associated with their forms](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/checkbox#additional_attributes). Additionally, to get all of the data associated with a multi-select, you must use [`FormData.getAll()`](https://developer.mozilla.org/en-US/docs/Web/API/FormData/getAll). `Object.fromEntries()` assumes that each form control's data is accessed with `FormData.get()`, so you'll need to correct the multi-select data (and checkbox data) in your generated JSON object.
+
+```js
+const form = document.querySelector("form#some-other-example-form");
+const formData = new FormData(form);
+
+// JSON-ify form data and correct it where needed
+const dataAsJSON = Object.fromEntries(formData);
+dataAsJSON.checkbox = formData.get("checkbox") != null;
+dataAsJSON.multiselect = formData.getAll("multiselect");
+```
+
+To know which form controls are "tricky" (like checkboxes and multi-selects) and which ones are "normal" (like textboxes and single-selects), you can visit MDN's documentation for the form control(s) that you're working with. That said, the vast majority of form controls behave "normally". So most of the time you won't need to think of these edge cases. (Plus, since the edge cases are so few, they'll typically be easier to remember.)
+
+### Using JSON-ified `FormData` without Ruining Progressive Enhancement
+
+Now we know how to access a form's data using the browser's native features. The browser gives us form data that automatically stays up to date _for free_ without any need for a state management tool. And we can even transform the data to a JSON-like structure if we want to. (Remember: In the end, you should send the regular `FormData` to the backend as is so that your application will be progressively enhanced. Generally, you should avoid sending form data to the backend as JSON.)
+
+However, this approach introduces a question... What do we do with this form data on the server? Node.js servers are certainly able to work with the `FormData` object. However, many developers prefer to work with JSON objects on the server instead of using `FormData.get()` and `FormData.getAll()`.
+
+The solution is actually quite simple: Instead of sending JSON from the frontend to the backend, we can create a utility function for the backend that _transforms_ `FormData` into valid JSON whenever we want. As long as we have access to 1&rpar; the `FormData` object on the incoming request and 2&rpar; the expected _schema_ for our form data, we can transform any `FormData` object into a valid JSON object. (If you're using an old Node.js server that can't use the `FormData` class, then you can still take a similar approach with whichever kind of object you're working with for form data.)
+
+```ts
+function parseFormDataIntoJSON<T extends Schema>(formData: FormData, schema: T): FormDataAsJSON<T>;
+```
+
+This approach gives us the best of both worlds: We gain a web form that functions without JS, and we gain an ergonomic JSON representation of the form data on the backend. For those who are interested, we'll spend the remainder of this section providing some ideas on how to implement `parseFormDataIntoJSON`. There are multiple ways to do this depending on the needs of your application. We're simply giving you the _starting point_. (That said, if there is enough interest from the community, we will consider supporting a fully-featured, fully-tested version of this function in the `Form Observer` utilities.)
+
+### Implementing `parseFormDataIntoJSON` in Simple Use Cases: Primitive Values
+
+Implementing `parseFormDataIntoJSON` is actually very easy for primitive values. By "primitive values", we mean values that can be represented without using an array or a JSON object. In addition to `number`s, `string`s, and `boolean`s, this includes types like `Date`s and `File`s.
+
+Imagine that we want to account for the aforementioned value types on the server. We can create a `Schema` type that is used to define the _expected structure_ of our incoming form data, and we can create utility types that map a `Schema` to a regular JSON object. (Note: If you aren't using TypeScript or don't care for type safety, you can skip this part.)
+
+```ts
+type Schema = {
+  [key: string]: { type: "number" | "string" | "boolean" | "date" | "file" };
+};
+
+type SchemaMap = { number: number; string: string; boolean: boolean; date: Date; file: File };
+type FormDataAsJSON<T extends Schema> = { [K in keyof T]: SchemaMap[T[K]["type"]] };
+```
+
+Note that we will not be accounting for optional values in our example. But one way to do so could be to include an `optional` property in the `Schema` type:
+
+```ts
+type Schema = {
+  [key: string]: { type: "number" | "string" | "boolean" | "date" | "file"; optional?: boolean };
+};
+```
+
+We can use these utility types to define our `parseFormDataIntoJSON` function. We'll provide this function with the `FormData` on the incoming request, and we'll also give it a physical `Schema` object that tells the function how to transform the `FormData` into a valid JSON object. The way to perform the transformation is straightforward: Loop over every part of the `Schema`, using the information in each component to dictate how the `FormData` should be transformed.
+
+```ts
+const transformers = {
+  string: (formValue: FormDataEntryValue): string => formValue as string,
+  number: (formValue: FormDataEntryValue): number => Number(formValue),
+  boolean: (formValue: FormDataEntryValue | null): boolean => formValue != null,
+  date: (formValue: FormDataEntryValue): Date => new Date(formValue as string),
+  file: (formValue: FormDataEntryValue): File => formValue as File,
+};
+
+function parseFormDataIntoJSON<T extends Schema>(formData: FormData, schema: T): FormDataAsJSON<T> {
+  const keys = Object.keys(schema);
+  const jsonObject: Record<string, unknown> = {};
+
+  keys.forEach((k) => {
+    const value = schema[k];
+    const formValue = formData.get(k);
+
+    if (formValue) return (jsonObject[k] = transformers[value.type](formValue)); // Don't set `null` values
+    return value.type === "boolean" ? (jsonObject[k] = false) : undefined;
+  });
+
+  return jsonObject as ReturnType<typeof parseFormDataIntoJSON<T>>;
+}
+```
+
+You can test this out with a Schema object like the following:
+
+```ts
+const exampleSchema = {
+  file: { type: "file" },
+  name: { type: "string" },
+  amount: { type: "number" },
+  subscribe: { type: "boolean" },
+  creation: { type: "date" },
+} satisfies Schema;
+
+parseFormDataIntoJSON(myFormData, exampleSchema);
+```
+
+### Implementing `parseFormDataIntoJSON` in Advanced Use Cases: Objects
+
+Unfortunately, the browser has no native way to represent object data or array data in forms. So in order to achieve this experience, we have to be creative with the `name`s that we use for our form controls, and we have to be even more intentional with our `Schema` type.
+
+Typically, when we work with objects in JavaScript, we access properties by writing `object.property`. So it makes sense to use this as our rule for defining "object data" in our progressively enhanced forms.
+
+```html
+<form>
+  <input name="user.name.first" type="text" required />
+  <input name="user.name.last" type="text" required />
+</form>
+```
+
+Here, we're saying that `user` is an object. It has a `name` property that is an object containing a `first` property and a `last` property. Now all we need to do is update our types and the `parseFormDataIntoJSON` function to convert this kind of `FormData` into a JSON object.
+
+One way to approach this is with recursion. We already have types and logic in place to create a JSON object from a `FormData` object that is only "1 level deep". So what we're really trying to do now is support nested object data in forms. This should be pretty easy to do given our foundation.
+
+```ts
+type Schema = {
+  [key: string]: { type: "number" | "string" | "boolean" | "date" | "file" } | { type: "object"; properties: Schema };
+};
+
+// The `SchemaMap` type will not change.
+
+type FormDataAsJSON<T extends Schema> = {
+  [K in keyof T]: T[K] extends { type: "object" }
+    ? FormDataAsJSON<T[K]["properties"]>
+    : T[K] extends { type: keyof SchemaMap }
+      ? SchemaMap[T[K]["type"]]
+      : never;
+};
+
+// The `transformers` will not change.
+
+function parseFormDataIntoJSON<T extends Schema>(formData: FormData, schema: T, scope?: string): FormDataAsJSON<T> {
+  const keys = Object.keys(schema);
+  const jsonObject: Record<string, unknown> = {};
+
+  keys.forEach((k) => {
+    const value = schema[k];
+    const name = scope ? `${scope}.${k}` : k;
+
+    // Recursively generate JSON objects
+    if (value.type === "object") return (jsonObject[k] = parseFormDataIntoJSON(formData, value.properties, name));
+
+    // Generate "primitive values"
+    const formValue = formData.get(name);
+    if (formValue) return (jsonObject[k] = transformers[value.type](formValue)); // Don't set `null` values
+    return value.type === "boolean" ? (jsonObject[k] = false) : undefined;
+  });
+
+  return jsonObject as ReturnType<typeof parseFormDataIntoJSON<T>>;
+}
+```
+
+Notice that we didn't have to change our code too much. We simply updated `parseFormDataIntoJSON` (and the necessary types) to recursively generate JSON objects from any nested `Schema`s. We also keep track of our level of nesting with the new `scope` parameter. This enables us to grab the correct value using `FormData.get()`. For example, we can properly call `FormData.get("user.name.first")` while we recurse through the `user` object thanks to the `scope` parameter.
+
+Our new logic works with the following example schema:
+
+```ts
+const exampleSchema = {
+  file: { type: "file" },
+  name: { type: "string" },
+  amount: { type: "number" },
+  subscribe: { type: "boolean" },
+  creation: { type: "date" },
+  user: {
+    type: "object",
+    properties: {
+      id: { type: "string" },
+      name: {
+        type: "object",
+        properties: {
+          first: { type: "string" },
+          last: { type: "string" },
+        },
+      },
+    },
+  },
+} satisfies Schema;
+
+parseFormDataIntoJSON(myFormData, exampleSchema);
+```
+
+### Improving the Return Type of the `FormData` Transformer
+
+If you've been following along with TypeScript, you may have noticed that although the _output_ types (from `parseDataIntoJSON` and `FormDataAsJSON`) are correct, they look a little convoluted when you hover over them. To solve this problem, we can use TypeScript's [`infer`](https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#inferring-within-conditional-types) keyword to force it to give us the _exact_ object type as an output. Although this makes the output type look prettier, it does add some complexity to our type definitions; so you should only consider doing this if it will truly help you. Note that your types will still be accurate whether you do this or not.
+
+```ts
+type FormDataAsJSON<T extends Schema> = {
+  [K in keyof T]: T[K] extends { type: "object" }
+    ? FormDataAsJSON<T[K]["properties"]> extends infer O
+      ? { [P in keyof O]: O[P] }
+      : never
+    : T[K] extends { type: keyof SchemaMap }
+      ? SchemaMap[T[K]["type"]]
+      : never;
+};
+
+// ...
+
+function parseFormDataIntoJSON<T extends Schema>(
+  formData: FormData,
+  schema: T,
+  scope?: string,
+): FormDataAsJSON<T> extends infer O ? { [P in keyof O]: O[P] } : never {
+  // ...
+}
+
+// When we hover `output`, we'll now get a type that is much more readable
+const output = parseFormDataIntoJSON(myFormData, exampleSchema);
+```
+
+The technique above basically forces TypeScript to `infer` the _exact_ object type for our output. The `never` case should never be reached. Again, this approach is optional.
+
+### Implementing `parseFormDataIntoJSON` in Advanced Use Cases: Arrays
+
+This is the last case that we need to support in our example, and it is by far the most complicated one. What makes this use case complicated is that there are situations where the browser supports array data and situations where it does not. For example, the browser supports multi-selects and multi-file uploads. Values for these pieces of data can be represented with a regular `name`. However, if we want to represent an array of data in an unsupported way, or if we want to support an array of object data (such as an array of work experience data), then we'll need to get creative with the `name`s of the form controls again.
+
+For array data that the browser supports, we'll use regular `name`s. For array data that _isn't_ supported by the browser, we can use the same convention that we used for object data. That is, we'll use the property-access syntax (e.g., `array[index]`) to structure the `name`s of our form controls.
+
+```html
+<!-- Native Array Form Data -->
+<select name="options" multiple>
+  <option value="1">One</option>
+  <option value="2">Two</option>
+  <option value="3">Three</option>
+</select>
+
+<!-- Array of Primitive Data -->
+<input name="nicknames[0]" />
+<input name="nicknames[1]" />
+
+<!-- Array of Object Data-->
+<input name="jobs[0].company" required />
+<input name="jobs[0].role" required />
+```
+
+First, let's update the types. Things get _a little_ bit more involved, but not too much.
+
+```ts
+type Schema = {
+  [key: string]:
+    | { type: "number" | "string" | "boolean" | "date" | "file" }
+    | { type: "object"; properties: Schema }
+    | { type: "array"; items: Exclude<Schema[string], { type: "array" }> };
+};
+
+// The `SchemaMap` type will not change.
+
+type FormDataAsJSON<T extends Schema> = {
+  [K in keyof T]: T[K] extends { type: "object" }
+    ? FormDataAsJSON<T[K]["properties"]> extends infer O
+      ? { [P in keyof O]: O[P] }
+      : never
+    : T[K] extends { type: "array" }
+      ? T[K]["items"] extends { type: keyof SchemaMap }
+        ? Array<SchemaMap[T[K]["items"]["type"]]>
+        : T[K]["items"] extends { type: "object" }
+          ? Array<FormDataAsJSON<T[K]["items"]["properties"]> extends infer O ? { [P in keyof O]: O[P] } : never>
+          : never
+      : T[K] extends { type: keyof SchemaMap }
+        ? SchemaMap[T[K]["type"]]
+        : never;
+};
+```
+
+Don't get scared. The changes are more straightforward than you think. For the `Schema` type, we updated it to support arrays. Similar to the `object` Schema type, the `array` Schema type holds a nested Schema in its `items` property. But this property is intentionally forbidden from using additional arrays directly. This means that we _don't_ support matrices/tensors (e.g., an array of arrays) in forms. (It's hard to imagine a case in which such structures would be helpful in forms.) But we _do_ support arrays of objects which themselves contain arrays.
+
+In the `FormDataAsJSON` type, all that we've done is add logic for the array case. If we have an array of _primitives_ (`T[K]["items"] extends { type: keyof SchemaMap }`), then the type just returns an array of primitves. If we have an array of _objects_ (`T[K]["items"] extends { type: "object" }`), then we return an array of recursively generated object types. Arrays of arrays are not supported and will return `never` as a type. If we don't have an array in the `Schema` input at all, then the `FormDataAsJSON` type behaves the same way it did beforehand.
+
+With the types figured out, let's update the logic in `parseFormDataIntoJSON`.
+
+```ts
+function parseFormDataIntoJSON<T extends Schema>(
+  formData: FormData,
+  schema: T,
+  scope?: string,
+): FormDataAsJSON<T> extends infer O ? { [P in keyof O]: O[P] } : never {
+  const keys = Object.keys(schema);
+  const jsonObject: Record<string, unknown> = {};
+
+  keys.forEach((k) => {
+    const value = schema[k];
+    const name = scope ? `${scope}.${k}` : k;
+
+    if (value.type === "object") return (jsonObject[k] = parseFormDataIntoJSON(formData, value.properties, name));
+    if (value.type !== "array") {
+      const formValue = formData.get(name);
+      if (formValue) return (jsonObject[k] = transformers[value.type](formValue)); // Don't set `null` values
+      return value.type === "boolean" ? (jsonObject[k] = false) : undefined;
+    }
+
+    // Value must be an Array
+    jsonObject[k] = [];
+
+    // Data is an array of object data
+    if (value.items.type === "object") {
+      for (let i = 0; ; i++) {
+        const item: Record<string, unknown> = parseFormDataIntoJSON(formData, value.items.properties, `${name}[${i}]`);
+        const values = Object.values(item).filter((v) => v !== false && !(Array.isArray(v) && v.length === 0));
+
+        // The object is effectively "empty", implying that there is no "i-th item"
+        if (values.length === 0) break;
+
+        // An "i-th object" was generated
+        (jsonObject[k] as unknown[])[i] = item;
+      }
+
+      return;
+    }
+
+    // Data was included as an "array" composed from multiple fields
+    if (formData.has(`${name}[0]`)) {
+      for (let i = 0; formData.has(`${name}[${i}]`); i++) {
+        const formValue = formData.get(`${name}[${i}]`) as FormDataEntryValue;
+        (jsonObject[k] as unknown[])[i] = transformers[value.items.type](formValue);
+      }
+
+      return;
+    }
+
+    // Data was included as an "array" belonging to a single field
+    const formDataValues = formData.getAll(name);
+    for (let i = 0; i < formDataValues.length; i++) {
+      (jsonObject[k] as unknown[])[i] = transformers[value.items.type](formDataValues[i]);
+    }
+  });
+
+  return jsonObject as ReturnType<typeof parseFormDataIntoJSON<T>>;
+}
+```
+
+As you can see, the logic for supporting arrays is much more involved be cause we need to cover all of our bases.
+
+In the case where we need to support an array of object data (e.g., `jobs[0].company` and `jobs[0].role`), we recursively create those objects in a loop until there are no more items in the array. To verify that we've finished looping through the "array" of object form data, we simply check that the object returned from our recursive call is empty. However, `boolean`s and `array`s will always appear on an object that "should be empty" because a `boolean` will always default to `false` and an `array` will always default to an empty array. So we exclude those 2 scenarios from our check.
+
+Next, we deal with the case where we have an array of primitive values that the browser doesn't support. This means fields with `name`s like `nicknames[0]`. Here, we loop over the array of primitives -- transforming them as needed until no more items are left in the array. To determine when we've finished looping through the "array" of data, we check whether or not the `ith` item exists within the `FormData` object.
+
+Finally, we handle the case of array data that the browser does support. This means fields with regular `name`s. Yet again, we transform all of the primitive values in the array to their expected type.
+
+You can test this function out with the following example Schema:
+
+```ts
+const exampleSchema = {
+  file: { type: "file" },
+  name: { type: "string" },
+  amount: { type: "number" },
+  subscribe: { type: "boolean" },
+  creation: { type: "date" },
+  user: {
+    type: "object",
+    properties: {
+      id: { type: "string" },
+      name: {
+        type: "object",
+        properties: {
+          first: { type: "string" },
+          last: { type: "string" },
+        },
+      },
+    },
+  },
+  jobs: {
+    type: "array",
+    items: {
+      type: "object",
+      properties: {
+        company: { type: "string" },
+        role: { type: "string" },
+        nicknames: {
+          type: "array",
+          items: { type: "string" },
+        },
+      },
+    },
+  },
+} satisfies Schema;
+```
+
+We also have an [interactive example in Solid.js](https://playground.solidjs.com/anonymous/4420336d-0bda-449a-85af-75e7384dd3fa) that you can use to see how the `parseFormDataIntoJSON` function works in real time. (The example uses this function on the frontend instead of the backend.)
+
+Remember that this is only an _example_ of how to transform `FormData` into JSON. You can alter the example that we've given you above to fit your needs, or you can take a totally different approach. If you're using a tool like [zod](https://zod.dev), then you can even add server validation into the mix with ease. The benefit of using a `FormData` parser is that it allows you to maintain a progressively enhanced application -- even for complex forms! And it also gives you greater flexibility/control for your use cases.
+
+All that said, bear in mind that you should be able to write server logic just fine by relying on the `FormData` object alone. Doing so saves you from having to create complex types, an intermediate parser function, and intermediate Schema objects (or from having to rely on someone else to do that for you). The type safety that comes from the more complex approach is only helpful insofar as your types and your logic are carefully and accurately defined. But there could still be edge cases that your abstractions may not account for.
+
+If JSON seems more easy to work with, remember that we're coming from an age where JSON was used _everywhere_ as we tried to manage complex state in SPAs instead of on the server. Thus, JSON may only _seem_ easier to use because it is familiar. If you try working with the `FormData` object as is, you may find that it's easy enough to use on its own, and that foregoing data transformations will bring you some performance gains. The approach you take is up to you; it's all a set of trade-offs.
+
+## Recommendations for Conditionally Rendered Fields
+
+It's very common for moderately-sized forms to have fields that are conditionally displayed to users. This allows a user to be presented only with the form fields that are relevant to them at any given time. In React applications, form fields are often rendered conditionally with the following approach:
+
+```jsx
+{
+  condition ? (
+    <fieldset>
+      <input name="field-1" />
+      <input name="field-2" />
+    </fieldset>
+  ) : null;
+}
+```
+
+However, this approach causes the owning `<form>` element to lose the `FormData` associated with these fields when they're hidden. If you still need the data associated with these fields when they aren't visible to the user, then we would recommend _hiding_ these fields instead.
+
+```jsx
+/* Note: You can also hide the element with CSS or the `style` attribute if you like */
+<fieldset hidden={conditionFailed}>
+  <input name="field-1" />
+  <input name="field-2" />
+</fieldset>
+```
+
+In addition to keeping the data associated with `field-1` and `field-2` in your `<form>`, this approach saves your JS framework from doing extra work. In particular, your framework will only need to toggle a single attribute when `conditionFailed` changes. This is more performant than requiring your framework to repeatedly add (or remove) DOM nodes as your condition changes.
+
+Note that if any of your conditionally-displayed fields partake in form validation _and_ [`form.noValidate`](#enabling-accessible-error-messages-during-form-submissions) is `false`, then you might need to `disable` these fields when you hide them. This is because browsers will still block form submissions for invalid form controls that are unfocusable. (A `hidden` or `display: none` field cannot be focused -- not even programmatically with JS.) Form controls that are `disabled` or `readonly` are excluded from this behavior since [the browser does not validate such fields](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/willValidate).
+
+If it's possible, it's worthwhile to consider if the conditionally-displayed fields in your form can be managed with navigation (instead of JS) so that your form will work for users who don't have JS. (For some forms, this may be more difficult than what it's worth.)
 
 ## Recommendations for Styling Form Fields and Their Error Messages
 
