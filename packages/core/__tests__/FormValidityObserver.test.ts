@@ -98,8 +98,7 @@ describe("Form Validity Observer (Class)", () => {
     /* ---------- Setup ---------- */
     const formValidityObserverCapture = new FormValidityObserver(types[0], { useEventCapturing: true });
     const formValidityObserverBubble = new FormValidityObserver(types[0]);
-    const form = document.createElement("form");
-    document.body.appendChild(form);
+    const form = document.body.appendChild(document.createElement("form"));
 
     const addEventListener = vi.spyOn(form.ownerDocument, "addEventListener");
     const removeEventListener = vi.spyOn(form.ownerDocument, "removeEventListener");

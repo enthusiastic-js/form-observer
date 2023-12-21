@@ -83,6 +83,9 @@ class FormValidityObserver extends FormObserver {
   /** @type {HTMLFormElement | undefined} The `form` currently being observed by the `FormValidityObserver` */
   #form;
 
+  /** @type {Document | ShadowRoot | undefined} The Root Node for the currently observed `form`. */
+  #root;
+
   /** @readonly @type {Required<FormValidityObserverOptions<M>>["scroller"]} */
   #scrollTo;
 
@@ -153,6 +156,7 @@ class FormValidityObserver extends FormObserver {
 
     const newlyObserved = super.observe(form); // Run assertions and attach handlers before storing `form` locally
     this.#form = form;
+    if (newlyObserved) this.#root = /** @type {Document | ShadowRoot} */ (this.#form.getRootNode());
     return newlyObserved;
   }
 
@@ -167,6 +171,7 @@ class FormValidityObserver extends FormObserver {
     if (form === this.#form) {
       this.#errorMessagesByFieldName.clear();
       this.#form = undefined;
+      this.#root = undefined;
     }
 
     return super.unobserve(form);
@@ -393,8 +398,7 @@ class FormValidityObserver extends FormObserver {
     const errorOwner = getErrorOwningControl(field);
     errorOwner.setAttribute(attrs["aria-invalid"], String(true));
 
-    const root = /** @type {Document | ShadowRoot} */ (field.getRootNode());
-    const errorElement = root.getElementById(
+    const errorElement = this.#root?.getElementById(
       /** @type {string} */ (errorOwner.getAttribute(attrs["aria-describedby"])),
     );
 
@@ -426,8 +430,7 @@ class FormValidityObserver extends FormObserver {
     const errorOwner = getErrorOwningControl(field);
     errorOwner.setAttribute(attrs["aria-invalid"], String(false));
 
-    const root = /** @type {Document | ShadowRoot} */ (field.getRootNode());
-    const errorElement = root.getElementById(
+    const errorElement = this.#root?.getElementById(
       /** @type {string} */ (errorOwner.getAttribute(attrs["aria-describedby"])),
     );
 
