@@ -13,8 +13,15 @@ class FormObserver {
 
   /* ---------------------------------------- Other Fields ---------------------------------------- */
   /**
-   * @readonly @type {Map<Node, Set<HTMLFormElement>>} Tracks the observed `HTMLFormElement`s **_and_** their
-   * corresponding [Roots](https://developer.mozilla.org/en-US/docs/Web/API/Node/getRootNode).
+   * @type {Map<Node, Set<HTMLFormElement>>} @readonly Retrieves the collection of observed `HTMLFormElement`s
+   * that belong to a given [Root Node](https://developer.mozilla.org/en-US/docs/Web/API/Node/getRootNode).
+   */
+  #formsCollections = new Map();
+
+  /**
+   * @type {Map<HTMLFormElement, Node>} @readonly Retrieves the
+   * [Root Node](https://developer.mozilla.org/en-US/docs/Web/API/Node/getRootNode) that owned
+   * the provided `HTMLFormElement` when it was originally observed.
    */
   #roots = new Map();
 
@@ -93,8 +100,8 @@ class FormObserver {
 
       return array.map((listener) => {
         return (event) => {
-          const field = event.target;
-          if (!this.#roots.get(field.getRootNode())?.has(/** @type {HTMLFormElement} */ (field.form))) return;
+          // Only invoke the `listener` if the field's `<form>` was already being observed
+          if (!this.#roots.has(/** @type {HTMLFormElement} */ (event.target.form))) return;
           return listener(event);
         };
       });
@@ -136,19 +143,23 @@ class FormObserver {
    */
   observe(form) {
     assertElementIsForm(form);
+    if (this.#roots.has(form)) return false; // This `<form>` is already being observed
+
     const root = form.getRootNode();
-    let observedForms = this.#roots.get(root);
-    if (observedForms?.has(form)) return false; // Nothing to do
+    let observedForms = this.#formsCollections.get(root);
 
     // Track the new form
-    if (observedForms) observedForms.add(form);
-    else {
+    if (observedForms) {
+      observedForms.add(form);
+      this.#roots.set(form, root);
+    } else {
       observedForms = new Set();
       observedForms.add(form);
-      this.#roots.set(root, observedForms);
+      this.#formsCollections.set(root, observedForms);
+      this.#roots.set(form, root);
     }
 
-    if (observedForms.size > 1) return true; // Listeners have already been attached to this root
+    if (observedForms.size > 1) return true; // Listeners have already been attached to the form's root
 
     // First OR Second constructor overload was used
     if (this.#listeners.length === 1) {
@@ -175,15 +186,17 @@ class FormObserver {
    */
   unobserve(form) {
     assertElementIsForm(form);
-    const root = form.getRootNode();
-    const observedForms = this.#roots.get(root);
-    if (!observedForms?.has(form)) return false; // Nothing to do
+    const root = this.#roots.get(form);
+    if (!root) return false; // This `<form>` is NOT being observed. Nothing to do.
 
     // Stop tracking the form
+    this.#roots.delete(form);
+
+    const observedForms = /** @type {Set<HTMLFormElement>} */ (this.#formsCollections.get(root));
     observedForms.delete(form);
     if (observedForms.size !== 0) return true; // Some `form`s still need the listeners attached to this root
 
-    this.#roots.delete(root); // Remove obsolete root
+    this.#formsCollections.delete(root); // Remove obsolete root
 
     // First OR Second constructor overload was used
     if (this.#listeners.length === 1) {
@@ -204,10 +217,8 @@ class FormObserver {
 
   /** Stops the observer from listening for any events emitted from all `form` fields. @returns {void} */
   disconnect() {
-    const iterator = this.#roots.values();
-    for (let forms = iterator.next().value; forms; forms = iterator.next().value) {
-      forms.forEach(/** @param {HTMLFormElement} form */ (form) => this.unobserve(form));
-    }
+    const iterator = this.#roots.keys();
+    for (let form = iterator.next().value; form; form = iterator.next().value) this.unobserve(form);
   }
 }
 

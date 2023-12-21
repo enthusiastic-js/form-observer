@@ -362,6 +362,53 @@ describe("Form Observer (Class)", () => {
         }
       });
 
+      // Proof: `addEventListener` is only called on the original Root Node
+      it("Does not observe the same `form` more than once EVEN IF the `form` was moved to a new Root Node", () => {
+        const formObserver = getFormObserverByTestCase(testCase);
+
+        // Observe Form in Light DOM
+        const { primaryForm, closedShadowForm } = renderForms();
+        const originalRoot = primaryForm.getRootNode();
+
+        const originalRootAddEventListener = vi.spyOn(originalRoot, "addEventListener");
+        formObserver.observe(primaryForm);
+
+        // Attempt to Re-observe Form in Shadow DOM
+        const newRoot = closedShadowForm.getRootNode();
+        newRoot.appendChild(primaryForm);
+        expect(primaryForm.getRootNode()).not.toBe(originalRoot);
+
+        const newRootAddEventListener = vi.spyOn(newRoot, "addEventListener");
+        formObserver.observe(primaryForm);
+
+        // Single Type, Single Listener, Single Options
+        if (testCase === testCases[0]) {
+          expect(originalRootAddEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(originalRootAddEventListener).toHaveBeenCalledTimes(1);
+
+          expect(newRootAddEventListener).not.toHaveBeenCalled();
+        }
+        // Multiple Types, Single Listener, Single Options
+        else if (testCase === testCases[1]) {
+          expect(originalRootAddEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(originalRootAddEventListener).toHaveBeenCalledWith(types[1], expect.any(Function), options[0]);
+          expect(originalRootAddEventListener).toHaveBeenCalledTimes(2);
+
+          expect(newRootAddEventListener).not.toHaveBeenCalled();
+        }
+        // Multiple Types, Multiple Listeners, Multiple Options
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        else if (testCase === testCases[2]) {
+          expect(originalRootAddEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(originalRootAddEventListener).toHaveBeenCalledWith(types[1], expect.any(Function), options[1]);
+          expect(originalRootAddEventListener).toHaveBeenCalledTimes(2);
+
+          expect(newRootAddEventListener).not.toHaveBeenCalled();
+        }
+        // Guard against invalid test cases
+        else throwUnsupportedTestCaseError(testCase);
+      });
+
       it("Returns `true` if the received `form` was NOT already being observed (and `false` otherwise)", () => {
         const formObserver = getFormObserverByTestCase(testCase);
         const { primaryForm, openShadowForm1 } = renderForms();
@@ -477,6 +524,53 @@ describe("Form Observer (Class)", () => {
             listeners.forEach((l) => expect(l).not.toHaveBeenCalled());
           }
         }
+      });
+
+      // Proof: `removeEventListener` is only called on the original Root Node
+      it("Works EVEN IF the `form` has already been removed from its original Root Node", () => {
+        const formObserver = getFormObserverByTestCase(testCase);
+
+        // Observe Form in Light DOM
+        const { primaryForm, closedShadowForm } = renderForms();
+        const originalRoot = primaryForm.getRootNode();
+        formObserver.observe(primaryForm);
+
+        // Move Form to ShadowDOM
+        const newRoot = closedShadowForm.getRootNode();
+        newRoot.appendChild(primaryForm);
+        expect(primaryForm.getRootNode()).not.toBe(originalRoot);
+
+        // Unobserve Form
+        const originalRootRemoveEventListener = vi.spyOn(originalRoot, "removeEventListener");
+        const newRootRemoveEventListener = vi.spyOn(newRoot, "removeEventListener");
+        formObserver.unobserve(primaryForm);
+
+        // Single Type, Single Listener, Single Options
+        if (testCase === testCases[0]) {
+          expect(originalRootRemoveEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(originalRootRemoveEventListener).toHaveBeenCalledTimes(1);
+
+          expect(newRootRemoveEventListener).not.toHaveBeenCalled();
+        }
+        // Multiple Types, Single Listener, Single Options
+        else if (testCase === testCases[1]) {
+          expect(originalRootRemoveEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(originalRootRemoveEventListener).toHaveBeenCalledWith(types[1], expect.any(Function), options[0]);
+          expect(originalRootRemoveEventListener).toHaveBeenCalledTimes(2);
+
+          expect(newRootRemoveEventListener).not.toHaveBeenCalled();
+        }
+        // Multiple Types, Multiple Listeners, Multiple Options
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        else if (testCase === testCases[2]) {
+          expect(originalRootRemoveEventListener).toHaveBeenCalledWith(types[0], expect.any(Function), options[0]);
+          expect(originalRootRemoveEventListener).toHaveBeenCalledWith(types[1], expect.any(Function), options[1]);
+          expect(originalRootRemoveEventListener).toHaveBeenCalledTimes(2);
+
+          expect(newRootRemoveEventListener).not.toHaveBeenCalled();
+        }
+        // Guard against invalid test cases
+        else throwUnsupportedTestCaseError(testCase);
       });
 
       it("Returns `true` if the received `form` WAS already being observed (and `false` otherwise)", () => {
