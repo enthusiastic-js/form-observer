@@ -5,6 +5,7 @@ import { svelte, vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 
 export default defineWorkspace([
   { test: createProjectConfig("core") },
+  { test: createProjectConfig("lit") },
   { test: createProjectConfig("react", ["ts", "tsx"]) },
   { test: createProjectConfig("solid", ["ts", "tsx"]), plugins: [solid()] },
   { test: createProjectConfig("svelte"), plugins: [svelte({ preprocess: vitePreprocess() })] },

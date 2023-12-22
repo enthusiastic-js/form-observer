@@ -53,7 +53,15 @@
     "import/no-extraneous-dependencies": [
       "error",
       {
-        "packageDir": ["./", "packages/core", "packages/svelte", "packages/vue", "packages/solid", "packages/react"],
+        "packageDir": [
+          "./",
+          "packages/core",
+          "packages/svelte",
+          "packages/vue",
+          "packages/solid",
+          "packages/react",
+          "packages/lit"
+        ],
         "peerDependencies": true,
         "devDependencies": ["./vitest.*", "**/*.test.{ts,tsx}"],
         "optionalDependencies": false,
