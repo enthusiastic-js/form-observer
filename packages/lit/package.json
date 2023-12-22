@@ -1,7 +1,7 @@
 {
   "name": "@form-observer/lit",
   "type": "module",
-  "version": "0.0.0-experimental-1",
+  "version": "0.6.3",
   "sideEffects": false,
   "description": "Convenience functions for the `@form-observer/core` package, designed for Lit apps",
   "exports": {

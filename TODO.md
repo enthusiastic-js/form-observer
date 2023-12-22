@@ -2,7 +2,6 @@
 
 ## IMMEDIATE
 
-- [ ] Update Core `FormValidityObserver` to keep track of watched Root Nodes on its own. (This will probably require a reverse HashMap, as in the case of LRU Caches [Least Recently Used Caches].)
 - [ ] Consider adding a [Qwik](https://qwik.builder.io/) integration for the `FormValidityObserver`.
 - [ ] Consider adding a [Preact](https://preactjs.com/) integration for the `FormValidityObserver`.
 - [ ] Consider adding some GitHub CI Actions to lint our code and run our tests.

@@ -30,6 +30,8 @@ class MyForm extends LitElement {
     `;
   }
 }
+
+customElements.define("my-form", MyForm);
 ```
 
 **Example (`FormValidityObserver`)**
@@ -43,7 +45,7 @@ class MyForm extends LitElement {
 
   render() {
     html`
-      <form ${automate(this.#observer)}>
+      <form ${automate(this.#observer)} .noValidate=${true}>
         <label for="full-name">Full Name</label>
         <input id="full-name" name="full-name" type="text" required aria-describedby="full-name-error" />
         <div id="full-name-error" role="alert"></div>
@@ -63,9 +65,11 @@ class MyForm extends LitElement {
     `;
   }
 }
+
+customElements.define("my-form", MyForm);
 ```
 
-> Note: If you prefer, you can call `observe` and `unobserver`/`disconnect` manually instead.
+> Note: If you prefer, you can call `observe` and `unobserve`/`disconnect` manually instead.
 
 ## Function: `createFormValidityObserver(types, options)`
 
@@ -86,9 +90,10 @@ class MyForm extends LitElement {
     const { configure } = this.#observer;
 
     html`
-      <form ${automate(this.#observer)}>
+      <form ${automate(this.#observer)} .noValidate=${true}>
         <label for="email">Email</label>
         <input
+          id="email"
           name="email"
           type="email"
           required
@@ -100,11 +105,17 @@ class MyForm extends LitElement {
     `;
   }
 }
+
+customElements.define("my-form", MyForm);
 ```
 
 The benefit of this approach is that you'll be able to write your error message configurations alongside your markup, thus improving the maintainability of your app. The slight redundancy that you see above is due to [Lit's lack of support for dynamic attributes](https://github.com/lit/rfcs/issues/26)[^1]. If dynamic attributes are supported in the future, we will update our API to remove this redundancy.
 
 [^1]: Lit _technically_ supports dynamic attributes via Custom Directives. However, since directives would be incompatible with SSR, we have foregone such a solution in the hopes that the Lit team will support dynamic attributes in the future.
+
+## Using the `noValidate` Property for Accessible Error Messaging
+
+If you want to display accessible error messages to your users whenever they try to submit an invalid form, you can use the `HTMLFormElement.noValidate` property. See [_Enabling Accessible Error Messages during Form Submissions_](../guides.md#enabling-accessible-error-messages-during-form-submissions) for more details.
 
 ## Gotchas
 

@@ -1,5 +1,29 @@
 # Changelog
 
+## 2023-12-22
+
+### v0.6.3 (Lit)
+
+- Correct documentation in package README
+
+### v0.6.2 (All Packages)
+
+#### Features
+
+- `FormObserver.unobserve()` will now remove event listeners from the correct Root Node even if the method is called _after_ a given `<form>` is moved to a different root.
+
+### v0.6.2 (Svelte)
+
+#### Bug Fixes
+
+- Memory leaks will no longer occur when an `autoObserve`d form is repeatedly removed from and added to the DOM.
+
+### v0.6.2 (Lit)
+
+#### Features
+
+- There is now a `Lit` integration for the Form Observer tools via the `@form-observer/lit` NPM package.
+
 ## 2023-12-10
 
 ### v0.6.1 (All Packages)

@@ -34,7 +34,7 @@ class MyForm extends LitElement {
 
   #handleSubmit(event) {
     event.preventDefault();
-    const success = validateFields({ focus: true });
+    const success = this.#observer.validateFields({ focus: true });
 
     if (success) {
       // Submit data to server
@@ -45,7 +45,7 @@ class MyForm extends LitElement {
     const { configure } = this.#observer;
 
     return html`
-      <form ${automate(this.#observer)} id="example" @submit="${this.#handleSubmit}">
+      <form ${automate(this.#observer)} id="example" .noValidate=${true} @submit="${this.#handleSubmit}">
         <h1>Feedback Form</h1>
 
         <!-- The browser's default error messages for "#name" will be accessibly displayed inside "#name-error" -->
@@ -88,7 +88,7 @@ class MyForm extends LitElement {
         minlength="30"
         aria-describedby="comments-error"
       ></textarea>
-      <div id="comments-error"></div>
+      <div id="comments-error" role="alert"></div>
 
       <button type="submit" form="example">Submit</button>
     `;
