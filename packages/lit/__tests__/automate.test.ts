@@ -18,15 +18,14 @@ describe("Automate (Lit Directive)", () => {
     vi.spyOn(FormObserver.prototype, "unobserve");
 
     class LitExample extends LitElement {
+      declare count: number;
       static properties = { count: { type: Number } };
       #observer = new FormObserver("input", () => undefined);
 
       render() {
         return html`
           <form ${automate(this.#observer)} aria-label="Test Form"></form>
-          <button type="button" @click="${() => ((this as unknown as { count: number }).count += 1)}">
-            Click Count: ${(this as unknown as { count: number }).count}
-          </button>
+          <button type="button" @click="${() => (this.count += 1)}">Click Count: ${this.count}</button>
         `;
       }
     }
