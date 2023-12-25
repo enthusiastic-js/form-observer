@@ -104,10 +104,10 @@ The `FormValidityObserver()` constructor creates a new observer and configures i
       <dd>
         The function used to scroll a field (or radiogroup) that has failed validation into view. Defaults to a function that calls <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView"><code>scrollIntoView()</code></a> on the field (or radiogroup) that failed validation.
       </dd>
-      <dt id="form-validity-observer-options-renderer"><code>renderer: (errorContainer: HTMLElement, errorMessage: M) => void</code></dt>
+      <dt id="form-validity-observer-options-renderer"><code>renderer: (errorContainer: HTMLElement, errorMessage: M | null) => void</code></dt>
       <dd>
         <p>
-          The custom function used to render error messages to the DOM when a validation constraint's <code>render</code> option is <code>true</code> or when <a href="#method-formvalidityobserversetfielderrorename-string-message-errormessagestring-eerrormessagem-e-render-boolean-void"><code>FormValidityObserver.setFieldError()</code></a> is called with the <code>render=true</code> option. (See the <a href="./types.md#validationerrorsm-e"><code>ValidationErrors</code></a> type for more details about validation constraints.)
+          The function used to render error messages to the DOM when a validation constraint's <code>render</code> option is <code>true</code> or when <a href="#method-formvalidityobserversetfielderrorename-string-message-errormessagestring-eerrormessagem-e-render-boolean-void"><code>FormValidityObserver.setFieldError()</code></a> is called with the <code>render=true</code> option. (See the <a href="./types.md#validationerrorsm-e"><code>ValidationErrors</code></a> type for more details about validation constraints.) When a field becomes valid (or when <a href="#method-formvalidityobserverclearfielderrorname-string-void"><code>FormValidityObserver.clearFieldError()</code></a> is called), this function will be called with <code>null</code> if the field has an <a href="https://www.w3.org/WAI/WCAG21/Techniques/aria/ARIA21#example-2-identifying-errors-in-data-format">accessible error container</a>.
         </p>
         <p>
           The message type, <code>M</code> is determined from your function definition. The type can be anything (e.g., a <code>string</code>, an <code>object</code>, a <code>ReactElement</code>, or anything else).
@@ -137,9 +137,9 @@ const observer = new FormValidityObserver("focusout", {
 
     fieldOrRadiogroup.scrollIntoView({ behavior: "smooth" });
   },
-
-  // Error messages rendered to the DOM are expected to be in the form of `HTMLElement`s
-  renderer(errorContainer: HTMLElement, errorMessage: HTMLElement) {
+  // Error messages will be rendered to the DOM as raw DOM Nodes
+  renderer(errorContainer: HTMLElement, errorMessage: HTMLElement | null) {
+    if (errorMessage === null) return errorContainer.replaceChildren();
     errorContainer.replaceChildren(errorMessage);
   },
 });

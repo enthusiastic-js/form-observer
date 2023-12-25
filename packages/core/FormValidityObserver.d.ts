@@ -49,13 +49,14 @@ export interface FormValidityObserverOptions<M> {
   scroller?(fieldOrRadiogroup: ValidatableField): void;
 
   /**
-   * The function used to render error messages to the DOM when a validation constraint's `render` option
-   * is `true`. Defaults to a function that accepts a string and renders it to the DOM as raw HTML.
+   * The function used to render error messages to the DOM when a validation constraint's `render` option is `true`.
+   * (It will be called with `null` when a field passes validation.) Defaults to a function that accepts a string
+   * and renders it to the DOM as raw HTML.
    *
    * You can replace the default function with your own `renderer` that renders other types of error messages
    * (e.g., DOM Nodes, React Elements, etc.) to the DOM instead.
    */
-  renderer?(errorContainer: HTMLElement, errorMessage: M): void;
+  renderer?(errorContainer: HTMLElement, errorMessage: M | null): void;
 }
 
 export interface ValidateFieldOptions {
@@ -177,4 +178,4 @@ export default FormValidityObserver;
 export declare function defaultScroller(fieldOrRadiogroup: ValidatableField): void;
 
 /** The default render function for {@link FormValidityObserverOptions.renderer} */
-export declare function defaultErrorRenderer(errorContainer: HTMLElement, error: string): void;
+export declare function defaultErrorRenderer(errorContainer: HTMLElement, error: string | null): void;

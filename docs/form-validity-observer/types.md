@@ -61,7 +61,8 @@ is only useful for a `renderer` function that supports it, such as this
 
 ```ts
 const observer = new FormValidityObserver("input", {
-  renderer(errorContainer: HTMLElement, errorMessage: StringOrElement) {
+  renderer(errorContainer: HTMLElement, errorMessage: StringOrElement | null) {
+    if (errorMessage === null) return errorContainer.replaceChildren();
     if (errorMessage.type === "DOMElement") {
       return errorContainer.replaceChildren(errorMessage.value);
     }

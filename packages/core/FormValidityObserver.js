@@ -59,9 +59,9 @@ const attrs = Object.freeze({ "aria-describedby": "aria-describedby", "aria-inva
  * scroll a `field` (or `radiogroup`) that has failed validation into view. Defaults to a function that calls
  * `fieldOrRadiogroup.scrollIntoView()`.
  *
- * @property {(errorContainer: HTMLElement, errorMessage: M) => void} [renderer] The function used to render
- * error messages to the DOM when a validation constraint's `render` option is `true`. Defaults to a function that
- * accepts a string and renders it to the DOM as raw HTML.
+ * @property {(errorContainer: HTMLElement, errorMessage: M | null) => void} [renderer] The function used to render
+ * error messages to the DOM when a validation constraint's `render` option is `true`. (It will be called with `null`
+ * when a field passes validation.) Defaults to a function that accepts a string and renders it to the DOM as raw HTML.
  *
  * You can replace the default function with your own `renderer` that renders other types of error messages
  * (e.g., DOM Nodes, React Elements, etc.) to the DOM instead.
@@ -434,7 +434,8 @@ class FormValidityObserver extends FormObserver {
       /** @type {string} */ (errorOwner.getAttribute(attrs["aria-describedby"])),
     );
 
-    if (errorElement) errorElement.textContent = "";
+    // TODO: Would using a `Symbol("empty")` be better than `null`?
+    if (errorElement) this.#renderError(errorElement, null);
     field.setCustomValidity?.("");
   }
 
@@ -494,10 +495,11 @@ export function defaultScroller(fieldOrRadiogroup) {
  * The default render function for {@link FormValidityObserver}'s `renderer` option
  *
  * @param {HTMLElement} errorContainer
- * @param {string} errorMessage
+ * @param {string | null} errorMessage
  * @returns {void}
  */
 export function defaultErrorRenderer(errorContainer, errorMessage) {
+  if (errorMessage === null) return errorContainer.replaceChildren();
   // TODO: Try using `setHTML` when it has better browser support.
   errorContainer.innerHTML = errorMessage; // eslint-disable-line no-param-reassign -- Required to update the DOM
 }

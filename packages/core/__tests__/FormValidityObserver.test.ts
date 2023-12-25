@@ -2636,7 +2636,10 @@ describe("Form Validity Observer (Class)", () => {
   const staticCustomError = document.createElement("div");
   const dynamicCustomError = (field: FormField): HTMLElement => document.createElement(field.tagName);
 
-  const renderer = (errorElement: HTMLElement, error: HTMLElement) => errorElement.replaceChildren(error);
+  const renderer = (errorElement: HTMLElement, error: HTMLElement | null) => {
+    if (error === null) return errorElement.replaceChildren();
+    errorElement.replaceChildren(error);
+  };
 
   /* ---------- Default Renderer ---------- */
   // Success Cases
