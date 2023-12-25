@@ -1,6 +1,12 @@
+/* eslint-disable testing-library/prefer-screen-queries -- Necessary when testing Shadow DOMs */
 import { vi, beforeEach, describe, it, expect } from "vitest";
+import { findByRole, getByRole } from "@testing-library/dom";
+import "@testing-library/jest-dom/vitest";
+import { LitElement, render, html } from "lit";
 import FormValidityObserver from "@form-observer/core/FormValidityObserver";
 import createFormValidityObserver from "../createFormValidityObserver.js";
+import type { RenderableLitValue } from "../createFormValidityObserver.js";
+import automate from "../automate.js";
 import type { EventType } from "../index.d.ts";
 
 describe("Create Form Validity Observer (Function)", () => {
@@ -38,12 +44,87 @@ describe("Create Form Validity Observer (Function)", () => {
     });
   });
 
-  /*
-   * TODO: This is currently impossible to support. We can certainly support RENDERING Lit Error Messages
-   * to the DOM. But if any JS logic interferes with that error message (e.g., `element.textContent = ""`),
-   * Lit will be unable to render new error messages to the related DOM container. This is a problem because
-   * up until this point, `FormValidityObserver.clearFieldError()` has simply emptied the `textContent` of
-   * its error containers directly. We'll have to rethink this approach if we want to support Renderable Lit Values.
-   */
-  it.todo("Uses a default `renderer` that accepts `HTML String Templates` AND any `Renderable Lit Value");
+  it("Uses a default `renderer` that accepts any `Renderable Lit Value`", async () => {
+    /* ---------- Setup ---------- */
+    const tag = "lit-example";
+    // These values are assigned in the `LitExample` constructor, and they're initialized here to appease TypeScript.
+    let setFieldError: FormValidityObserver<RenderableLitValue | RenderableLitValue[]>["setFieldError"] = () => {};
+    let clearFieldError: FormValidityObserver<RenderableLitValue | RenderableLitValue[]>["clearFieldError"] = () => {};
+
+    class LitExample extends LitElement {
+      #observer = createFormValidityObserver(types[0]);
+
+      constructor() {
+        super();
+        setFieldError = this.#observer.setFieldError;
+        clearFieldError = this.#observer.clearFieldError;
+      }
+
+      render() {
+        return html`
+          <form ${automate(this.#observer)}>
+            <input name="first-name" type="text" required aria-describedby="first-name-error" />
+            <div id="first-name-error" role="alert"></div>
+          </form>
+        `;
+      }
+    }
+
+    customElements.define(tag, LitExample);
+    render(html`<lit-example></lit-example>`, document.body);
+
+    // eslint-disable-next-line testing-library/no-node-access -- Necessary for the test
+    const component = document.querySelector(tag) as LitExample;
+    const shadowRoot = component.shadowRoot as ShadowRoot;
+
+    const input = await findByRole<HTMLInputElement>(shadowRoot as unknown as HTMLElement, "textbox");
+    const errorContainer = getByRole(shadowRoot as unknown as HTMLElement, "alert");
+
+    /* ---------- Rendering a Single Template Result ---------- */
+    const messageSingle = "Something is wrong here...";
+    const messageSingleTemplateResult = html`<p>${messageSingle}</p>`;
+    setFieldError(input.name, messageSingleTemplateResult, true);
+
+    expect(input).toHaveAttribute("aria-invalid", String(true));
+    expect(input).toHaveAccessibleDescription(messageSingle);
+    expect(errorContainer.childNodes[1]).toEqual(expect.any(HTMLParagraphElement));
+
+    clearFieldError(input.name);
+    expect(input).toHaveAttribute("aria-invalid", String(false));
+    expect(input).not.toHaveAccessibleDescription();
+    expect(errorContainer).toBeEmptyDOMElement();
+
+    /* ---------- Rendering Multiple DOM Nodes ---------- */
+    const messageDivided = ["This is the first line", "of multiple lines", "found in this message."] as const;
+    const node1 = document.createElement("div");
+    const node2 = document.createTextNode(` ${messageDivided[1]} `);
+    const node3 = document.createElement("p");
+    [node1.textContent, , node3.textContent] = messageDivided;
+
+    setFieldError(input.name, [node1, node2, node3], true);
+    expect(input).toHaveAttribute("aria-invalid", String(true));
+    expect(input).toHaveAccessibleDescription(messageDivided.join(" "));
+    [node1, node2, node3].forEach((n) => expect(errorContainer).toContain(n));
+
+    clearFieldError(input.name);
+    expect(input).toHaveAttribute("aria-invalid", String(false));
+    expect(input).not.toHaveAccessibleDescription();
+    expect(errorContainer).toBeEmptyDOMElement();
+
+    /* ---------- Rendering Pure Strings ---------- */
+    const messageString = "This is a PURE string!!!";
+    setFieldError(input.name, messageString, true);
+
+    expect(input).toHaveAttribute("aria-invalid", String(true));
+    expect(input).toHaveAccessibleDescription(messageString);
+    expect(errorContainer.childNodes[1]).toEqual(expect.any(Text));
+
+    clearFieldError(input.name);
+    expect(input).toHaveAttribute("aria-invalid", String(false));
+    expect(input).not.toHaveAccessibleDescription();
+    expect(errorContainer).toBeEmptyDOMElement();
+
+    /* ---------- Cleanup ---------- */
+    document.body.replaceChildren();
+  });
 });

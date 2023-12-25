@@ -34,7 +34,7 @@ describe("Automate (Lit Directive)", () => {
     render(html`<lit-example></lit-example>`, document.body);
 
     /* ---------- Run Assertions ---------- */
-    // eslint-disable-next-line testing-library/no-node-access -- Necessary for test
+    // eslint-disable-next-line testing-library/no-node-access -- Necessary for the test
     const component = document.querySelector(tag) as LitExample;
     const shadowRoot = component.shadowRoot as ShadowRoot;
 
