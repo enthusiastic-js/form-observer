@@ -22,7 +22,7 @@ The following methods on the `VueFormValidityObserver` are the exact same as the
 - [`setFieldError(name, message, render)`](../README.md#method-formvalidityobserversetfielderrorename-string-message-errormessagestring-eerrormessagem-e-render-boolean-void)
 - [`clearFieldError(name)`](../README.md#method-formvalidityobserverclearfielderrorname-string-void)
 
-#### Function: `autoObserve(novalidate?: boolean): (formRef: HTMLFormElement) => void`
+#### Function: `autoObserve(novalidate?: boolean): (formRef: HTMLFormElement | null) => void`
 
 A utility function used to simplify the process of setting up and cleaning up a form's `FormValidityObserver`. Pass its return value as a [`ref`](https://vuejs.org/guide/essentials/template-refs.html#function-refs) to the form that you're validating to automate setup (i.e., the call to [`observe`](../README.md#method-formvalidityobserverobserveform-htmlformelement-boolean)) and teardown (i.e., the call to [`unobserve`](../README.md#method-formvalidityobserverunobserveform-htmlformelement-boolean)).
 

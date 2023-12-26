@@ -32,7 +32,6 @@ export interface ReactFormValidityObserver<M = string> extends Omit<FormValidity
    * calling `useMemo(autoObserve, [autoObserve])`. In class components, that means assigning the returned
    * `ref` to the class instance during instantiation.
    *
-   *
    * @param novalidate Indicates that the
    * {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#novalidate novalidate} attribute should
    * be applied to the `form` element when JavaScript is enabled. Defaults to `true`.
@@ -42,7 +41,7 @@ export interface ReactFormValidityObserver<M = string> extends Omit<FormValidity
    *   <input name="first-name" type="textbox" required />
    * </form>
    */
-  autoObserve(novalidate?: boolean): (formRef: HTMLFormElement) => void;
+  autoObserve(novalidate?: boolean): (formRef: HTMLFormElement | null) => void;
 }
 
 export type ReactFieldProps = Pick<

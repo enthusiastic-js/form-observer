@@ -36,7 +36,7 @@ export interface VueFormValidityObserver<M = string> extends Omit<FormValidityOb
    *   <input name="first-name" type="textbox" required />
    * </form>
    */
-  autoObserve(novalidate?: boolean): (formRef: HTMLFormElement) => void;
+  autoObserve(novalidate?: boolean): (formRef: HTMLFormElement | null) => void;
 }
 
 export type VueFieldProps = Pick<

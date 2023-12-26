@@ -33,7 +33,7 @@ The following methods on the `ReactFormValidityObserver` are the exact same as t
 - [`setFieldError(name, message, render)`](../README.md#method-formvalidityobserversetfielderrorename-string-message-errormessagestring-eerrormessagem-e-render-boolean-void)
 - [`clearFieldError(name)`](../README.md#method-formvalidityobserverclearfielderrorname-string-void)
 
-#### Function: `autoObserve(novalidate?: boolean): (formRef: HTMLFormElement) => void`
+#### Function: `autoObserve(novalidate?: boolean): (formRef: HTMLFormElement | null) => void`
 
 A "[React Action](https://thomason-isaiah.medium.com/do-you-really-need-react-state-to-format-inputs-9d17f5f837fd?source=user_profile---------0----------------------------)" used to simplify the process of setting up and cleaning up a form's `FormValidityObserver`. It does this by calling [`observe`](../README.md#method-formvalidityobserverobserveform-htmlformelement-boolean) and [`unobserve`](../README.md#method-formvalidityobserverunobserveform-htmlformelement-boolean) automatically with the form on which it is used.
 
@@ -288,7 +288,7 @@ class MyForm extends Component {
 }
 ```
 
-The second approach is to automate the observer's setup and cleanup with [`autoObserve`](#function-autoobservenovalidate-boolean-formref-htmlformelement--void):
+The second approach is to automate the observer's setup and cleanup with [`autoObserve`](#function-autoobservenovalidate-boolean-formref-htmlformelement--null--void):
 
 ```tsx
 import { Component } from "react";
