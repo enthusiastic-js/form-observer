@@ -90,11 +90,14 @@ export default function createFormValidityObserver(types, options) {
  * The default render function used for the {@link FormValidityObserver}'s `renderer` option in Solid applications.
  *
  * @param {HTMLElement} errorContainer
- * @param {string | import("solid-js").JSX.Element} errorMessage
+ * @param {string | import("solid-js").JSX.Element | null} errorMessage
  * @returns {void}
  */
 export function defaultErrorRendererSolid(errorContainer, errorMessage) {
-  if (typeof errorMessage === "string") return defaultErrorRenderer(errorContainer, errorMessage);
+  if (typeof errorMessage === "string" || errorMessage === null) {
+    return defaultErrorRenderer(errorContainer, errorMessage);
+  }
+
   if (errorMessage instanceof Node) return errorContainer.replaceChildren(errorMessage);
   if (errorMessage instanceof Array) {
     const nodes = errorMessage.filter((e) => typeof e === "string" || e instanceof Node);
