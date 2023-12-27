@@ -61,7 +61,8 @@
           "packages/solid",
           "packages/react",
           "packages/lit",
-          "packages/preact"
+          "packages/preact",
+          "packages/qwik"
         ],
         "peerDependencies": true,
         "devDependencies": ["./vitest.*", "**/*.test.{ts,tsx}"],

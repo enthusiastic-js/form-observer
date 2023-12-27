@@ -1,0 +1,53 @@
+{
+  "name": "@form-observer/qwik",
+  "type": "module",
+  "version": "0.5.0",
+  "sideEffects": false,
+  "description": "Convenience functions for the `@form-observer/core` package, designed for Qwik apps",
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./index.d.cts",
+        "default": "./index.cjs"
+      },
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./useFormValidityObserver": {
+      "require": {
+        "types": "./useFormValidityObserver.d.cts",
+        "default": "./useFormValidityObserver.cjs"
+      },
+      "types": "./useFormValidityObserver.d.ts",
+      "default": "./useFormValidityObserver.js"
+    },
+    "./types": {
+      "require": {
+        "types": "./types.d.cts"
+      },
+      "types": "./types.d.ts"
+    }
+  },
+  "peerDependencies": {
+    "@builder.io/qwik": "^1.3.0",
+    "@form-observer/core": "^0.7.0"
+  },
+  "author": "Isaiah Thomason",
+  "license": "MIT",
+  "keywords": [
+    "form",
+    "observer",
+    "web",
+    "validation",
+    "qwik",
+    "progressive-enhancement"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enthusiastic-js/form-observer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/enthusiastic-js/form-observer/issues"
+  },
+  "homepage": "https://github.com/enthusiastic-js/form-observer#readme"
+}
