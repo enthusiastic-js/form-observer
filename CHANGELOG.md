@@ -1,5 +1,23 @@
 # Changelog
 
+## 2023-12-27
+
+### v0.7.1 (Solid)
+
+#### Bug Fixes
+
+- Corrected the default `renderer` function for `@form-observer/solid` to take into account the core `FormValidityObserver`'s new error-clearing behavior in `v0.7.0`.
+
+### v0.7.0 (All Packages)
+
+- The `clearFieldError` method has been refactored to call the `FormValidityObserver`'s `renderer` function with `null`. This change will allow the core `FormValidityObserver` to leverage a given JS Framework's `render` function more seamlessly.
+
+### v0.7.0 (Preact)
+
+#### Features
+
+- There is now a `Preact` integration for the Form Observer tools via the `@form-observer/preact` NPM package.
+
 ## 2023-12-22
 
 ### v0.6.3 (Lit)

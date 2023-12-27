@@ -1,7 +1,7 @@
 {
   "name": "@form-observer/core",
   "type": "module",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "sideEffects": false,
   "description": "A simple utility for reacting to events from a form's fields",
   "exports": {

@@ -1,7 +1,7 @@
 {
   "name": "@form-observer/react",
   "type": "module",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "sideEffects": false,
   "description": "Convenience functions for the `@form-observer/core` package, designed for React apps",
   "exports": {
@@ -37,7 +37,7 @@
     }
   },
   "peerDependencies": {
-    "@form-observer/core": "^0.6.2",
+    "@form-observer/core": "^0.7.0",
     "react": ">=16.8.0"
   },
   "devDependencies": {
