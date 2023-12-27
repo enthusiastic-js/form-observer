@@ -2,7 +2,6 @@
 
 ## IMMEDIATE
 
-- [ ] Consider adding a [Qwik](https://qwik.builder.io/) integration for the `FormValidityObserver`.
 - [ ] Consider adding some GitHub CI Actions to lint our code and run our tests.
 - [ ] Consider adding some badges to our Repository's homepage (e.g., Test Coverage).
 
