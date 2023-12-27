@@ -243,6 +243,7 @@ That said, we _do_ provide framework-specific wrappers for the `FormValidityObse
 - [Vue](https://github.com/enthusiastic-js/form-observer/tree/main/docs/form-validity-observer/integrations/vue.md) (`@form-observer/vue`)
 - [Solid](https://github.com/enthusiastic-js/form-observer/tree/main/docs/form-validity-observer/integrations/solid.md) (`@form-observer/solid`)
 - [Lit](https://github.com/enthusiastic-js/form-observer/tree/main/docs/form-validity-observer/integrations/lit.md) (`@form-observer/lit`)
+- [Preact](https://github.com/enthusiastic-js/form-observer/tree/main/docs/form-validity-observer/integrations/preact.md) (`@form-observer/preact`)
 
 For your convenience, these libraries re-export the tools provided by `@form-observer/core` -- allowing you to consolidate your imports. For instance, you can import the `FormObserver`, the `FormStorageObserver`, the `FormValidityObserver`, and the _Svelte-specific_ version of the `FormValidityObserver` all from `@form-observer/svelte` if you like.
 
@@ -256,3 +257,4 @@ Live Examples of the `FormValidityObserver` on `StackBlitz`:
 - [Vue Integration](https://stackblitz.com/edit/form-observer-vue-example?file=src%2FApp.vue)
 - [Solid Integration](https://stackblitz.com/edit/form-observer-solid-example?file=src%2FApp.tsx)
 - [Lit Integration](https://stackblitz.com/edit/form-observer-lit-example?file=src%2Flit-example.ts)
+- [Preact Integration](https://stackblitz.com/edit/form-observer-preact-example?file=src%2Fapp.tsx)

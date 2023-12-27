@@ -408,3 +408,5 @@ In the future, when `aria-errormessage` has better support, the `FormValidityObs
   - [React Integration](https://stackblitz.com/edit/form-observer-react-example?file=src%2FApp.tsx)
   - [Vue Integration](https://stackblitz.com/edit/form-observer-vue-example?file=src%2FApp.vue)
   - [Solid Integration](https://stackblitz.com/edit/form-observer-solid-example?file=src%2FApp.tsx)
+  - [Lit Integration](https://stackblitz.com/edit/form-observer-lit-example?file=src%2Flit-example.ts)
+  - [Preact Integration](https://stackblitz.com/edit/form-observer-preact-example?file=src%2Fapp.tsx)

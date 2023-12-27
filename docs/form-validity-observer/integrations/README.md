@@ -7,6 +7,7 @@ We currently provide _convenience APIs_ for the following JS Frameworks:
 - [Vue](./vue.md) (`@form-observer/vue`)
 - [Solid](./solid.md) (`@form-observer/solid`)
 - [Lit](./lit.md) (`@form-observer/lit`)
+- [Preact](./preact.md) (`@form-observer/preact`)
 
 ## Do I _Need_ a Framework Integration?
 

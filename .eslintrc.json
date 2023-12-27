@@ -60,7 +60,8 @@
           "packages/vue",
           "packages/solid",
           "packages/react",
-          "packages/lit"
+          "packages/lit",
+          "packages/preact"
         ],
         "peerDependencies": true,
         "devDependencies": ["./vitest.*", "**/*.test.{ts,tsx}"],
