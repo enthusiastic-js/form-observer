@@ -1,15 +1,15 @@
 # TODO
 
-## IMMEDIATE
-
-- [ ] Consider adding some GitHub CI Actions to lint our code and run our tests.
-- [ ] Consider adding some badges to our Repository's homepage (e.g., Test Coverage).
-
 ## Documentation
 
 - [ ] Figure out a Logo for the `enthusiastic-js` Organization and maybe the Form Observer package?
 - [ ] In the interest of time, we're probably going to have to do the bare minimum when it comes to the documentation. Make the API clear, give some helpful examples, etc. After we've release the first draft of the project, we can start thinking about how to "perfect" the docs. But for now, don't get too paranoid about the wording.
 - [ ] Adding demos somewhere in this repo (or in something like a CodeSandbox) would likely be helpful for developers. **Edit**: We now have examples for the `FormValidityObserver`. Would examples for the `FormObserver` or the `FormStorageObserver` also be helpful?
+
+## Repository
+
+- [ ] Consider adding `Releases` to GitHub and automating the publishing of NPM Packages. (Maybe for the _next_ version? Maybe?)
+- [ ] Consider adding some badges to our Repository's homepage (e.g., Test Coverage).
 
 ## `FormValidityObserver`
 
@@ -44,7 +44,6 @@
 ## TypeScript
 
 - [ ] `Critical`: Figure out what to do about the broken, overloaded generic constructor types for the `FormObserver` (and its children) -- specifically surrounding generic event types. This _seems_ to be a bug in TypeScript, though it might be intentional since generic constructors are not allowed in `.ts` files at all... We don't want to rewrite our code again, and it seems a little difficult to create separate `.d.ts` files for the generic constructors (_if_ our plan is to cast all of the default exports of classes to the constructor `interface`s). So... We'll wait and see if the TypeScript team will update anything for now. See https://github.com/microsoft/TypeScript/issues/55919 and https://github.com/microsoft/TypeScript/issues/40451. At least all of the other types in our project are good, though! :D And those are the more important types! Plus, if people are using the Framework Integrations, they'll have all the types that they need anyway (at least for form field validation). So... it _should_ be safe to release our package right now.
-- [ ] Support custom event types for the `FormObserver` and its children. We technically support custom event types already. However, the TypeScript types don't think so. 😅 (Currently, we only support the standard event types that are recognized by the browser, as far as TypeScript is concerned. For now, people can technically get away with `any` -- though that is undesirable.)
 
 ## Testing
 
