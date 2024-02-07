@@ -18,11 +18,11 @@ When you're working with pure HTML and pure JS, you'll have code that looks like
 ```html
 <form>
   <label for="username">Username</label>
-  <input id="username" name="username" type="text" required aria-labelledby="username-error" />
+  <input id="username" name="username" type="text" required aria-describedby="username-error" />
   <div id="username-error" role="alert"></div>
 
   <label for="email">Email</label>
-  <input id="email" name="email" type="email" required aria-labelledby="email-error" />
+  <input id="email" name="email" type="email" required aria-describedby="email-error" />
   <div id="email-error" role="alert"></div>
 
   <!-- Other Fields -->
@@ -46,11 +46,11 @@ The code above is pretty simple. However, the fact that we have to keep track of
 ```svelte
 <form bind:this={form}>
   <label for="username">Username</label>
-  <input id="username" name="username" type="text" required aria-labelledby="username-error" />
+  <input id="username" name="username" type="text" required aria-describedby="username-error" />
   <div id="username-error" role="alert" />
 
   <label for="email">Email</label>
-  <input id="email" name="email" type="email" required aria-labelledby="email-error" />
+  <input id="email" name="email" type="email" required aria-describedby="email-error" />
   <div id="email-error" role="alert" />
 
   <!-- Other Fields -->
@@ -80,14 +80,14 @@ This can be simplified if we augment the `configure` function to generate the co
 ```svelte
 <form use:autoObserve>
   <label for="username">Username</label>
-  <input id="username" {...configure("username", { required })} aria-labelledby="username-error" />
+  <input id="username" {...configure("username", { required })} aria-describedby="username-error" />
   <div id="username-error" role="alert" />
 
   <label for="email">Email</label>
   <input
     id="email"
     {...configure("email", { required, type: { value: "email", message: "Please provide a valid email" } })}
-    aria-labelledby="email-error"
+    aria-describedby="email-error"
   />
   <div id="email-error" role="alert" />
 
