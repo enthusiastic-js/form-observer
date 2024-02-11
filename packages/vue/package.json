@@ -32,8 +32,8 @@
     "@form-observer/core": "^0.7.0"
   },
   "devDependencies": {
-    "@testing-library/vue": "^8.0.1",
-    "@vitejs/plugin-vue": "^5.0.0",
+    "@testing-library/vue": "^8.0.2",
+    "@vitejs/plugin-vue": "^5.0.4",
     "vue": "^3.3.6"
   },
   "author": "Isaiah Thomason",
