@@ -1,5 +1,9 @@
 # TODO
 
+## Priority
+
+- [ ] Support some kind of `renderByDefault` option
+
 ## Documentation
 
 - [ ] Figure out a Logo for the `enthusiastic-js` Organization and maybe the Form Observer package?
