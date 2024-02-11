@@ -34,7 +34,7 @@ export interface ValidationErrors<M, E extends ValidatableField = ValidatableFie
   validate?(field: E): void | ErrorDetails<M, E> | Promise<void | ErrorDetails<M, E>>;
 }
 
-export interface FormValidityObserverOptions<M> {
+export interface FormValidityObserverOptions<M, E extends ValidatableField = ValidatableField> {
   /**
    * Indicates that the observer's event listener should be called during the event capturing phase instead of
    * the event bubbling phase. Defaults to `false`.
@@ -57,6 +57,12 @@ export interface FormValidityObserverOptions<M> {
    * (e.g., DOM Nodes, React Elements, etc.) to the DOM instead.
    */
   renderer?(errorContainer: HTMLElement, errorMessage: M | null): void;
+
+  /**
+   * The default errors to display for the field constraints. (The `validate` option configures the default
+   * _custom validation function_ used for all form fields.)
+   */
+  defaultErrors?: ValidationErrors<M, E>;
 }
 
 export interface ValidateFieldOptions {
@@ -76,9 +82,9 @@ interface FormValidityObserverConstructor {
    *
    * @param types The type(s) of event(s) that trigger(s) form field validation.
    */
-  new <T extends OneOrMany<EventType>, M = string>(
+  new <T extends OneOrMany<EventType>, M = string, E extends ValidatableField = ValidatableField>(
     types: T,
-    options?: FormValidityObserverOptions<M>,
+    options?: FormValidityObserverOptions<M, E>,
   ): FormValidityObserver<M>;
 }
 
@@ -153,10 +159,12 @@ interface FormValidityObserver<M = string> {
 
   /**
    * Configures the error messages that will be displayed for a form field's validation constraints.
-   * If an error message is not configured for a validation constraint, then the browser's default error message
-   * for that constraint will be used instead.
+   * If an error message is not configured for a validation constraint and there is no corresponding
+   * {@link FormValidityObserverOptions.defaultErrors default configuration}, then the browser's
+   * default error message for that constraint will be used instead.
    *
-   * Note: If the field is _only_ using the browser's default error messages, it does _not_ need to be `configure`d.
+   * Note: If the field is _only_ using the configured {@link FormValidityObserverOptions.defaultErrors `defaultErrors`}
+   * and/or the browser's default error messages, it _does not_ need to be `configure`d.
    *
    * @param name The `name` of the form field
    * @param errorMessages A `key`-`value` pair of validation constraints (key)

@@ -128,13 +128,14 @@ We'll walk you through the process by going step-by-step on how we made our `Sve
 The first step is easy. Just create a function that instantiates and returns a `FormValidityObserver`. Because this function will only be creating an augmented `FormValidityObserver`, it should accept the same arguments as the class's [constructor](../README.md#constructor-formvalidityobservertypes-options). The return type will be an `interface` that represents the enhanced observer, but we won't add anything to it yet.
 
 ```ts
-import type { EventType, OneOrMany, FormValidityObserverOptions } from "@form-observer/core";
+import type { EventType, OneOrMany, ValidatableField, FormValidityObserverOptions } from "@form-observer/core";
 import FormValidityObserver from "@form-observer/core/FormValidityObserver";
 
-function createFormValidityObserver<T extends OneOrMany<EventType>, M = string>(
-  types: T,
-  options?: FormValidityObserverOptions<M>,
-): SvelteFormValidityObserver<M> {
+function createFormValidityObserver<
+  T extends OneOrMany<EventType>,
+  M = string,
+  E extends ValidatableField = ValidatableField,
+>(types: T, options?: FormValidityObserverOptions<M, E>): SvelteFormValidityObserver<M> {
   const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M>;
   return observer;
 }
@@ -157,10 +158,11 @@ In order to ensure that all of the `FormValidityObserver`'s methods function pro
 ```ts
 // Imports ...
 
-function createFormValidityObserver<T extends OneOrMany<EventType>, M = string>(
-  types: T,
-  options?: FormValidityObserverOptions<M>,
-): SvelteFormValidityObserver<M> {
+function createFormValidityObserver<
+  T extends OneOrMany<EventType>,
+  M = string,
+  E extends ValidatableField = ValidatableField,
+>(types: T, options?: FormValidityObserverOptions<M, E>): SvelteFormValidityObserver<M> {
   const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M>;
 
   /* ---------- Bindings ---------- */
@@ -193,14 +195,15 @@ In this step, we create a reusable utility function that will enable us to autom
 Most JS frameworks create a way for you to accomplish this easily with utility functions. In [`React`](https://react.dev/reference/react-dom/components/common#ref-callback) or [`Vue`](https://vuejs.org/api/built-in-special-attributes.html#ref), you would pass a `ref` callback to an `HTMLFormElement`. In `Svelte`, the idiomatic way to accomplish this is with [`actions`](https://learn.svelte.dev/tutorial/actions):
 
 ```ts
-import type { EventType, OneOrMany, FormValidityObserverOptions } from "@form-observer/core";
+import type { EventType, OneOrMany, ValidatableField, FormValidityObserverOptions } from "@form-observer/core";
 import FormValidityObserver from "@form-observer/core/FormValidityObserver";
 import type { ActionReturn } from "svelte/action";
 
-function createFormValidityObserver<T extends OneOrMany<EventType>, M = string>(
-  types: T,
-  options?: FormValidityObserverOptions<M>,
-): SvelteFormValidityObserver<M> {
+function createFormValidityObserver<
+  T extends OneOrMany<EventType>,
+  M = string,
+  E extends ValidatableField = ValidatableField,
+>(types: T, options?: FormValidityObserverOptions<M, E>): SvelteFormValidityObserver<M> {
   const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M>;
 
   /* ---------- Bindings ---------- */
@@ -402,10 +405,11 @@ The hardest part of this process is defining the TypeScript types. With that out
 ```ts
 // Imports ...
 
-export default function createFormValidityObserver<T extends OneOrMany<EventType>, M = string>(
-  types: T,
-  options?: FormValidityObserverOptions<M>,
-): SvelteFormValidityObserver<M> {
+export default function createFormValidityObserver<
+  T extends OneOrMany<EventType>,
+  M = string,
+  E extends ValidatableField = ValidatableField,
+>(types: T, options?: FormValidityObserverOptions<M, E>): SvelteFormValidityObserver<M> {
   const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M>;
 
   /* ---------- Bindings ---------- */

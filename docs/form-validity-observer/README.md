@@ -116,6 +116,17 @@ The `FormValidityObserver()` constructor creates a new observer and configures i
           The <code>renderer</code> defaults to a function that accepts error messages of type <code>string</code> and renders them to the DOM as raw HTML.
         </p>
       </dd>
+      <dt id="form-validity-observer-options-default-errors"><code>defaultErrors: ValidationErrors&lt;M, E&gt;</code></dt>
+      <dd>
+        <p>
+          Configures the default error messages to display for the validation constraints. (See the <a href="#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-void"><code>configure</code></a> method for more details about error message configuration, and refer to the <a href="./types.md#validationerrorsm-e"><code>ValidationErrors</code></a> type for more details about validation constraints.)
+        </p>
+        <p>
+          <blockquote>
+            <strong>Note: The <code>defaultErrors.validate</code> option will provide a default custom validation function for <em>all</em> fields in your form.</strong> This is primarily useful if you have a reusable validation function that you want to apply to all of your form's fields (for example, if you are using <a href="https://zod.dev">Zod</a>). See <a href="./guides.md#getting-the-most-out-of-the-defaulterrors-option"><i>Getting the Most out of the <code>defaultErrors</code></i> Option</a> for examples on how to use this option effectively.
+          </blockquote>
+        </p>
+      </dd>
     </dl>
   </dd>
 </dl>
@@ -204,11 +215,11 @@ form1.elements[0].dispatchEvent(new FocusEvent("focusout")); // Does nothing
 
 ### Method: `FormValidityObserver.configure<E>(name: string, errorMessages: `[`ValidationErrors<M, E>`](./types.md#validationerrorsm-e)`): void`
 
-Configures the error messages that will be displayed for a form field's validation constraints. If an error message is not configured for a validation constraint, then the field's [`validationMessage`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLObjectElement/validationMessage) will be used instead. For [native form fields](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/elements), the browser automatically supplies a default `validationMessage` depending on the broken constraint.
+Configures the error messages that will be displayed for a form field's validation constraints. If an error message is not configured for a validation constraint and there is no corresponding [default configuration](#form-validity-observer-options-default-errors), then the field's [`validationMessage`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLObjectElement/validationMessage) will be used instead. For [native form fields](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/elements), the browser automatically supplies a default `validationMessage` depending on the broken constraint.
 
-> Note: If the field is _only_ using the browser's default error messages, it does _not_ need to be `configure`d.
+> Note: If the field is _only_ using the configured [`defaultErrors`](#form-validity-observer-options-default-errors) and/or the browser's default error messages, it _does not_ need to be `configure`d.
 
-The Form Element Type, `E`, represents the form field being configured. This type is inferred from the `errorMessages` configuration and defaults to a general [`ValidatableField`](./types.md#validatablefield).
+The Field Element Type, `E`, represents the form field being configured. This type is inferred from the `errorMessages` configuration and defaults to a general [`ValidatableField`](./types.md#validatablefield).
 
 #### Parameters
 
@@ -297,7 +308,7 @@ When the `focus` option is `false`, you can consider `validateField()` to be an 
 
 Marks the form field having the specified `name` as invalid (via the [`[aria-invalid="true"]`](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-invalid) attribute) and applies the provided error `message` to it. Typically, you shouldn't need to call this method manually; but in rare situations it might be helpful.
 
-The Form Element Type, `E`, represents the invalid form field. This type is inferred from the error `message` if it is a function. Otherwise, `E` defaults to a general [`ValidatableField`](./types.md#validatablefield).
+The Field Element Type, `E`, represents the invalid form field. This type is inferred from the error `message` if it is a function. Otherwise, `E` defaults to a general [`ValidatableField`](./types.md#validatablefield).
 
 #### Parameters
 

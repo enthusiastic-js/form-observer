@@ -23,8 +23,9 @@ const constraintsMap = Object.freeze({
  *
  * @template {import("./index.d.ts").OneOrMany<import("./index.d.ts").EventType>} T
  * @template [M=string]
+ * @template {import("./index.d.ts").ValidatableField} [E=import("./index.d.ts").ValidatableField]
  * @param {T} types
- * @param {import("./index.d.ts").FormValidityObserverOptions<M>} [options]
+ * @param {import("./index.d.ts").FormValidityObserverOptions<M, E>} [options]
  * @returns {import("./types.d.ts").ReactFormValidityObserver<M>}
  */
 export default function createFormValidityObserver(types, options) {

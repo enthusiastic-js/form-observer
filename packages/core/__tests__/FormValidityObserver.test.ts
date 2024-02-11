@@ -1201,6 +1201,60 @@ describe("Form Validity Observer (Class)", () => {
         expect(formValidityObserver.clearFieldError).toHaveBeenCalledWith(field.name);
       });
 
+      it("Uses the default error message configurations provided to the constructor", () => {
+        /* ---------- Setup ---------- */
+        // Render Fields
+        const form = document.createElement("form");
+        const input1 = createElementWithProps("input", { name: "first", required: true, pattern: "\\d+" });
+        const input2 = createElementWithProps("input", { name: "second", required: true, pattern: "\\d+" });
+
+        document.body.append(form);
+        form.append(input1, input2);
+
+        // Configure Observer and Error Messages
+        const defaultErrors = {
+          required: "You MUST submit this field",
+          pattern: "This doesn't look right...",
+          validate: (field) => `Field ${field.name} failed validation` as const,
+        } as const satisfies ValidationErrors<string>;
+
+        const observer = new FormValidityObserver(types[0], { defaultErrors });
+        observer.observe(form);
+
+        const customPatternError = "Numbers only, please.";
+        expect(customPatternError).not.toBe(defaultErrors.pattern);
+        observer.configure(input1.name, { pattern: customPatternError });
+
+        const customValidator = (_: FormField) => "Customized" as const;
+        observer.configure(input2.name, { validate: customValidator });
+
+        /* ---------- Run Assertions ---------- */
+        // `required` Error (Same, Both Unconfigured)
+        observer.validateField(input1.name);
+        expectErrorFor(input1, defaultErrors.required, "none");
+
+        observer.validateField(input2.name);
+        expectErrorFor(input2, defaultErrors.required, "none");
+
+        // `pattern` Error (Different, 1st Input Customized)
+        input1.value = "a";
+        observer.validateField(input1.name);
+        expectErrorFor(input1, customPatternError, "none");
+
+        input2.value = "b";
+        observer.validateField(input2.name);
+        expectErrorFor(input2, defaultErrors.pattern, "none");
+
+        // Custom `validate` Function (Different, 2nd Input Customized);
+        input1.value = "1";
+        observer.validateField(input1.name);
+        expectErrorFor(input1, defaultErrors.validate(input1), "none");
+
+        input2.value = "2";
+        observer.validateField(input2.name);
+        expectErrorFor(input2, customValidator(input2), "none");
+      });
+
       it("Focuses (AND scrolls to) an invalid field when the options require it (default scroller)", async () => {
         /* ---------- Setup ---------- */
         // Render Field
@@ -2810,6 +2864,44 @@ describe("Form Validity Observer (Class)", () => {
     },
   });
 
+  /* -------------------- Renderer Type Tests --> `defaultErrors` Option -------------------- */
+  // Note: Given the extensive tests for the `configure` method, and given that the `defaultErrors` option
+  // uses the same type for the error message configuration, we'll just do some quick happy-path tests here.
+
+  // Default Renderer
+  new FormValidityObserver(event1, {
+    defaultErrors: {
+      badinput: staticErrorString,
+      required: dynamicErrorString,
+
+      min: { message: staticErrorString },
+      minlength: { message: dynamicErrorString },
+
+      validate(field) {
+        if (Math.random() < 0.5) return `${field.name} is a weird name`;
+        return Promise.resolve({ message: dynamicErrorString, render: true });
+      },
+    },
+  });
+
+  // Custom Renderer
+  new FormValidityObserver(event1, {
+    renderer,
+    defaultErrors: {
+      max: { message: staticErrorString, render: false },
+      maxlength: { message: dynamicErrorString, render: false },
+
+      type: { message: staticCustomError, render: true },
+      pattern: { message: dynamicCustomError, render: true },
+
+      validate(_field) {
+        if (Math.random() < 100 / 3) return staticErrorString;
+        if (Math.random() < (100 / 3) * 2) return { message: staticErrorString, render: false };
+        return Promise.resolve({ message: dynamicCustomError, render: true });
+      },
+    },
+  });
+
   /* -------------------- Type Tests for Dynamic Fields -------------------- */
   /* ---------- `setFieldError` ---------- */
   // Both specific AND general types work
@@ -2818,7 +2910,7 @@ describe("Form Validity Observer (Class)", () => {
   new FormValidityObserver(event1).setFieldError(name, (_: ValidatableField) => "");
   new FormValidityObserver(event1).setFieldError(name, (_: FormField) => "");
 
-  /* ---------- `validate` Constraint ---------- */
+  /* ---------- `configure`d Error Messages ---------- */
   // Both specific AND general types work
   new FormValidityObserver(event1).configure(name, { required: (_: HTMLTextAreaElement) => "" });
   new FormValidityObserver(event1).configure(name, { required: (_: HTMLInputElement) => "" });
@@ -2836,6 +2928,14 @@ describe("Form Validity Observer (Class)", () => {
     // @ts-expect-error -- Incompatible with the `HTMLInputElement` specified earlier
     validate: (_: HTMLSelectElement) => "",
   });
+
+  /* ---------- Default Error Messages ---------- */
+  // Both specific AND general types work.
+  // (Because `configure` uses the same type for the error message configuration, we'll only do some quick tests here.)
+  new FormValidityObserver(event1, { defaultErrors: { required: (_: HTMLTextAreaElement) => "" } });
+  new FormValidityObserver(event1, { defaultErrors: { required: (_: HTMLInputElement) => "" } });
+  new FormValidityObserver(event1, { defaultErrors: { required: (_: ValidatableField) => "" } });
+  new FormValidityObserver(event1, { defaultErrors: { required: (_: FormField) => "" } });
 })();
 /* eslint-enable @typescript-eslint/no-empty-function */
 /* eslint-enable no-unreachable */

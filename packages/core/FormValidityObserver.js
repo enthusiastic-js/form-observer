@@ -49,6 +49,7 @@ const attrs = Object.freeze({ "aria-describedby": "aria-describedby", "aria-inva
 
 /**
  * @template M
+ * @template {import("./types.d.ts").ValidatableField} [E=import("./types.d.ts").ValidatableField]
  * @typedef {Object} FormValidityObserverOptions
  *
  * @property {boolean} [useEventCapturing] Indicates that the observer's event listener should be called during
@@ -65,6 +66,9 @@ const attrs = Object.freeze({ "aria-describedby": "aria-describedby", "aria-inva
  *
  * You can replace the default function with your own `renderer` that renders other types of error messages
  * (e.g., DOM Nodes, React Elements, etc.) to the DOM instead.
+ *
+ * @property {ValidationErrors<M, E>} [defaultErrors] The default errors to display for the field constraints.
+ * (The `validate` option configures the default _custom validation function_ used for all form fields.)
  */
 
 /**
@@ -80,17 +84,12 @@ const attrs = Object.freeze({ "aria-describedby": "aria-describedby", "aria-inva
 
 /** @template [M=string] */
 class FormValidityObserver extends FormObserver {
-  /** @type {HTMLFormElement | undefined} The `form` currently being observed by the `FormValidityObserver` */
-  #form;
+  /** @type {HTMLFormElement | undefined} The `form` currently being observed by the `FormValidityObserver` */ #form;
+  /** @type {Document | ShadowRoot | undefined} The Root Node for the currently observed `form`. */ #root;
 
-  /** @type {Document | ShadowRoot | undefined} The Root Node for the currently observed `form`. */
-  #root;
-
-  /** @readonly @type {Required<FormValidityObserverOptions<M>>["scroller"]} */
-  #scrollTo;
-
-  /** @readonly @type {Required<FormValidityObserverOptions<M>>["renderer"]} */
-  #renderError;
+  /** @readonly @type {Required<FormValidityObserverOptions<M>>["scroller"]} */ #scrollTo;
+  /** @readonly @type {Required<FormValidityObserverOptions<M>>["renderer"]} */ #renderError;
+  /** @readonly @type {FormValidityObserverOptions<M>["defaultErrors"]} */ #defaultErrors;
 
   /**
    * @readonly
@@ -106,13 +105,14 @@ class FormValidityObserver extends FormObserver {
   /**
    * @template {import("./types.d.ts").OneOrMany<import("./types.d.ts").EventType>} T
    * @template [M=string]
+   * @template {import("./types.d.ts").ValidatableField} [E=import("./types.d.ts").ValidatableField]
    * @overload
    *
    * Provides a way to validate an `HTMLFormElement`'s fields (and to display _accessible_ errors for those fields)
    * in response to the events that the fields emit.
    *
    * @param {T} types The type(s) of event(s) that trigger(s) form field validation.
-   * @param {FormValidityObserverOptions<M>} [options]
+   * @param {FormValidityObserverOptions<M, E>} [options]
    * @returns {FormValidityObserver<M>}
    */
 
@@ -135,6 +135,7 @@ class FormValidityObserver extends FormObserver {
     super(types, eventListener, { passive: true, capture: options?.useEventCapturing });
     this.#scrollTo = options?.scroller ?? defaultScroller;
     this.#renderError = /** @type {any} Necessary because of double `M`s */ (options?.renderer ?? defaultErrorRenderer);
+    this.#defaultErrors = /** @type {any} Necessary because of double `M`s */ (options?.defaultErrors);
   }
 
   /**
@@ -301,14 +302,15 @@ class FormValidityObserver extends FormObserver {
 
     const constraint = getBrokenConstraint(field.validity);
     if (constraint) {
-      const error = this.#errorMessagesByFieldName.get(name)?.[constraint];
+      const error = this.#errorMessagesByFieldName.get(name)?.[constraint] ?? this.#defaultErrors?.[constraint];
 
       if (typeof error === "object") return this.#resolveValidation(field, error, options);
       return this.#resolveValidation(field, error || field.validationMessage, options);
     }
 
     // User-driven Validation (MUST BE DONE LAST)
-    const errOrPromise = this.#errorMessagesByFieldName.get(name)?.validate?.(field);
+    const customValidator = this.#errorMessagesByFieldName.get(name)?.validate ?? this.#defaultErrors?.validate;
+    const errOrPromise = customValidator?.(field);
     if (errOrPromise instanceof Promise) return errOrPromise.then((e) => this.#resolveValidation(field, e, options));
     return this.#resolveValidation(field, errOrPromise, options);
   }
@@ -441,10 +443,12 @@ class FormValidityObserver extends FormObserver {
 
   /**
    * Configures the error messages that will be displayed for a form field's validation constraints.
-   * If an error message is not configured for a validation constraint, then the browser's default error message
-   * for that constraint will be used instead.
+   * If an error message is not configured for a validation constraint and there is no corresponding
+   * {@link FormValidityObserverOptions.defaultErrors default configuration}, then the browser's
+   * default error message for that constraint will be used instead.
    *
-   * Note: If the field is _only_ using the browser's default error messages, it does _not_ need to be `configure`d.
+   * Note: If the field is _only_ using the configured {@link FormValidityObserverOptions.defaultErrors `defaultErrors`}
+   * and/or the browser's default error messages, it _does not_ need to be `configure`d.
    *
    * @template {import("./types.d.ts").ValidatableField} E
    * @param {string} name The `name` of the form field

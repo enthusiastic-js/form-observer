@@ -6,6 +6,7 @@
 
 ## Documentation
 
+- [ ] Add more detailed examples of how to use `Zod` with the `defaultErrors.validate` option.
 - [ ] Figure out a Logo for the `enthusiastic-js` Organization and maybe the Form Observer package?
 - [ ] In the interest of time, we're probably going to have to do the bare minimum when it comes to the documentation. Make the API clear, give some helpful examples, etc. After we've release the first draft of the project, we can start thinking about how to "perfect" the docs. But for now, don't get too paranoid about the wording.
 - [ ] Adding demos somewhere in this repo (or in something like a CodeSandbox) would likely be helpful for developers. **Edit**: We now have examples for the `FormValidityObserver`. Would examples for the `FormObserver` or the `FormStorageObserver` also be helpful?

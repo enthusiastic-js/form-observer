@@ -4,6 +4,7 @@ Here you'll find helpful tips on how to use the `FormValidityObserver` effective
 
 - [Enabling/Disabling Accessible Error Messages](#enabling-accessible-error-messages-during-form-submissions)
 - [Keeping Track of Visited/Dirty Fields](#keeping-track-of-visiteddirty-fields)
+- [Getting the Most out of the `defaultErrors` option](#getting-the-most-out-of-the-defaulterrors-option)
 - [Keeping Track of Form Data](#keeping-track-of-form-data)
 - [Recommendations for Conditionally Rendered Fields](#recommendations-for-conditionally-rendered-fields)
 - [Recommendations for Styling Form Fields and Their Error Messages](#recommendations-for-styling-form-fields-and-their-error-messages)
@@ -128,6 +129,150 @@ const dirtyFields = fields.filter((f) => f.getAttribute("data-dirty") === String
 To get an idea of how these event listeners would function, you can play around with them on the [MDN Playground](https://developer.mozilla.org/en-US/play?id=I15VQ64lWQShncvhr9JnLQQYWOoJQhpU1hHDLWKGF4D229TmIjON7qmRqK2mVceWNXsaP6jIjm%2FOjZ%2Bi). Feel free to alter this implementation to fit your needs.
 
 You can learn more about what can be done with forms using pure JS on our [Philosophy](../extras/philosophy.md#avoid-unnecessary-overhead-and-reinventing-the-wheel) page.
+
+## Getting the Most out of the `defaultErrors` Option
+
+Typically, we want the error messages in our application to be consistent. Unfortunately, this can sometimes cause us to write the same error messages over and over again. For example, consider a message that might be displayed for the `required` constraint:
+
+```html
+<form>
+  <label for="first-name">First Name</label>
+  <input id="first-name" type="text" required aria-describedby="first-name-error" />
+  <div id="first-name-error" role="alert"></div>
+
+  <label for="last-name">Last Name</label>
+  <input id="last-name" type="text" required aria-describedby="last-name-error" />
+  <div id="last-name-error" role="alert"></div>
+
+  <label for="email">Email</label>
+  <input id="email" type="email" required aria-describedby="email-error" />
+  <div id="email-error" role="alert"></div>
+
+  <!-- Other Fields ... -->
+</div>
+```
+
+We might configure our error messages like so
+
+```js
+const observer = new FormValidityObserver("focusout");
+observer.configure("first-name", { required: "First Name is required." });
+observer.configure("last-name", { required: "Last Name is required." });
+observer.configure("email", { required: "Email is required." });
+// Configurations for other fields ...
+```
+
+But this is redundant (and consequently, error-prone). Since all of our error messages for the `required` constraint follow the same format (`"<FIELD_NAME> is required"`), it would be better for us to use the [`defaultErrors`](./README.md#form-validity-observer-options-default-errors) configuration option instead.
+
+```js
+const observer = new FormValidityObserver("focusout", {
+  defaultErrors: {
+    required: (field) => `${field.labels?.[0].textContent ?? "This field"} is required.`;
+  },
+});
+```
+
+This gives us one consistent way to define the `required` error message for _all_ of our fields. Of course, it's possible that not all of your form controls will be labeled by a `<label>` element. For instance, a `radiogroup` is typically labeled by a `<legend>` instead. In this case, you may choose to make the error message more generic
+
+```js
+const observer = new FormValidityObserver("focusout", {
+  defaultErrors: { required: "This field is required" },
+});
+```
+
+Or you may choose to make the error message more flexible
+
+```js
+const observer = new FormValidityObserver("focusout", {
+  defaultErrors: {
+    required(field) {
+      if (field instanceof HTMLInputElement && field.type === "radio") {
+        const radiogroup = input.closest("fieldset[role='radiogroup']");
+        const legend = radiogroup.firstElementChild.matches("legend") ? radiogroup.firstElementChild : null;
+        return `${legend?.textContent ?? "This field"} is required.`;
+      }
+
+      return `${field.labels?.[0].textContent ?? "This field"} is required.`;
+    },
+  },
+});
+```
+
+And if you ever need a _unique_ error message for a specific field, you can still configure it explicitly.
+
+```js
+const observer = new FormValidityObserver("focusout", {
+  defaultErrors: { required: "This field is required" },
+});
+
+observer.configure("my-unique-field", { required: "This field has a unique `required` error!" });
+```
+
+### Default Validation Functions
+
+The `validate` option in the `defaultErrors` object provides a default custom validation function for _all_ of the fields in your form. This can be helpful if you have a reusable validation function that you want to apply to all of your form's fields. For example, if you're using [`Zod`](https://zod.dev) to validate your form data, you could do something like this:
+
+```js
+const schema = z.object({
+  "first-name": z.string(),
+  "last-name": z.string(),
+  email: z.string().email(),
+});
+
+const observer = new FormValidityObserver("focusout", {
+  defaultErrors: {
+    validate(field) {
+      const result = schema.shape[field.name].safeParse(field.value);
+      // Extract field's error message from `result`
+      return errorMessage;
+    },
+  },
+});
+```
+
+By leveraging `defaultErrors.validate`, you can easily use Zod (or any other validation tool) on your frontend. If you're using an SSR framework, you can use the exact same tool on your backend. It's the best of both worlds!
+
+### Zod Validation with Nested Fields
+
+For more complex form structures (e.g., "Nested Fields" as objects or arrays), you will need to write some advanced logic to make sure that you access the correct `safeParse` function. For example, if you have a field named `address.name.first`, then you'll need to recursively follow the path from `address` to `first` to access the correct `safeParse` function. The [`shape`](https://zod.dev/?id=shape) property (for objects) and the [`element`](https://zod.dev/?id=element) property (for arrays) in Zod will help you accomplish this. Alternatively, you can flatten your object structure entirely:
+
+```js
+const schema = z.object({
+  "address.name.first": z.string(),
+  "address.name.last": z.string(),
+  "address.city": z.string(),
+  // Other fields...
+});
+```
+
+This enables you to use the approach that we showed above without having to write any recursive logic. It's arguably more performant than defining and walking through nested objects, but it requires you to be doubly sure that you're spelling all of your fields' names correctly. Also note that the logic for handling arrays in this example would still take a little effort and may require some recursion. However, this logic shouldn't be too difficult to write.
+
+If there's sufficient interest from the community, then we may add some Zod helper functions to our packages to take this burden off of developers.
+
+### Zod Validation Using Existing Libraries
+
+Another option is to use an existing library that validates forms with Zod (e.g., `@conform-to/zod`) and to extract the error messages from that tool. For example, you might do something like the following:
+
+```js
+import { FormValidityObserver } from "@form-observer";
+import { parseWithZod } from "@conform-to/zod";
+import { z } from "zod";
+
+const schema = z.object({
+  email: z.string().email(),
+  password: z.string(),
+});
+
+const observer = new FormValidityObserver("focusout", {
+  defaultErrors: {
+    validate(field) {
+      const results = parseWithZod(new FormData(field.form), schema);
+      // Grab the correct error message from `results` object by using `field.name`.
+      return errorMessage;
+    },
+  },
+});
+```
 
 ## Keeping Track of Form Data
 

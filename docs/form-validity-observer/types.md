@@ -121,6 +121,7 @@ Remember that each instance of the `FormValidityObserver` determines its `M` typ
 ### Primary Uses
 
 - [`FormValidityObserver.configure`](./README.md#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-void)
+- [`FormValidityObserverOptions.defaultErrors`](./README.md#form-validity-observer-options-default-errors)
 
 ## `ErrorDetails<M, E>`
 

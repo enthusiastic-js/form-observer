@@ -49,7 +49,7 @@ Remember that `autoObserve` is simply a convenience utility for calling `observe
 
 An enhanced version of [`FormValidityObserver.configure`](../README.md#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-void) for `Solid`. In addition to configuring a field's error messages, it generates the props that should be applied to the field based on the provided arguments.
 
-> Note: If the field is _only_ using the browser's default error messages, it does _not_ need to be `configure`d.
+> Note: If the field is _only_ using the configured [`defaultErrors`](../README.md#form-validity-observer-options-default-errors) and/or the browser's default error messages, it _does not_ need to be `configure`d.
 
 The `SolidValidationErrors<M, E>` type is an enhanced version of the core [`ValidationErrors<M, E>`](../types.md#validationerrorsm-e) type. Here is how `SolidValidationErrors` compares to `ValidationErrors`.
 

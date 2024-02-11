@@ -6,7 +6,8 @@ export interface ReactFormValidityObserver<M = string> extends Omit<FormValidity
    * An enhanced version of {@link FormValidityObserver.configure} for `React`. In addition to configuring a field's
    * error messages, it generates the props that should be applied to the field based on the provided arguments.
    *
-   * Note: If the field is _only_ using the browser's default error messages, it does _not_ need to be `configure`d.
+   * Note: If the field is _only_ using the configured `defaultErrors` and/or the browser's default error messages,
+   * it _does not_ need to be `configure`d.
    *
    * @param name The `name` of the form field
    * @param errorMessages A `key`-`value` pair of validation constraints (key) and their corresponding
