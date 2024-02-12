@@ -1,5 +1,19 @@
 # Changelog
 
+## 2023-02-11
+
+### v0.7.2 (Solid, Lit, Preact)
+
+- Enable developers to configure the default error messages to display for the validation constraints. (This will help remove redundancy from codebases.)
+- Enable developers to use a default custom validation function for all of their form fields.
+
+(Note: Version `0.7.1` is buggy for `Lit` and `Preact` and should not be used. Use `0.7.2` instead.)
+
+### v0.7.1 (Core, React, Vue, Svelte)
+
+- Enable developers to configure the default error messages to display for the validation constraints. (This will help remove redundancy from codebases.)
+- Enable developers to use a default custom validation function for all of their form fields.
+
 ## 2023-12-27
 
 ### v0.7.1 (Solid)
