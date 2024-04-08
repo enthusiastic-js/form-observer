@@ -137,7 +137,7 @@ function MyForm() {
 
 Interested in learning more? Check out our [documentation](https://github.com/enthusiastic-js/form-observer/tree/main/docs). A great place to start would be our docs for the [`Form Observer` API](https://github.com/enthusiastic-js/form-observer/tree/main/docs/form-observer/README.md#api) or our [guides](https://github.com/enthusiastic-js/form-observer/tree/main/docs/form-observer/guides.md) for common use cases.
 
-Too eager to bother with documentation? Feel free to play with our library in a [CodeSandbox](https://codesandbox.io/) or in your own application! All of our tools have detailed JSDocs, so you should be able to learn all that you need to get started from within your IDE.
+Too eager to bother with documentation? Feel free to play with our library on [StackBlitz](https://stackblitz.com/@ITenthusiasm/collections/form-observer-examples) or in your own application! All of our tools have detailed JSDocs, so you should be able to learn all that you need to get started from within your IDE.
 
 ## Solutions to Common Problems
 
