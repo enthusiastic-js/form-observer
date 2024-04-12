@@ -32,7 +32,7 @@
     "@form-observer/core": "^0.7.1"
   },
   "devDependencies": {
-    "@testing-library/vue": "^8.0.2",
+    "@testing-library/vue": "^8.0.3",
     "@vitejs/plugin-vue": "^5.0.4",
     "vue": "^3.3.6"
   },

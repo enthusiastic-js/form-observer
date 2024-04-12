@@ -41,8 +41,8 @@
     "react": ">=16.8.0"
   },
   "devDependencies": {
-    "@testing-library/react": "^14.2.1",
-    "@types/react": "^18.2.55"
+    "@testing-library/react": "^14.3.1",
+    "@types/react": "^18.2.77"
   },
   "author": "Isaiah Thomason",
   "license": "MIT",
