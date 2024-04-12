@@ -44,7 +44,7 @@ const attrs = Object.freeze({ "aria-describedby": "aria-describedby", "aria-inva
  *
  * @property {
      (field: E) => void | ErrorDetails<M, E> | Promise<void | ErrorDetails<M, E>>
-   } [validate]  A function that runs custom validation logic for a field. This validation is always run _last_.
+   } [validate] A function that runs custom validation logic for a field. This validation is always run _last_.
  */
 
 /**
