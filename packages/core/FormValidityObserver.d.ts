@@ -8,33 +8,42 @@ import type { OneOrMany, EventType, ValidatableField } from "./types.d.ts";
 
 export type ErrorMessage<M, E extends ValidatableField = ValidatableField> = M | ((field: E) => M);
 
-export type ErrorDetails<M, E extends ValidatableField = ValidatableField> =
-  | ErrorMessage<string, E>
-  | { render: true; message: ErrorMessage<M, E> }
-  | { render?: false; message: ErrorMessage<string, E> };
+export type ErrorDetails<M, E extends ValidatableField = ValidatableField, R extends boolean = false> = R extends true
+  ?
+      | ErrorMessage<M, E>
+      | { render?: true; message: ErrorMessage<M, E> }
+      | { render: false; message: ErrorMessage<string, E> }
+  :
+      | ErrorMessage<string, E>
+      | { render: true; message: ErrorMessage<M, E> }
+      | { render?: false; message: ErrorMessage<string, E> };
 
 /** The errors to display to the user in the various situations where a field fails validation. */
-export interface ValidationErrors<M, E extends ValidatableField = ValidatableField> {
-  required?: ErrorDetails<M, E>;
-  minlength?: ErrorDetails<M, E>;
-  min?: ErrorDetails<M, E>;
-  maxlength?: ErrorDetails<M, E>;
-  max?: ErrorDetails<M, E>;
-  step?: ErrorDetails<M, E>;
-  type?: ErrorDetails<M, E>;
-  pattern?: ErrorDetails<M, E>;
+export interface ValidationErrors<M, E extends ValidatableField = ValidatableField, R extends boolean = false> {
+  required?: ErrorDetails<M, E, R>;
+  minlength?: ErrorDetails<M, E, R>;
+  min?: ErrorDetails<M, E, R>;
+  maxlength?: ErrorDetails<M, E, R>;
+  max?: ErrorDetails<M, E, R>;
+  step?: ErrorDetails<M, E, R>;
+  type?: ErrorDetails<M, E, R>;
+  pattern?: ErrorDetails<M, E, R>;
 
   /**
    * The error to display when the user's input is malformed, such as an incomplete date.
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/ValidityState/badInput ValidityState.badInput}
    */
-  badinput?: ErrorDetails<M, E>;
+  badinput?: ErrorDetails<M, E, R>;
 
   /** A function that runs custom validation logic for a field. This validation is always run _last_. */
-  validate?(field: E): void | ErrorDetails<M, E> | Promise<void | ErrorDetails<M, E>>;
+  validate?(field: E): void | ErrorDetails<M, E, R> | Promise<void | ErrorDetails<M, E, R>>;
 }
 
-export interface FormValidityObserverOptions<M, E extends ValidatableField = ValidatableField> {
+export interface FormValidityObserverOptions<
+  M,
+  E extends ValidatableField = ValidatableField,
+  R extends boolean = false,
+> {
   /**
    * Indicates that the observer's event listener should be called during the event capturing phase instead of
    * the event bubbling phase. Defaults to `false`.
@@ -59,10 +68,16 @@ export interface FormValidityObserverOptions<M, E extends ValidatableField = Val
   renderer?(errorContainer: HTMLElement, errorMessage: M | null): void;
 
   /**
+   * Determines the default value for every validation constraint's `render` option. (Also sets the default value
+   * for `setFieldError`'s `render` option.)
+   */
+  renderByDefault?: R;
+
+  /**
    * The default errors to display for the field constraints. (The `validate` option configures the default
    * _custom validation function_ used for all form fields.)
    */
-  defaultErrors?: ValidationErrors<M, E>;
+  defaultErrors?: ValidationErrors<M, E, R>;
 }
 
 export interface ValidateFieldOptions {
@@ -82,13 +97,18 @@ interface FormValidityObserverConstructor {
    *
    * @param types The type(s) of event(s) that trigger(s) form field validation.
    */
-  new <T extends OneOrMany<EventType>, M = string, E extends ValidatableField = ValidatableField>(
+  new <
+    T extends OneOrMany<EventType>,
+    M = string,
+    E extends ValidatableField = ValidatableField,
+    R extends boolean = false,
+  >(
     types: T,
-    options?: FormValidityObserverOptions<M, E>,
-  ): FormValidityObserver<M>;
+    options?: FormValidityObserverOptions<M, E, R>,
+  ): FormValidityObserver<M, R>;
 }
 
-interface FormValidityObserver<M = string> {
+interface FormValidityObserver<M = string, R extends boolean = false> {
   /**
    * Instructs the observer to watch the validity state of the provided `form`'s fields.
    * Also connects the `form` to the observer's validation functions.
@@ -149,8 +169,17 @@ interface FormValidityObserver<M = string> {
    * @param render When `true`, the error `message` will be rendered to the DOM using the observer's
    * {@link FormValidityObserverOptions.renderer `renderer`} function.
    */
-  setFieldError<E extends ValidatableField>(name: string, message: ErrorMessage<M, E>, render: true): void;
-  setFieldError<E extends ValidatableField>(name: string, message: ErrorMessage<string, E>, render?: false): void;
+  setFieldError<E extends ValidatableField>(
+    name: string,
+    message: R extends true ? ErrorMessage<string, E> : ErrorMessage<M, E>,
+    render: R extends true ? false : true,
+  ): void;
+
+  setFieldError<E extends ValidatableField>(
+    name: string,
+    message: R extends true ? ErrorMessage<M, E> : ErrorMessage<string, E>,
+    render?: R,
+  ): void;
 
   /**
    * Marks the form field with the specified `name` as valid (`[aria-invalid="false"]`) and clears its error message.
@@ -176,7 +205,7 @@ interface FormValidityObserver<M = string> {
    * // If the field passes all of its validation constraints, no error message will be shown.
    * observer.configure("credit-card", { required: "You must provide a credit card number" })
    */
-  configure<E extends ValidatableField>(name: string, errorMessages: ValidationErrors<M, E>): void;
+  configure<E extends ValidatableField>(name: string, errorMessages: ValidationErrors<M, E, R>): void;
 }
 
 declare const FormValidityObserver: FormValidityObserverConstructor;

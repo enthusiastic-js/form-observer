@@ -619,6 +619,59 @@ describe("Form Validity Observer (Class)", () => {
         });
       });
 
+      it("Renders error messages to the DOM by default when the `renderByDefault` config option is `true`", () => {
+        const errorMessage = "<div>This field isn't correct!</div>";
+        const errorFunc = (field: FormField) => `<div>Element "${field.tagName}" of type "${field.type}" is bad!</div>`;
+        const formValidityObserver = new FormValidityObserver(types, { renderByDefault: true });
+
+        // Render Form
+        const { form, fieldset, fields } = renderEmptyFields();
+        [fieldset, ...fields].forEach(renderErrorContainerForField);
+        const radios = Array.from(fieldset.elements) as HTMLInputElement[];
+        formValidityObserver.observe(form);
+
+        /* ---------- Run Assertions ---------- */
+        ([errorMessage, errorFunc] as const).forEach((e) => {
+          // Reset Errors
+          (Array.from(form.elements) as FormField[]).forEach((f) => formValidityObserver.clearFieldError(f.name));
+
+          // Radio Button Groups
+          formValidityObserver.setFieldError(radios[0].name, e);
+
+          expect(fieldset).toHaveAttribute(attrs["aria-invalid"], String(true));
+          expect(fieldset).not.toHaveAccessibleDescription(typeof e === "function" ? e(radios[0]) : e);
+          expect(fieldset).toHaveAccessibleDescription(getTextFromMarkup(typeof e === "function" ? e(radios[0]) : e));
+
+          radios.forEach((radio) => {
+            expect(radio.validationMessage).toBe("");
+            expect(radio).not.toHaveAccessibleDescription();
+            expect(radio).not.toHaveAttribute(attrs["aria-invalid"]);
+          });
+
+          // Other Fields
+          fields.forEach((field) => {
+            formValidityObserver.setFieldError(field.name, e);
+
+            expect(field.validationMessage).toBe("");
+            expect(field).toHaveAttribute(attrs["aria-invalid"], String(true));
+            expect(field).not.toHaveAccessibleDescription(typeof e === "function" ? e(field) : e);
+            expect(field).toHaveAccessibleDescription(getTextFromMarkup(typeof e === "function" ? e(field) : e));
+          });
+        });
+
+        /* ---------- Verify That the Manual `render` Option Still Works ---------- */
+        formValidityObserver.setFieldError(fields[0].name, errorMessage, false);
+        expect(fields[0].validationMessage).toBe(errorMessage);
+        expect(fields[0]).toHaveAttribute(attrs["aria-invalid"], String(true));
+        expect(fields[0]).toHaveAccessibleDescription(errorMessage);
+
+        formValidityObserver.setFieldError(fields[1].name, errorFunc, true);
+        expect(fields[1].validationMessage).toBe("");
+        expect(fields[1]).toHaveAttribute(attrs["aria-invalid"], String(true));
+        expect(fields[1]).not.toHaveAccessibleDescription(errorFunc(fields[1]));
+        expect(fields[1]).toHaveAccessibleDescription(getTextFromMarkup(errorFunc(fields[1])));
+      });
+
       // See https://developer.mozilla.org/en-US/docs/Web/API/Element/setHTML
       // eslint-disable-next-line vitest/no-disabled-tests -- TODO: Bring this test back when browser support is better.
       it.skip("SECURELY renders error messages to the DOM as HTML whenever possible (default renderer)", () => {
@@ -1578,7 +1631,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Renders a field's error as HTML when the user-defined validator requires it (default renderer)", async () => {
         // Render Field
-        const error = "<p>Shall I be rendered? Or not?</div>";
+        const error = "<p>Shall I be rendered? Or not?</p>";
         const { form, field } = renderField(createElementWithProps("input", { name: "user-validated" }), {
           accessible: true,
         });
@@ -1661,6 +1714,85 @@ describe("Form Validity Observer (Class)", () => {
         expect(field).toHaveAttribute(attrs["aria-invalid"], String(true));
         expect(field).toHaveAccessibleDescription(deriveError(errorFunc(field)));
         expect(formValidityObserver.setFieldError).toHaveBeenNthCalledWith(2, field.name, errorFunc, true);
+      });
+
+      it("Renders error messages to the DOM by default when the `renderByDefault` config option is `true`", () => {
+        // Render Field
+        const error = "<p>Shall I be rendered? Or not?</p>";
+        const { form, field } = renderField(createElementWithProps("input", { name: "user-validated" }), {
+          accessible: true,
+        });
+
+        // Setup `FormValidityObserver`s
+        const formValidityObserver1 = new FormValidityObserver(types[0], { defaultErrors: { required: error } });
+        formValidityObserver1.observe(form);
+        vi.spyOn(formValidityObserver1, "setFieldError");
+
+        const formValidityObserver2 = new FormValidityObserver(types[0], {
+          renderByDefault: true,
+          defaultErrors: { required: error },
+        });
+        formValidityObserver2.observe(form);
+        vi.spyOn(formValidityObserver2, "setFieldError");
+
+        const validate = vi.fn();
+        formValidityObserver1.configure(field.name, { validate });
+        formValidityObserver2.configure(field.name, { validate });
+
+        /* ---------- Assertions with Custom Validation ---------- */
+        // Test with `render` Option Omitted
+        validate.mockReturnValueOnce({ message: error });
+        expect(formValidityObserver1.validateField(field.name)).toBe(false);
+        expectErrorFor(field, error, "a11y");
+        expect(formValidityObserver1.setFieldError).toHaveBeenNthCalledWith(1, field.name, error, undefined);
+
+        validate.mockReturnValueOnce({ message: error });
+        expect(formValidityObserver2.validateField(field.name)).toBe(false);
+        expectErrorFor(field, expect.not.stringMatching(error), "html");
+        expectErrorFor(field, getTextFromMarkup(error), "html");
+        expect(formValidityObserver2.setFieldError).toHaveBeenNthCalledWith(1, field.name, error, undefined);
+
+        // Test with `render` Option Disabled
+        validate.mockReturnValueOnce({ message: error, render: false });
+        expect(formValidityObserver1.validateField(field.name)).toBe(false);
+        expectErrorFor(field, error, "a11y");
+        expect(formValidityObserver1.setFieldError).toHaveBeenNthCalledWith(2, field.name, error, false);
+
+        validate.mockReturnValueOnce({ message: error, render: false });
+        expect(formValidityObserver2.validateField(field.name)).toBe(false);
+        expectErrorFor(field, error, "a11y");
+        expect(formValidityObserver2.setFieldError).toHaveBeenNthCalledWith(2, field.name, error, false);
+
+        // Test with `render` Option Enabled
+        validate.mockReturnValueOnce({ message: error, render: true });
+        expect(formValidityObserver1.validateField(field.name)).toBe(false);
+        expectErrorFor(field, expect.not.stringMatching(error), "html");
+        expectErrorFor(field, getTextFromMarkup(error), "html");
+        expect(formValidityObserver1.setFieldError).toHaveBeenNthCalledWith(3, field.name, error, true);
+
+        validate.mockReturnValueOnce({ message: error, render: true });
+        expect(formValidityObserver2.validateField(field.name)).toBe(false);
+        expectErrorFor(field, expect.not.stringMatching(error), "html");
+        expectErrorFor(field, getTextFromMarkup(error), "html");
+        expect(formValidityObserver2.setFieldError).toHaveBeenNthCalledWith(3, field.name, error, true);
+
+        /* ---------- Assertions with Regular Errors (also Defaulted) ---------- */
+        // Clear errors
+        validate.mockReturnValueOnce(undefined);
+        expect(formValidityObserver1.validateField(field.name)).toBe(true);
+        expectNoErrorsFor(field);
+
+        // Force a `required` Error to Occur
+        field.required = true;
+
+        expect(formValidityObserver1.validateField(field.name)).toBe(false);
+        expectErrorFor(field, error, "a11y");
+        expect(formValidityObserver1.setFieldError).toHaveBeenNthCalledWith(4, field.name, error);
+
+        expect(formValidityObserver2.validateField(field.name)).toBe(false);
+        expectErrorFor(field, expect.not.stringMatching(error), "html");
+        expectErrorFor(field, getTextFromMarkup(error), "html");
+        expect(formValidityObserver2.setFieldError).toHaveBeenNthCalledWith(4, field.name, error);
       });
 
       it("Rejects non-`string` error messages when the `render` option is not `true`", () => {
@@ -2740,12 +2872,12 @@ describe("Form Validity Observer (Class)", () => {
 
   // Failure Cases
   // @ts-expect-error -- Only `string`s are allowed for unrendered messages
-  new FormValidityObserver(event1, { renderer }).setFieldError(name, staticErrorCusotm);
+  new FormValidityObserver(event1, { renderer }).setFieldError(name, staticCustomError);
   // @ts-expect-error -- Only `string`s are allowed for unrendered messages
   new FormValidityObserver(event1, { renderer }).setFieldError(name, dynamicCustomError);
 
   // @ts-expect-error -- Only `string`s are allowed for unrendered messages
-  new FormValidityObserver(event1, { renderer }).setFieldError(name, staticErrorCusotm, false);
+  new FormValidityObserver(event1, { renderer }).setFieldError(name, staticCustomError, false);
   // @ts-expect-error -- Only `string`s are allowed for unrendered messages
   new FormValidityObserver(event1, { renderer }).setFieldError(name, dynamicCustomError, false);
 
@@ -2758,6 +2890,43 @@ describe("Form Validity Observer (Class)", () => {
   new FormValidityObserver(event1, { renderer }).setFieldError(name, 1, true);
   // @ts-expect-error -- Cannot render message types not supported by `renderer`
   new FormValidityObserver(event1, { renderer }).setFieldError(name, (field) => field.childElementCount, true);
+
+  /* ---------- Custom Renderer with `renderByDefault=true` ---------- */
+  // Success Cases
+  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, staticCustomError);
+  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, dynamicCustomError);
+
+  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, staticErrorString, false);
+  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, dynamicErrorString, false);
+
+  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, staticCustomError, true);
+  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, dynamicCustomError, true);
+
+  // Failure Cases
+  // @ts-expect-error -- Cannot render message types not supported by `renderer`
+  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, staticErrorString);
+  // @ts-expect-error -- Cannot render message types not supported by `renderer`
+  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, dynamicErrorString);
+
+  // @ts-expect-error -- Only `string`s are allowed for unrendered messages
+  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, staticCustomError, false);
+  // @ts-expect-error -- Only `string`s are allowed for unrendered messages
+  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, dynamicCustomError, false);
+
+  // @ts-expect-error -- Cannot render message types not supported by `renderer`
+  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, staticErrorString, true);
+  // @ts-expect-error -- Cannot render message types not supported by `renderer`
+  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, staticErrorString, true);
+
+  // @ts-expect-error -- Cannot render message types not supported by `renderer`
+  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, 1, true);
+
+  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(
+    name,
+    // @ts-expect-error -- Cannot render message types not supported by `renderer`
+    (field) => field.childElementCount,
+    true,
+  );
 
   /* -------------------- Renderer Type Tests --> `configure` -------------------- */
   /* ---------- Default Renderer ---------- */
@@ -2864,6 +3033,60 @@ describe("Form Validity Observer (Class)", () => {
     },
   });
 
+  /* ---------- Custom Renderer with `renderByDefault=true` ---------- */
+  // Success Cases
+  new FormValidityObserver(event1, { renderer, renderByDefault: true }).configure(name, {
+    badinput: staticCustomError,
+    required: dynamicCustomError,
+
+    min: { message: staticCustomError },
+    minlength: { message: dynamicCustomError },
+
+    max: { message: staticErrorString, render: false },
+    maxlength: { message: dynamicErrorString, render: false },
+
+    type: { message: staticCustomError, render: true },
+    pattern: { message: dynamicCustomError, render: true },
+
+    validate(_field) {
+      if (Math.random() < 100 / 3) return dynamicCustomError;
+      if (Math.random() < (100 / 3) * 2) return { message: staticErrorString, render: false };
+      return Promise.resolve({ message: dynamicCustomError, render: true });
+    },
+  });
+
+  // Failure Cases
+  new FormValidityObserver(event1, { renderer, renderByDefault: true }).configure(name, {
+    // @ts-expect-error -- Cannot render message types not supported by `renderer`
+    badinput: staticErrorString,
+    // @ts-expect-error -- Cannot render message types not supported by `renderer`
+    required: dynamicErrorString,
+
+    // @ts-expect-error -- Only `HTMLElement`s are allowed for rendered messages
+    min: { message: staticErrorString },
+    // @ts-expect-error -- Only `HTMLElement`s are allowed for rendered messages
+    minlength: { message: dynamicErrorString },
+
+    // @ts-expect-error -- Only `string`s are allowed for unrendered messages
+    max: { message: staticCustomError, render: false },
+    // @ts-expect-error -- Only `string`s are allowed for unrendered messages
+    maxlength: { message: dynamicCustomError, render: false },
+
+    // @ts-expect-error -- Cannot render message types not supported by `renderer`
+    type: { message: staticErrorString, render: true },
+    // @ts-expect-error -- Cannot render message types not supported by `renderer`
+    pattern: { message: dynamicErrorString, render: true },
+
+    // @ts-expect-error -- Cannot render message types not supported by `renderer`
+    step: { message: 1, render: true },
+
+    // @ts-expect-error -- Cannot render unsupported messages
+    validate(field) {
+      if (Math.random() < 0.5) return (f) => ({ message: f.childElementCount, render: true }); // Bad render type
+      return Promise.resolve(field.childElementCount); // Bad render type
+    },
+  });
+
   /* -------------------- Renderer Type Tests --> `defaultErrors` Option -------------------- */
   // Note: Given the extensive tests for the `configure` method, and given that the `defaultErrors` option
   // uses the same type for the error message configuration, we'll just do some quick happy-path tests here.
@@ -2896,8 +3119,33 @@ describe("Form Validity Observer (Class)", () => {
 
       validate(_field) {
         if (Math.random() < 100 / 3) return staticErrorString;
-        if (Math.random() < (100 / 3) * 2) return { message: staticErrorString, render: false };
-        return Promise.resolve({ message: dynamicCustomError, render: true });
+        if (Math.random() < (100 / 3) * 2) return { message: staticErrorString, render: false as const };
+        return Promise.resolve({ message: dynamicCustomError, render: true as const });
+      },
+    },
+  });
+
+  // Custom Renderer with `renderByDefault=true`
+  new FormValidityObserver(event1, {
+    renderer,
+    renderByDefault: true,
+    defaultErrors: {
+      badinput: staticCustomError,
+      required: dynamicCustomError,
+
+      min: { message: staticCustomError },
+      minlength: { message: dynamicCustomError },
+
+      max: { message: staticErrorString, render: false },
+      maxlength: { message: dynamicErrorString, render: false },
+
+      type: { message: staticCustomError, render: true },
+      pattern: { message: dynamicCustomError, render: true },
+
+      validate(_field) {
+        if (Math.random() < 100 / 3) return staticCustomError;
+        if (Math.random() < (100 / 3) * 2) return { message: staticErrorString, render: false as const };
+        return Promise.resolve({ message: dynamicCustomError, render: true as const });
       },
     },
   });
@@ -2936,6 +3184,20 @@ describe("Form Validity Observer (Class)", () => {
   new FormValidityObserver(event1, { defaultErrors: { required: (_: HTMLInputElement) => "" } });
   new FormValidityObserver(event1, { defaultErrors: { required: (_: ValidatableField) => "" } });
   new FormValidityObserver(event1, { defaultErrors: { required: (_: FormField) => "" } });
+
+  new FormValidityObserver(event1, { defaultErrors: { validate: (_: HTMLTextAreaElement) => "" } });
+  new FormValidityObserver(event1, { defaultErrors: { validate: (_: HTMLInputElement) => "" } });
+  new FormValidityObserver(event1, { defaultErrors: { validate: (_: ValidatableField) => "" } });
+  new FormValidityObserver(event1, { defaultErrors: { validate: (_: FormField) => "" } });
+
+  // Fields must be consistent/compatible, however
+  new FormValidityObserver(event1, {
+    defaultErrors: {
+      required: (_: HTMLInputElement) => "",
+      // @ts-expect-error -- Incompatible with the `HTMLInputElement` specified earlier
+      validate: (_: HTMLSelectElement) => "",
+    },
+  });
 })();
 /* eslint-enable @typescript-eslint/no-empty-function */
 /* eslint-enable no-unreachable */
