@@ -13,7 +13,9 @@ Here you'll find helpful tips on how to use the `FormValidityObserver` effective
 <!--
 TODO: Some `Guides` that could be helpful:
 
-1) MAYBE something on how to work with accessible error messages? (Should we also mention `aria-errormessage` vs. `aria-describedby` too? As well as the lack of support for `aria-errormessage`? Or does that belong somewhere else in the docs?)
+1) Using `renderByDefault` to render errors to stateful objects (instead of rendering to the DOM).
+2) Reconciling error messages sent by the server on the client side.
+3) MAYBE something on how to work with accessible error messages? (Should we also mention `aria-errormessage` vs. `aria-describedby` too? As well as the lack of support for `aria-errormessage`? Or does that belong somewhere else in the docs?)
 -->
 
 ## Enabling Accessible Error Messages during Form Submissions

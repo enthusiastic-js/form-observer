@@ -1,9 +1,5 @@
 # TODO
 
-## Priority
-
-- [ ] Support some kind of `renderByDefault` option
-
 ## Documentation
 
 - [ ] Add more detailed examples of how to use `Zod` with the `defaultErrors.validate` option.
