@@ -124,7 +124,7 @@ describe("Form Validity Observer (Class)", () => {
 
   describe("Overriden Core Methods", () => {
     /* -------------------- Assertion Helpers for Core Methods -------------------- */
-    function expectValidationFunctionsToBeEnabled(observer: FormValidityObserver, enabled = true): void {
+    function expectValidationMethodsToBeEnabled(observer: FormValidityObserver, enabled = true): void {
       const fakeMessage = "This error doesn't matter";
       const fakeFieldName = "field-not-in-form";
 
@@ -160,16 +160,16 @@ describe("Form Validity Observer (Class)", () => {
         expect(formValidityObserver.observe).not.toBe(FormObserver.prototype.observe);
       });
 
-      it("Connects the provided `form` to the observer's validation functions", () => {
+      it("Connects the provided `form` to the observer's validation methods", () => {
         const form = document.createElement("form");
         const formValidityObserver = new FormValidityObserver(types);
 
-        // The observer's validation functions first fail because no form is connected to them.
-        expectValidationFunctionsToBeEnabled(formValidityObserver, false);
+        // The observer's validation methods first fail because no form is connected to them.
+        expectValidationMethodsToBeEnabled(formValidityObserver, false);
 
-        // The observer's validation functions work after a form is connected.
+        // The observer's validation methods work after a form is connected.
         formValidityObserver.observe(form);
-        expectValidationFunctionsToBeEnabled(formValidityObserver);
+        expectValidationMethodsToBeEnabled(formValidityObserver);
       });
 
       it("Only allows 1 `form` to be observed at a time", () => {
@@ -214,19 +214,19 @@ describe("Form Validity Observer (Class)", () => {
         expect(formValidityObserver.unobserve).not.toBe(FormObserver.prototype.unobserve);
       });
 
-      it("Disconnects the provided `form` from the observer's validation functions IF it was being observed", () => {
+      it("Disconnects the provided `form` from the observer's validation methods IF it was being observed", () => {
         const form = document.createElement("form");
         const formValidityObserver = new FormValidityObserver(types);
 
         formValidityObserver.observe(form);
         formValidityObserver.unobserve(document.createElement("form"));
 
-        // The observer's validation functions still work because the connected `form` was not unobserved
-        expectValidationFunctionsToBeEnabled(formValidityObserver);
+        // The observer's validation methods still work because the connected `form` was not unobserved
+        expectValidationMethodsToBeEnabled(formValidityObserver);
 
-        // The observer's validation functions stop working because the connected `form` was unobserved
+        // The observer's validation methods stop working because the connected `form` was unobserved
         formValidityObserver.unobserve(form);
-        expectValidationFunctionsToBeEnabled(formValidityObserver, false);
+        expectValidationMethodsToBeEnabled(formValidityObserver, false);
       });
 
       it("Resets the error messages for the provided `form`'s fields IF it was being observed", async () => {

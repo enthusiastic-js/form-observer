@@ -154,7 +154,7 @@ class FormValidityObserver extends FormObserver {
 
   /**
    * Instructs the observer to watch the validity state of the provided `form`'s fields.
-   * Also connects the `form` to the observer's validation functions.
+   * Also connects the `form` to the observer's validation methods.
    *
    * (_Automated_ field validation will only occur when a field emits an event having a type
    * that was specified during the observer's instantiation.)
@@ -177,7 +177,7 @@ class FormValidityObserver extends FormObserver {
 
   /**
    * Stops the observer from watching the validity state of the provided `form`'s fields.
-   * Also disconnects the `form` from the observer's validation functions.
+   * Also disconnects the `form` from the observer's validation methods.
    *
    * @param {HTMLFormElement} form
    * @returns {boolean} `true` if the `form` was originally being observed, and `false` otherwise.

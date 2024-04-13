@@ -6,9 +6,9 @@ A _convenience_ API for reducing code repetition in a [Solid](https://www.solidj
 
 Creates an enhanced version of the `FormValidityObserver`, known as the `SolidFormValidityObserver`. It accepts the exact same arguments as the [`FormValidityObserver`'s constructor](../README.md#constructor-formvalidityobservertypes-options).
 
-### Return Type: `SolidFormValidityObserver<M>`
+### Return Type: `SolidFormValidityObserver<M, R>`
 
-An enhanced version of the `FormValidityObserver`, designed specifically for Solid applications. It has the same Type Parameters as the `FormValidityObserver`. As with the `FormValidityObserver`, the type of `M` is derived from the [`renderer`](../README.md#form-validity-observer-options-renderer) option.
+An enhanced version of the `FormValidityObserver`, designed specifically for Solid applications. It has the same Type Parameters as the `FormValidityObserver`. As with the `FormValidityObserver`, the type of `M` is derived from the [`renderer`](../README.md#form-validity-observer-options-renderer) option, and the type of `R` is derived from the [`renderByDefault`](../README.md#form-validity-observer-options-render-by-default) option.
 
 #### Copied Methods
 
@@ -45,13 +45,13 @@ function MyForm() {
 
 Remember that `autoObserve` is simply a convenience utility for calling `observe` and `unobserve` automatically. You're free to setup and teardown the `FormValidityObserver` manually if you prefer.
 
-#### Function: `configure<E>(name: string, errorMessages: SolidValidationErrors<M, E>): SolidFieldProps`
+#### Function: `configure<E>(name: string, errorMessages: SolidValidationErrors<M, E, R>): SolidFieldProps`
 
-An enhanced version of [`FormValidityObserver.configure`](../README.md#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-void) for `Solid`. In addition to configuring a field's error messages, it generates the props that should be applied to the field based on the provided arguments.
+An enhanced version of [`FormValidityObserver.configure`](../README.md#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-r-void) for `Solid`. In addition to configuring a field's error messages, it generates the props that should be applied to the field based on the provided arguments.
 
 > Note: If the field is _only_ using the configured [`defaultErrors`](../README.md#form-validity-observer-options-default-errors) and/or the browser's default error messages, it _does not_ need to be `configure`d.
 
-The `SolidValidationErrors<M, E>` type is an enhanced version of the core [`ValidationErrors<M, E>`](../types.md#validationerrorsm-e) type. Here is how `SolidValidationErrors` compares to `ValidationErrors`.
+The `SolidValidationErrors<M, E, R>` type is an enhanced version of the core [`ValidationErrors<M, E, R>`](../types.md#validationerrorsm-e-r) type. Here is how `SolidValidationErrors` compares to `ValidationErrors`.
 
 ##### Properties That Mimic the `ValidationErrors` Properties
 
@@ -107,7 +107,7 @@ All the other properties on the `SolidValidationErrors` type are enhancements of
 
 The rules are as follows:
 
-1&rpar; When a constraint is configured with an [`ErrorDetails`](../types.md#errordetailsm-e) object, the object must include a `value` property specifying the value of the constraint. In this scenario, both the field's constraint value _and_ its error message are configured.
+1&rpar; When a constraint is configured with an [`ErrorDetails`](../types.md#errordetailsm-e-r) object, the object must include a `value` property specifying the value of the constraint. In this scenario, both the field's constraint value _and_ its error message are configured.
 
 ```tsx
 import { createFormValidityObserver } from "@form-observer/solid";

@@ -111,7 +111,7 @@ interface FormValidityObserverConstructor {
 interface FormValidityObserver<M = string, R extends boolean = false> {
   /**
    * Instructs the observer to watch the validity state of the provided `form`'s fields.
-   * Also connects the `form` to the observer's validation functions.
+   * Also connects the `form` to the observer's validation methods.
    *
    * (_Automated_ field validation will only occur when a field emits an event having a type
    * that was specified during the observer's instantiation.)
@@ -124,7 +124,7 @@ interface FormValidityObserver<M = string, R extends boolean = false> {
 
   /**
    * Stops the observer from watching the validity state of the provided `form`'s fields.
-   * Also disconnects the `form` from the observer's validation functions.
+   * Also disconnects the `form` from the observer's validation methods.
    *
    * @param form
    * @returns `true` if the `form` was originally being observed, and `false` otherwise.

@@ -14,13 +14,13 @@ interface ValidatableField
 }
 ```
 
-Any `HTMLElement` that can participate in form field validation. This includes all of the native form fields, such as [`HTMLInputElement`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement), [`HTMLSelectElement`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLSelectElement), and [`HTMLTextArea`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement) element. It also includes any Web Components that [function as form fields](./guides.md#usage-with-web-components).
+Any `HTMLElement` that can participate in form field validation. This includes all of the native form fields, such as [`HTMLInputElement`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement), [`HTMLSelectElement`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLSelectElement), and [`HTMLTextAreaElement`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLTextAreaElement) element. It also includes any Web Components that [function as form fields](./guides.md#usage-with-web-components).
 
 ### Primary Uses
 
 - The [`scoller`](../form-validity-observer/README.md#form-validity-observer-options-scroller) option for the `FormValidityObserver`
 - The [`ErrorMessage`](#errormessagem-e) type used by the `FormValidityObserver`
-- The `validate` property of the [`ValidationErrors`](#validationerrorsm-e) type
+- The `validate` property of the [`ValidationErrors`](#validationerrorsm-e-r) type
 
 ## `ErrorMessage<M, E>`
 
@@ -47,7 +47,7 @@ An error message is not restricted to being of type `string`. For example, it ca
 ```ts
 type StringOrElement = { type: "DOMString"; value: string } | { type: "DOMElement"; value: HTMLElement };
 
-const message = { type: "DOMString", value: "<div>This field is bad</p>" } satisfies ErrorMessage<StringOrElement>;
+const message = { type: "DOMString", value: "<div>This field is bad</div>" } satisfies ErrorMessage<StringOrElement>;
 
 const messageFunction = ((field: HTMLSelectElement) => {
   const container = document.createElement("p");
@@ -78,25 +78,25 @@ Note that each instance of the `FormValidityObserver` determines its `M` type fr
 ### Primary Uses
 
 - [`FormValidityObserver.setFieldError`](./README.md#method-formvalidityobserversetfielderrorename-string-message-errormessagestring-eerrormessagem-e-render-boolean-void)
-- The [`ErrorDetails<M>`](#errordetailsm-e) type
+- The [`ErrorDetails<M, E, R>`](#errordetailsm-e-r) type
 
-## `ValidationErrors<M, E>`
+## `ValidationErrors<M, E, R>`
 
 ```ts
-interface ValidationErrors<M, E extends ValidatableField = ValidatableField> {
+interface ValidationErrors<M, E extends ValidatableField = ValidatableField, R extends boolean = false> {
   // Standard HTML Attributes
-  required?: ErrorDetails<M, E>;
-  minlength?: ErrorDetails<M, E>;
-  min?: ErrorDetails<M, E>;
-  maxlength?: ErrorDetails<M, E>;
-  max?: ErrorDetails<M, E>;
-  step?: ErrorDetails<M, E>;
-  type?: ErrorDetails<M, E>;
-  pattern?: ErrorDetails<M, E>;
+  required?: ErrorDetails<M, E, R>;
+  minlength?: ErrorDetails<M, E, R>;
+  min?: ErrorDetails<M, E, R>;
+  maxlength?: ErrorDetails<M, E, R>;
+  max?: ErrorDetails<M, E, R>;
+  step?: ErrorDetails<M, E, R>;
+  type?: ErrorDetails<M, E, R>;
+  pattern?: ErrorDetails<M, E, R>;
 
   // Custom Validation Properties
-  badinput?: ErrorDetails<M, E>;
-  validate?(field: E): void | ErrorDetails<M, E> | Promise<void | ErrorDetails<M, E>>;
+  badinput?: ErrorDetails<M, E, R>;
+  validate?(field: E): void | ErrorDetails<M, E, R> | Promise<void | ErrorDetails<M, E, R>>;
 }
 ```
 
@@ -120,22 +120,31 @@ Remember that each instance of the `FormValidityObserver` determines its `M` typ
 
 ### Primary Uses
 
-- [`FormValidityObserver.configure`](./README.md#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-void)
+- [`FormValidityObserver.configure`](./README.md#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-r-void)
 - [`FormValidityObserverOptions.defaultErrors`](./README.md#form-validity-observer-options-default-errors)
 
-## `ErrorDetails<M, E>`
+## `ErrorDetails<M, E, R>`
 
 ```ts
-type ErrorDetails<M, E extends ValidatableField = ValidatableField> =
-  | ErrorMessage<string, E>
-  | { render: true; message: ErrorMessage<M, E> }
-  | { render?: false; message: ErrorMessage<string, E> };
+type ErrorDetails<M, E extends ValidatableField = ValidatableField, R extends boolean = false> = R extends true
+  ?
+      | ErrorMessage<M, E>
+      | { render?: true; message: ErrorMessage<M, E> }
+      | { render: false; message: ErrorMessage<string, E> }
+  :
+      | ErrorMessage<string, E>
+      | { render: true; message: ErrorMessage<M, E> }
+      | { render?: false; message: ErrorMessage<string, E> };
 ```
 
-A helper type that indicates how a field's [`ErrorMessage`](#errormessagem-e) will be rendered to the DOM. This type is only relevant for the [`FormValidityObserver.configure`](./README.md#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-void) method, which sets up the error messages that will be displayed for a form field.
+A helper type that indicates how a field's [`ErrorMessage`](#errormessagem-e) will be rendered. This type is primarily related to the [`FormValidityObserver.configure`](./README.md#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-r-void) method, which sets up the error messages that will be displayed for a form field.
 
-When `ErrorDetails` is an object whose `render` property is `true`, the the error `message` will be rendered to the DOM using the observer's [`renderer`](./README.md#form-validity-observer-options-renderer) function. Otherwise, the error message will be rendered to the DOM as a raw string.
+When `ErrorDetails` is an object whose `render` property is `true`, the error `message` will be rendered (typically to the DOM) using the observer's [`renderer`](./README.md#form-validity-observer-options-renderer) function. When the `render` property is `false`, the error message will be rendered to the DOM as a raw string (e.g., `element.textContent = ErrorDetails.message`).
+
+The generic `R` type is a `boolean` value that stands for "Render By Default". It determines how an error message will be rendered when the `render` property is omitted from the `ErrorDetails` object (or when `ErrorDetails` is just an `ErrorMessage` instead of an object). For example, if `R` is `true`, then by default, all error messages will be rendered using the observer's `renderer` function. (The way to opt out of this would be to explicitly pass `render: false` to the `ErrorDetails` object.)
+
+The generic `R` type is set by the [`renderByDefault`](./README.md#form-validity-observer-options-render-by-default) option passed to the `FormValidityObserver`'s constructor.
 
 ### Primary Uses
 
-- [`FormValidityObserver.configure`](./README.md#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-void) via the [`ValidationErrors`](#validationerrorsm-e) type.
+- [`FormValidityObserver.configure`](./README.md#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-r-void) via the [`ValidationErrors`](#validationerrorsm-e-r) type.

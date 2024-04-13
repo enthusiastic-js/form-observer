@@ -107,19 +107,30 @@ The `FormValidityObserver()` constructor creates a new observer and configures i
       <dt id="form-validity-observer-options-renderer"><code>renderer: (errorContainer: HTMLElement, errorMessage: M | null) => void</code></dt>
       <dd>
         <p>
-          The function used to render error messages to the DOM when a validation constraint's <code>render</code> option is <code>true</code> or when <a href="#method-formvalidityobserversetfielderrorename-string-message-errormessagestring-eerrormessagem-e-render-boolean-void"><code>FormValidityObserver.setFieldError()</code></a> is called with the <code>render=true</code> option. (See the <a href="./types.md#validationerrorsm-e"><code>ValidationErrors</code></a> type for more details about validation constraints.) When a field becomes valid (or when <a href="#method-formvalidityobserverclearfielderrorname-string-void"><code>FormValidityObserver.clearFieldError()</code></a> is called), this function will be called with <code>null</code> if the field has an <a href="https://www.w3.org/WAI/WCAG21/Techniques/aria/ARIA21#example-2-identifying-errors-in-data-format">accessible error container</a>.
+          The function used to render error messages (typically to the DOM) when a validation constraint's <code>render</code> option is <code>true</code> or when <a href="#method-formvalidityobserversetfielderrorename-string-message-errormessagestring-eerrormessagem-e-render-boolean-void"><code>FormValidityObserver.setFieldError()</code></a> is called with the <code>render=true</code> option. (See the <a href="./types.md#validationerrorsm-e-r"><code>ValidationErrors</code></a> type for more details about validation constraints.) When a field becomes valid (or when <a href="#method-formvalidityobserverclearfielderrorname-string-void"><code>FormValidityObserver.clearFieldError()</code></a> is called), this function will be called with <code>null</code>. Note that this function will only be called if the field has an <a href="https://www.w3.org/WAI/WCAG21/Techniques/aria/ARIA21#example-2-identifying-errors-in-data-format">accessible error container</a>.
         </p>
         <p>
-          The message type, <code>M</code> is determined from your function definition. The type can be anything (e.g., a <code>string</code>, an <code>object</code>, a <code>ReactElement</code>, or anything else).
+          The Message Type, <code>M</code>, is determined from your function definition. The type can be anything (e.g., a <code>string</code>, an <code>object</code>, a <code>ReactElement</code>, or anything else).
         </p>
         <p>
           The <code>renderer</code> defaults to a function that accepts error messages of type <code>string</code> and renders them to the DOM as raw HTML.
         </p>
       </dd>
-      <dt id="form-validity-observer-options-default-errors"><code>defaultErrors: ValidationErrors&lt;M, E&gt;</code></dt>
+      <dt id="form-validity-observer-options-render-by-default"><code>renderByDefault: R extends boolean</code></dt>
       <dd>
         <p>
-          Configures the default error messages to display for the validation constraints. (See the <a href="#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-void"><code>configure</code></a> method for more details about error message configuration, and refer to the <a href="./types.md#validationerrorsm-e"><code>ValidationErrors</code></a> type for more details about validation constraints.)
+          Determines the default value for every validation constraint's <code>render</code> option. (Also sets the default value for <a href="#method-formvalidityobserversetfielderrorename-string-message-errormessagestring-eerrormessagem-e-render-boolean-void"><code>FormValidityObserver.setFieldError</code></a>'s <code>render</code> option.)
+        </p>
+        <p>
+          <blockquote>
+            <strong>Note: When <code>renderByDefault</code> is <code>true</code>, the <code>renderer</code> function <em>must</em> account for error messages of type <code>string</code>.</strong> (The default <code>renderer</code> function already accounts for this.) So, for example, if you wanted your <code>renderer</code> function to support <code>ReactElement</code>s, and the <code>renderByDefault</code> option was <code>true</code>, then your <code>renderer</code>'s Message Type, <code>M</code>, would need to be <code>ReactElement | string</code>.
+          </blockquote>
+        </p>
+      </dd>
+      <dt id="form-validity-observer-options-default-errors"><code>defaultErrors: ValidationErrors&lt;M, E, R&gt;</code></dt>
+      <dd>
+        <p>
+          Configures the default error messages to display for the validation constraints. (See the <a href="#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-r-void"><code>configure</code></a> method for more details about error message configuration, and refer to the <a href="./types.md#validationerrorsm-e-r"><code>ValidationErrors</code></a> type for more details about validation constraints.)
         </p>
         <p>
           <blockquote>
@@ -158,7 +169,7 @@ const observer = new FormValidityObserver("focusout", {
 
 ### Method: `FormValidityObserver.observe(form: HTMLFormElement): boolean`
 
-Instructs the observer to validate any fields (belonging to the provided form) that a user interacts with, and registers the observer's validation functions with the provided form. Automatic field validation will only occur when a field belonging to the form emits an event matching one of the `types` that were specified during the observer's construction. Unlike the `FormObserver` and the `FormStorageObserver`, _the `FormValidityObserver` may only observe 1 form at a time_.
+Instructs the observer to validate any fields (belonging to the provided form) that a user interacts with, and registers the observer's validation methods with the provided form. Automatic field validation will only occur when a field belonging to the form emits an event matching one of the `types` that were specified during the observer's construction. Unlike the `FormObserver` and the `FormStorageObserver`, _the `FormValidityObserver` may only observe 1 form at a time_.
 
 Note that the `name` attribute is what the observer uses to [identify fields](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormControlsCollection/namedItem) during manual form validation and error handling. Therefore, a valid `name` is required for all validated fields. **If a field does not have a `name`, then it _will not_ participate in form validation.** Since the [web specification](https://www.w3.org/TR/html401/interact/forms.html#successful-controls) does not allow nameless fields to participate in form submission, this is likely a requirement that your application already satisfies.
 
@@ -178,7 +189,7 @@ form.elements[0].dispatchEvent(new InputEvent("input")); // Field gets validated
 
 ### Method: `FormValidityObserver.unobserve(form: HTMLFormElement): boolean`
 
-Instructs the observer to stop watching a form for user interactions. The form's fields will no longer be validated when a user interacts with them, and the observer's manual validation functions will be disabled.
+Instructs the observer to stop watching a form for user interactions. The form's fields will no longer be validated when a user interacts with them, and the observer's manual validation methods will be disabled.
 
 If the provided form element was being watched before `unobserve()` was called, the method will run any necessary teardown logic and return `true`. Otherwise, the method does nothing and returns `false`.
 
@@ -213,7 +224,7 @@ observer.unobserve(form); // Returns `false` because the form was already `unobs
 form1.elements[0].dispatchEvent(new FocusEvent("focusout")); // Does nothing
 ```
 
-### Method: `FormValidityObserver.configure<E>(name: string, errorMessages: `[`ValidationErrors<M, E>`](./types.md#validationerrorsm-e)`): void`
+### Method: `FormValidityObserver.configure<E>(name: string, errorMessages: `[`ValidationErrors<M, E, R>`](./types.md#validationerrorsm-e-r)`): void`
 
 Configures the error messages that will be displayed for a form field's validation constraints. If an error message is not configured for a validation constraint and there is no corresponding [default configuration](#form-validity-observer-options-default-errors), then the field's [`validationMessage`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLObjectElement/validationMessage) will be used instead. For [native form fields](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/elements), the browser automatically supplies a default `validationMessage` depending on the broken constraint.
 
@@ -265,7 +276,7 @@ creditCardField.dispatchEvent(new FocusEvent("focusout"));
 
 ### Method: `FormValidityObserver.validateFields(options?: ValidateFieldsOptions): boolean | Promise<boolean>`
 
-Validates all of the observed form's fields, returning `true` if _all_ of the validated fields pass validation and `false` otherwise. The `boolean` that `validateFields()` returns will be wrapped in a [`Promise`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) if _any_ of the validated fields use an asynchronous function for the [`validate` constraint](./types.md#validationerrorsm-e). This promise will `resolve` after all asynchronous validation functions have `settled`.
+Validates all of the observed form's fields, returning `true` if _all_ of the validated fields pass validation and `false` otherwise. The `boolean` that `validateFields()` returns will be wrapped in a [`Promise`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) if _any_ of the validated fields use an asynchronous function for the [`validate` constraint](./types.md#validationerrorsm-e-r). This promise will `resolve` after all asynchronous validation functions have `settled`.
 
 #### Parameters
 
@@ -282,7 +293,7 @@ When the `focus` option is `false`, you can consider `validateFields()` to be an
 
 ### Method: `FormValidityObserver.validateField(name: string, options?: ValidateFieldOptions): boolean | Promise<boolean>`
 
-Validates the form field with the specified `name`, returning `true` if the field passes validation and `false` otherwise. The `boolean` that `validateField()` returns will be wrapped in a [`Promise`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) if the field's [`validate` constraint](./types.md#validationerrorsm-e) runs asynchronously. This promise will `resolve` after the asynchronous validation function `resolves`. Unlike the [`validateFields()`](#method-formvalidityobservervalidatefieldsoptions-validatefieldsoptions-boolean--promiseboolean) method, this promise will also `reject` if the asynchronous validation function `rejects`.
+Validates the form field with the specified `name`, returning `true` if the field passes validation and `false` otherwise. The `boolean` that `validateField()` returns will be wrapped in a [`Promise`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) if the field's [`validate` constraint](./types.md#validationerrorsm-e-r) runs asynchronously. This promise will `resolve` after the asynchronous validation function `resolves`. Unlike the [`validateFields()`](#method-formvalidityobservervalidatefieldsoptions-validatefieldsoptions-boolean--promiseboolean) method, this promise will also `reject` if the asynchronous validation function `rejects`.
 
 > Note: Per the HTML spec, any field whose [`willValidate`](https://developer.mozilla.org/en-US/docs/Web/API/ElementInternals/willValidate) property is `false` will automatically pass validation.
 
@@ -326,10 +337,10 @@ The Field Element Type, `E`, represents the invalid form field. This type is inf
   <dt><code>render</code> (Optional)</dt>
   <dd>
     <p>
-      Indicates that the field's error message should be rendered to the DOM using the observer's <a href="#form-validity-observer-options-renderer"><code>renderer</code> function</a>. Defaults to <code>false</code>.
+      Indicates that the field's error message should be rendered using the observer's <a href="#form-validity-observer-options-renderer"><code>renderer</code> function</a>. Defaults to the value of the observer's <a href="#form-validity-observer-options-render-by-default"><code>renderByDefault</code></a> configuration option.
     </p>
     <p>
-      When the <code>render</code> argument is <code>false</code> (or omitted), then the error message <em>must</em> be of type <code>string</code>. When <code>render</code> is <code>true</code>, then the error message <em>must</em> be of type <code>M</code>, where <code>M</code> is determined from the observer's <code>renderer</code> function.
+      When the <code>render</code> argument is <code>false</code>, then the error message <em>must</em> be of type <code>string</code>. When <code>render</code> is <code>true</code>, then the error message <em>must</em> be of type <code>M</code>, where <code>M</code> is determined from the observer's <code>renderer</code> function.
     </p>
   </dd>
 </dl>
@@ -337,7 +348,8 @@ The Field Element Type, `E`, represents the invalid form field. This type is inf
 **Example**
 
 ```js
-const observer = new FormValidityObserver("change"); // By default, the `renderer` renders strings as raw HTML
+// By default, the `renderer` renders strings as raw HTML, and the `renderByDefault` option is `false`
+const observer = new FormValidityObserver("change");
 const form = document.getElementById("my-form");
 observer.observe(form);
 
@@ -376,7 +388,7 @@ The idea here is to make form validation as quick and easy as possible for those
 <details>
   <summary>Justification</summary>
 
-If your forms are [progressively enhanced](https://learn.svelte.dev/tutorial/progressive-enhancement), you will already be satisfying this requirement. Leveraging the `name` attribute enables users who lack access to JavaScript to use your forms. Moreover, the `name` attribute enables many well-known form-related tools to identify fields without causing friction with developers. Given these realities, this restriction seems reasonable to us.
+If your forms are [progressively enhanced](https://learn.svelte.dev/tutorial/progressive-enhancement), you will already be satisfying this requirement. Leveraging the `name` attribute enables users who lack access to JavaScript to use your forms. Moreover, the `name` attribute enables many well-known form-related tools to identify fields without causing friction for developers. Given these realities, this restriction seems reasonable to us.
 
 </details>
 
@@ -404,7 +416,7 @@ If your forms provide [accessible radio button groups](https://www.w3.org/WAI/tu
 
 ## What about `aria-errormessage`?
 
-If you're familiar with the [`aria-errormessage`](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-errormessage) attribute, then you'll know that it is technically "better" than the [`aria-describedby`](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-describedby) attribute when it comes to conveying error messages for invalid form fields. Although it is technically superior, the `aria-errormessage` attribute is also [far less supported](https://a11ysupport.io/tech/aria/aria-errormessage_attribute) by assistive technologies (as of 2023-10-27). Because the `aria-describedby` attribute is [accepted by the WAI](https://www.w3.org/WAI/WCAG21/Techniques/aria/ARIA21#example-2-identifying-errors-in-data-format) as a valid means to convey error messages for fields, and because the attribute is more widely supported by assistive technologies, the `FormValidityObserver` uses this attribute for conveying error messages instead.
+If you're familiar with the [`aria-errormessage`](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-errormessage) attribute, then you'll know that it is technically "better" than the [`aria-describedby`](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-describedby) attribute when it comes to conveying error messages for invalid form fields. Although it is technically superior, the `aria-errormessage` attribute is also [far less supported](https://a11ysupport.io/tech/aria/aria-errormessage_attribute) by assistive technologies (as of 2024-04-13). Because the `aria-describedby` attribute is [accepted by the WAI](https://www.w3.org/WAI/WCAG21/Techniques/aria/ARIA21#example-2-identifying-errors-in-data-format) as a valid means to convey error messages for fields, and because the attribute is more widely supported by assistive technologies, the `FormValidityObserver` uses this attribute for conveying error messages instead.
 
 In the future, when `aria-errormessage` has better support, the `FormValidityObserver` will be updated to support it. Until then, the attribute will not be supported.
 

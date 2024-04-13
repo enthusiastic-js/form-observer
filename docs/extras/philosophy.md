@@ -318,7 +318,7 @@ The next natural step is to provide a way to validate an _entire form_. For that
 
 If the developer opts out of accessible error messaging, the `setFieldError` and `clearFieldError` methods will fallback to `field.setCustomValidity()`, and `validateField({ focus: true })`/`validateFields({ focus: true })` will fallback to `field.reportValidity()`/`form.reportValidity()`.
 
-As an added bonus, the `FormValidityObserver` exposes a [`configure`](../form-validity-observer/README.md#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-void) method that enables developers to configure the error messages that should be displayed when a field fails validation. (Any unconfigured error messages will fallback to the `validationMessage` that the browser provides.) It also allows a custom validation function to be configured for the field.
+As an added bonus, the `FormValidityObserver` exposes a [`configure`](../form-validity-observer/README.md#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-r-void) method that enables developers to configure the error messages that should be displayed when a field fails validation. (Any unconfigured error messages will fallback to the `validationMessage` that the browser provides.) It also allows a custom validation function to be configured for the field.
 
 Seeing the big picture here? The `FormValidityObserver` is basically a wrapper for the browser's native features when accessible error messages aren't being used. When accessible error messages are needed, it functions as an _enhancement_ (not a replacement) of the browser's features to satisfy that need. As a bonus, it includes configurable scrolling/rendering functionality as well.
 

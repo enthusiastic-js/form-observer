@@ -135,12 +135,14 @@ function createFormValidityObserver<
   T extends OneOrMany<EventType>,
   M = string,
   E extends ValidatableField = ValidatableField,
->(types: T, options?: FormValidityObserverOptions<M, E>): SvelteFormValidityObserver<M> {
-  const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M>;
+  R extends boolean = false,
+>(types: T, options?: FormValidityObserverOptions<M, E, R>): SvelteFormValidityObserver<M, R> {
+  const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M, R>;
   return observer;
 }
 
-interface SvelteFormValidityObserver<M = string> extends Omit<FormValidityObserver<M>, "configure"> {}
+interface SvelteFormValidityObserver<M = string, R extends boolean = false>
+  extends Omit<FormValidityObserver<M, R>, "configure"> {}
 ```
 
 Note: Since we will be augmenting the `FormValidityObserver.configure()` method, we are _not_ copying its type definition to the `SvelteFormValidityObserver` interface.
@@ -162,8 +164,9 @@ function createFormValidityObserver<
   T extends OneOrMany<EventType>,
   M = string,
   E extends ValidatableField = ValidatableField,
->(types: T, options?: FormValidityObserverOptions<M, E>): SvelteFormValidityObserver<M> {
-  const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M>;
+  R extends boolean = false,
+>(types: T, options?: FormValidityObserverOptions<M, E, R>): SvelteFormValidityObserver<M, R> {
+  const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M, R>;
 
   /* ---------- Bindings ---------- */
   // Form Observer Methods
@@ -180,7 +183,8 @@ function createFormValidityObserver<
   return observer;
 }
 
-interface SvelteFormValidityObserver<M = string> extends Omit<FormValidityObserver<M>, "configure"> {}
+interface SvelteFormValidityObserver<M = string, R extends boolean = false>
+  extends Omit<FormValidityObserver<M, R>, "configure"> {}
 ```
 
 Note: Because we will be enhancing the `configure` method, we _have not_ attached it to the `observer` object that we return.
@@ -203,8 +207,9 @@ function createFormValidityObserver<
   T extends OneOrMany<EventType>,
   M = string,
   E extends ValidatableField = ValidatableField,
->(types: T, options?: FormValidityObserverOptions<M, E>): SvelteFormValidityObserver<M> {
-  const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M>;
+  R extends boolean = false,
+>(types: T, options?: FormValidityObserverOptions<M, E, R>): SvelteFormValidityObserver<M, R> {
+  const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M, R>;
 
   /* ---------- Bindings ---------- */
   // Apply all bindings...
@@ -224,7 +229,8 @@ function createFormValidityObserver<
   return observer;
 }
 
-interface SvelteFormValidityObserver<M = string> extends Omit<FormValidityObserver<M>, "configure"> {
+interface SvelteFormValidityObserver<M = string, R extends boolean = false>
+  extends Omit<FormValidityObserver<M, R>, "configure"> {
   autoObserve(form: HTMLFormElement, novalidate?: boolean): ActionReturn;
 }
 ```
@@ -284,7 +290,7 @@ The benefit of this approach, as we mentioned earlier, is that our configuration
 <input {...configure("email", { type: { value: "email", message: "Invalid Email" }, required: true })} />
 ```
 
-Of course, as with the core `FormValidityObserver`, calls to `configure` can be skipped if the developer is _only_ using the browser's default error messages:
+Of course, as with the core `FormValidityObserver`, calls to `configure` can be skipped if the developer is _only_ using the using the configured [`defaultErrors`](../README.md#form-validity-observer-options-default-errors) and/or the browser's default error messages:
 
 ```html
 <input name="email" type="email" required />
@@ -292,7 +298,7 @@ Of course, as with the core `FormValidityObserver`, calls to `configure` can be 
 
 Note: Our `configure` method should _not_ support adding an error `message` for a constraint without the constraint's `value`. This is because the error message would never get used in that scenario.
 
-Now that we've specified all the requirements, let's implement this functionality. First off, we'll update the `SvelteFormValidityObserver` interface. Some new TypeScript types will have to be added here. If you're only using JavaScript, you can skip this part. :&rpar;
+Now that we've specified all of the requirements, let's implement this functionality. First off, we'll update the `SvelteFormValidityObserver` interface. Some new TypeScript types will have to be added here. If you're only using JavaScript, you can skip this part. :&rpar;
 
 #### Adding the TypeScript Types for `configure`
 
@@ -311,9 +317,10 @@ import type { HTMLInputAttributes } from "svelte/elements";
 
 // Definition of `createFormValidityObserver` ...
 
-interface SvelteFormValidityObserver<M = string> extends Omit<FormValidityObserver<M>, "configure"> {
+interface SvelteFormValidityObserver<M = string, R extends boolean = false>
+  extends Omit<FormValidityObserver<M, R>, "configure"> {
   // Augments `FormValidityObserver.configure()`
-  configure<E extends ValidatableField>(name: string, errorMessages: SvelteValidationErrors<M, E>): SvelteFieldProps;
+  configure<E extends ValidatableField>(name: string, errorMessages: SvelteValidationErrors<M, E, R>): SvelteFieldProps;
   autoObserve(form: HTMLFormElement, novalidate?: boolean): ActionReturn;
 }
 
@@ -324,23 +331,30 @@ type SvelteFieldProps = Pick<
 >;
 
 // Augments `ValidationErrors` type
-export interface SvelteValidationErrors<M, E extends ValidatableField = ValidatableField>
-  extends Pick<ValidationErrors<M, E>, "badinput" | "validate"> {
-  required?: SvelteErrorDetails<M, HTMLInputAttributes["required"], E> | ErrorMessage<string, E>;
-  minlength?: SvelteErrorDetails<M, HTMLInputAttributes["minlength"], E>;
-  min?: SvelteErrorDetails<M, HTMLInputAttributes["min"], E>;
-  maxlength?: SvelteErrorDetails<M, HTMLInputAttributes["maxlength"], E>;
-  max?: SvelteErrorDetails<M, HTMLInputAttributes["max"], E>;
-  step?: SvelteErrorDetails<M, HTMLInputAttributes["step"], E>;
-  type?: SvelteErrorDetails<M, HTMLInputAttributes["type"], E>;
-  pattern?: SvelteErrorDetails<M, HTMLInputAttributes["pattern"], E>;
+export interface SvelteValidationErrors<M, E extends ValidatableField = ValidatableField, R extends boolean = false>
+  extends Pick<ValidationErrors<M, E, R>, "badinput" | "validate"> {
+  required?:
+    | SvelteErrorDetails<M, HTMLInputAttributes["required"], E, R>
+    | ErrorMessage<R extends true ? M : string, E>;
+  minlength?: SvelteErrorDetails<M, HTMLInputAttributes["minlength"], E, R>;
+  min?: SvelteErrorDetails<M, HTMLInputAttributes["min"], E, R>;
+  maxlength?: SvelteErrorDetails<M, HTMLInputAttributes["maxlength"], E, R>;
+  max?: SvelteErrorDetails<M, HTMLInputAttributes["max"], E, R>;
+  step?: SvelteErrorDetails<M, HTMLInputAttributes["step"], E, R>;
+  type?: SvelteErrorDetails<M, HTMLInputAttributes["type"], E, R>;
+  pattern?: SvelteErrorDetails<M, HTMLInputAttributes["pattern"], E, R>;
 }
 
 // Augments `ErrorDetails` type
-type SvelteErrorDetails<M, V, E extends ValidatableField = ValidatableField> =
+type SvelteErrorDetails<M, V, E extends ValidatableField = ValidatableField, R extends boolean = false> =
   | V
-  | { render: true; message: ErrorMessage<M, E>; value: V }
-  | { render?: false; message: ErrorMessage<string, E>; value: V };
+  | (R extends true
+      ?
+          | { render?: true; message: ErrorMessage<M, E>; value: V }
+          | { render: false; message: ErrorMessage<string, E>; value: V }
+      :
+          | { render: true; message: ErrorMessage<M, E>; value: V }
+          | { render?: false; message: ErrorMessage<string, E>; value: V });
 ```
 
 You don't have to understand what these types do to use them. But if you're interested in understanding what's happening here, let's walk you through what we did.
@@ -349,7 +363,7 @@ You don't have to understand what these types do to use them. But if you're inte
 
 Our `configure` method has changed the type of the `errorMessages` argument from `ValidationErrors` to `SvelteValidationErrors` so that we can configure a field's constraints and error messages simultaneously. The type that enables us to support this feature is `SvelteErrorDetails`.
 
-`SvelteErrorDetails` is _almost_ the exact same type as [`ErrorDetails`](../types.md#errordetailsm-e). There are only two differences between `SvelteErrorDetail` and `ErrorDetails`:
+`SvelteErrorDetails` is _almost_ the exact same type as [`ErrorDetails`](../types.md#errordetailsm-e-r). There are only two differences between `SvelteErrorDetails` and `ErrorDetails`:
 
 <ol>
   <li>
@@ -362,19 +376,19 @@ Our `configure` method has changed the type of the `errorMessages` argument from
   </li>
   <li>
     <p>
-      When an object is <em>not</em> being used, <code>SvelteErrorDetails</code> details replaces <code>ErrorMessage&lt;string&gt;</code> with <code>V</code>, where <code>V</code> represents the value of the constraint. This is an <em>alteration</em> of the <code>ErrorDetails</code> type.
+      When an object is <em>not</em> being used, <code>SvelteErrorDetails</code> details replaces <code>ErrorMessage</code> with <code>V</code>, where <code>V</code> represents the value of the constraint. This is an <em>alteration</em> of the <code>ErrorDetails</code> type.
     </p>
     <p>
-      Whenever a raw value is used for <code>SvelteErrorDetails</code>, developers will be able to specify a field's constraint <em>without</em> providing the error message for that constraint. In this scenario, the browser's default error message will be used for that constraint instead. Since it does not make sense to provide an error message without a constraint value,  the <code>SvelteErrorDetails</code> type does not support that "use case".
+      Whenever a raw value is used for <code>SvelteErrorDetails</code>, developers will be able to specify a field's constraint <em>without</em> providing the error message for that constraint. In this scenario, the browser's default error message (or the configured <a href="../README.md#form-validity-observer-options-default-errors">default error</a>) will be used for that constraint instead. Since it does not make sense to provide an error message without a constraint value,  the <code>SvelteErrorDetails</code> type does not support that "use case".
     </p>
   </li>
 </ol>
 
-Just as the `ErrorDetails` type forms the foundation of the [`ValidationErrors`](../types.md#validationerrorsm-e) type, so the `SvelteErrorDetails` type forms the foundation of the `SvelteValidationErrors` type. The type definition for `SvelteValidationErrors` is _almost_ the exact same as the type definition for `ValidationErrors`. In fact, the `badinput` and `validate` properties are exactly the same between the 2.
+Just as the `ErrorDetails` type forms the foundation of the [`ValidationErrors`](../types.md#validationerrorsm-e-r) type, so the `SvelteErrorDetails` type forms the foundation of the `SvelteValidationErrors` type. The type definition for `SvelteValidationErrors` is _almost_ the exact same as the type definition for `ValidationErrors`. In fact, the `badinput` and `validate` properties are exactly the same between the 2.
 
 The primary way in which the `SvelteValidationErrors` type differs from the `ValidationErrors` type is that it takes constraint values into account (with the help of `SvelteErrorDetails`). It determines the value types that each constraint supports by looking at `Svelte`'s type definition for the `input` field's props (i.e., `HTMLInputAttributes`). (**Note: If you're using a different JS framework, you should use _that_ framework's type definitions for the `input` field's props instead.**)
 
-Notice that the `required` constraint is slightly different from the others in that it supports one additional type: [`ErrorMessage<string>`](../types.md#errormessagem-e). If the developer supplies an error message by itself for the `required` constraint, it is safe to assume that `required` is `true`. This is an assumption that can only be made safely with the `required` constraint because it is a `boolean`.
+Notice that the `required` constraint is slightly different from the others in that it supports one additional type: [`ErrorMessage`](../types.md#errormessagem-e). If the developer supplies an error message by itself for the `required` constraint, it is safe to assume that `required` is `true`. This is an assumption that can only be made safely with the `required` constraint because it is a `boolean`.
 
 ##### Enhancing the Return Type of `configure`
 
@@ -390,8 +404,9 @@ type SvelteFieldProps = Pick<
 And we make _this_ the return type of `configure`:
 
 ```ts
-interface SvelteFormValidityObserver<M = string> extends Omit<FormValidityObserver<M>, "configure"> {
-  configure<E extends ValidatableField>(name: string, errorMessages: SvelteValidationErrors<M, E>): SvelteFieldProps;
+interface SvelteFormValidityObserver<M = string, R extends boolean = false>
+  extends Omit<FormValidityObserver<M, R>, "configure"> {
+  configure<E extends ValidatableField>(name: string, errorMessages: SvelteValidationErrors<M, E, R>): SvelteFieldProps;
   autoObserve(form: HTMLFormElement, novalidate?: boolean): ActionReturn;
 }
 ```
@@ -409,23 +424,24 @@ export default function createFormValidityObserver<
   T extends OneOrMany<EventType>,
   M = string,
   E extends ValidatableField = ValidatableField,
->(types: T, options?: FormValidityObserverOptions<M, E>): SvelteFormValidityObserver<M> {
-  const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M>;
+  R extends boolean = false,
+>(types: T, options?: FormValidityObserverOptions<M, E, R>): SvelteFormValidityObserver<M, R> {
+  const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M, R>;
 
   /* ---------- Bindings ---------- */
   // Apply bindings for exposed methods ...
 
   /** **Private** reference to the original {@link FormValidityObserver.configure} method */
-  const originalConfigure = observer.configure.bind(observer) as FormValidityObserver<M>["configure"];
+  const originalConfigure = observer.configure.bind(observer) as FormValidityObserver<M, R>["configure"];
 
   /* ---------- Enhancements ---------- */
   // Definition for `autoObserver` ...
 
   // Enhanced `configure` method
   observer.configure = (name, errorMessages) => {
-    const keys = Object.keys(errorMessages) as Array<keyof SvelteValidationErrors<M>>;
+    const keys = Object.keys(errorMessages) as Array<keyof SvelteValidationErrors<M, ValidatableField, R>>;
     const props = { name } as SvelteFieldProps;
-    const config = {} as ValidationErrors<M>;
+    const config = {} as ValidationErrors<M, ValidatableField, R>;
 
     // Build `props` object and error `config` object from `errorMessages`
     for (let i = 0; i < keys.length; i++) {
@@ -474,8 +490,8 @@ Here in `configure`, we're looping over each of the properties provided in the `
 
 1. If the constraint _value_ is `null` or `undefined`, then the constraint was omitted by the developer. There is nothing to add to the local error `config` or the returned constraint `props`. A `required` constraint with a value of `false` is treated as if it was `undefined`.
 2. If the _constraint_ is `badinput` or `validate`, it can be copied directly to the error `config`. There are no `props` to update here since `badinput` and `validate` are not valid HTML attributes.
-3. If the constraint _value_ is not an object, then we can assume that we have a raw constraint value. (For instance, we could have a raw `number` value for the `max` constraint.) The developer has indicated that they want to specify a field constraint without a custom error message; so only the constraint `props` are updated. <p>The exception to this rule is the `required` constraint. If the _constraint_ is `required` **and** the constraint _value_ is an `ErrorMessage<string>`, then we assign this value to the error `config` instead of the `props` object. In this scenario, the _value_ for the `required` constraint is implicitly `true` (even if the value is an empty string).</p>
-4. If the constraint _value_ is an object, then we can give the `value` property on this object to the `props` object. For simplicity, the error `config` can be given the entire constraint object in this scenario, even though it won't use the attached `value` property. Notice also that here, yet again, a `required` constraint with a value of `false` is treated as if the constraint was `undefined`.
+3. If the constraint _value_ is not a `SvelteErrorDetails` object, then we can assume that we have a raw constraint value. (For instance, we could have a raw `number` value for the `max` constraint.) The developer has indicated that they want to specify a field constraint without a custom error message; so only the constraint `props` are updated. <p>The exception to this rule is the `required` constraint. If the _constraint_ is `required` **and** the constraint _value_ is an `ErrorMessage`, then we assign this value to the error `config` instead of the `props` object. In this scenario, the _value_ for the `required` constraint is implicitly `true` (even if the value is an empty string).</p>
+4. If the constraint _value_ is a `SvelteErrorDetails` object, then we can give the `value` property on this object to the `props` object. For simplicity, the error `config` can be given the entire constraint object in this scenario, even though it won't use the attached `value` property. Notice also that here, yet again, a `required` constraint with a value of `false` is treated as if the constraint was `undefined`.
 
 After we finish looping over the properties in `errorMessages`, we configure the error messages for the field by calling the _core_ `FormValidityObserver.configure()` method with the error `config` object. Finally, we return any necessary form field `props`.
 
@@ -492,7 +508,7 @@ if (constraint === "badinput" || constraint === "validate") {
 }
 ```
 
-When TypeScript sees `errorMessages[constraint]`, it sees `errorMessages["badinput" | "validate"]`, which narrows down to a _union_ between the `badinput` configuration and the `validate` configuration. Unfortunately, this union cannot safely be applied to the error `config` object -- as far as TypeScript is concerned. For instance, TypeScript cannot assign `errorMessages.validate` to `config.badinput` because the 2 types are incompatiable. And although we know that this scenario will never come up in this code block, _TypeScript does not_. So it throws an error. In some way or another, this is the same problem that's happening in every other part of the `for` loop where you're seeing a TypeScript error.
+When TypeScript sees `errorMessages[constraint]`, it sees `errorMessages["badinput" | "validate"]`, which narrows down to a _union_ between the `badinput` configuration and the `validate` configuration. Unfortunately, this union cannot safely be applied to the error `config` object -- as far as TypeScript is concerned. For instance, TypeScript cannot assign `errorMessages.validate` to `config.badinput` because the 2 types are incompatible. And although we know that this scenario will never come up in this code block, _TypeScript does not_. So it throws an error. In some way or another, this is the same problem that's happening in every other part of the `for` loop where you're seeing a TypeScript error.
 
 A simple solution to this problem to help TypeScript is to narrow down each individual constraint
 
@@ -516,9 +532,9 @@ If we want to keep our code readable, then the next best solution is to use `any
 
 ```ts
 observer.configure = (name, errorMessages) => {
-  const keys = Object.keys(errorMessages) as Array<keyof SvelteValidationErrors<M>>;
+  const keys = Object.keys(errorMessages) as Array<keyof SvelteValidationErrors<M, ValidatableField, R>>;
   const props = { name } as SvelteFieldProps;
-  const config = {} as ValidationErrors<M>;
+  const config = {} as ValidationErrors<M, ValidatableField, R>;
 
   // Build `props` object and error `config` object from `errorMessages`
   for (let i = 0; i < keys.length; i++) {
