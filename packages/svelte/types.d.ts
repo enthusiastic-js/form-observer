@@ -2,7 +2,8 @@ import type { ErrorMessage, ValidationErrors, ValidatableField, FormValidityObse
 import type { ActionReturn } from "svelte/action";
 import type { HTMLInputAttributes } from "svelte/elements";
 
-export interface SvelteFormValidityObserver<M = string> extends Omit<FormValidityObserver<M>, "configure"> {
+export interface SvelteFormValidityObserver<M = string, R extends boolean = false>
+  extends Omit<FormValidityObserver<M, R>, "configure"> {
   /**
    * An enhanced version of {@link FormValidityObserver.configure} for `Svelte`. In addition to configuring a field's
    * error messages, it generates the props that should be applied to the field based on the provided arguments.
@@ -22,7 +23,7 @@ export interface SvelteFormValidityObserver<M = string> extends Omit<FormValidit
    * <input {...configure("comment", { maxlength: 10 })} />
    * <input name="another-comment" maxlength="10" />
    */
-  configure<E extends ValidatableField>(name: string, errorMessages: SvelteValidationErrors<M, E>): SvelteFieldProps;
+  configure<E extends ValidatableField>(name: string, errorMessages: SvelteValidationErrors<M, E, R>): SvelteFieldProps;
 
   /**
    * Svelte `action` used to automatically setup and cleanup a form's observer.
@@ -46,21 +47,28 @@ export type SvelteFieldProps = Pick<
  * An augmetation of {@link ValidationErrors} for `Svelte`. Represents the constraints that should be applied
  * to a form field, and the error messages that should be displayed when those constraints are broken.
  */
-export interface SvelteValidationErrors<M, E extends ValidatableField = ValidatableField>
-  extends Pick<ValidationErrors<M, E>, "badinput" | "validate"> {
+export interface SvelteValidationErrors<M, E extends ValidatableField = ValidatableField, R extends boolean = false>
+  extends Pick<ValidationErrors<M, E, R>, "badinput" | "validate"> {
   // Standard HTML Attributes
-  required?: SvelteErrorDetails<M, HTMLInputAttributes["required"], E> | ErrorMessage<string, E>;
-  minlength?: SvelteErrorDetails<M, HTMLInputAttributes["minlength"], E>;
-  min?: SvelteErrorDetails<M, HTMLInputAttributes["min"], E>;
-  maxlength?: SvelteErrorDetails<M, HTMLInputAttributes["maxlength"], E>;
-  max?: SvelteErrorDetails<M, HTMLInputAttributes["max"], E>;
-  step?: SvelteErrorDetails<M, HTMLInputAttributes["step"], E>;
-  type?: SvelteErrorDetails<M, HTMLInputAttributes["type"], E>;
-  pattern?: SvelteErrorDetails<M, HTMLInputAttributes["pattern"], E>;
+  required?:
+    | SvelteErrorDetails<M, HTMLInputAttributes["required"], E, R>
+    | ErrorMessage<R extends true ? M : string, E>;
+  minlength?: SvelteErrorDetails<M, HTMLInputAttributes["minlength"], E, R>;
+  min?: SvelteErrorDetails<M, HTMLInputAttributes["min"], E, R>;
+  maxlength?: SvelteErrorDetails<M, HTMLInputAttributes["maxlength"], E, R>;
+  max?: SvelteErrorDetails<M, HTMLInputAttributes["max"], E, R>;
+  step?: SvelteErrorDetails<M, HTMLInputAttributes["step"], E, R>;
+  type?: SvelteErrorDetails<M, HTMLInputAttributes["type"], E, R>;
+  pattern?: SvelteErrorDetails<M, HTMLInputAttributes["pattern"], E, R>;
 }
 
 /** An augmentation of `ErrorDetails` for `Svelte`. */
-export type SvelteErrorDetails<M, V, E extends ValidatableField = ValidatableField> =
+export type SvelteErrorDetails<M, V, E extends ValidatableField = ValidatableField, R extends boolean = false> =
   | V
-  | { render: true; message: ErrorMessage<M, E>; value: V }
-  | { render?: false; message: ErrorMessage<string, E>; value: V };
+  | (R extends true
+      ?
+          | { render?: true; message: ErrorMessage<M, E>; value: V }
+          | { render: false; message: ErrorMessage<string, E>; value: V }
+      :
+          | { render: true; message: ErrorMessage<M, E>; value: V }
+          | { render?: false; message: ErrorMessage<string, E>; value: V });

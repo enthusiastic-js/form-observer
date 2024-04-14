@@ -1,7 +1,8 @@
 import type { ErrorMessage, ValidationErrors, ValidatableField, FormValidityObserver } from "@form-observer/core";
 import type { JSX } from "preact";
 
-export interface PreactFormValidityObserver<M = string> extends Omit<FormValidityObserver<M>, "configure"> {
+export interface PreactFormValidityObserver<M = string, R extends boolean = false>
+  extends Omit<FormValidityObserver<M, R>, "configure"> {
   /**
    * An enhanced version of {@link FormValidityObserver.configure} for `Preact`. In addition to configuring a field's
    * error messages, it generates the props that should be applied to the field based on the provided arguments.
@@ -21,7 +22,7 @@ export interface PreactFormValidityObserver<M = string> extends Omit<FormValidit
    * <input {...configure("comment", { maxlength: 10 })} />
    * <input name="another-comment" maxlength={10} />
    */
-  configure<E extends ValidatableField>(name: string, errorMessages: PreactValidationErrors<M, E>): PreactFieldProps;
+  configure<E extends ValidatableField>(name: string, errorMessages: PreactValidationErrors<M, E, R>): PreactFieldProps;
 
   /**
    * Creates a Preact `ref` callback used to automatically setup and cleanup a form's observer.
@@ -54,21 +55,28 @@ export type PreactFieldProps = Pick<
  * An augmetation of {@link ValidationErrors} for `Preact`. Represents the constraints that should be applied
  * to a form field, and the error messages that should be displayed when those constraints are broken.
  */
-export interface PreactValidationErrors<M, E extends ValidatableField = ValidatableField>
-  extends Pick<ValidationErrors<M, E>, "badinput" | "validate"> {
+export interface PreactValidationErrors<M, E extends ValidatableField = ValidatableField, R extends boolean = false>
+  extends Pick<ValidationErrors<M, E, R>, "badinput" | "validate"> {
   // Standard HTML Attributes
-  required?: PreactErrorDetails<M, JSX.IntrinsicElements["input"]["required"], E> | ErrorMessage<string, E>;
-  minlength?: PreactErrorDetails<M, JSX.IntrinsicElements["input"]["minlength"], E>;
-  min?: PreactErrorDetails<M, JSX.IntrinsicElements["input"]["min"], E>;
-  maxlength?: PreactErrorDetails<M, JSX.IntrinsicElements["input"]["maxlength"], E>;
-  max?: PreactErrorDetails<M, JSX.IntrinsicElements["input"]["max"], E>;
-  step?: PreactErrorDetails<M, JSX.IntrinsicElements["input"]["step"], E>;
-  type?: PreactErrorDetails<M, JSX.IntrinsicElements["input"]["type"], E>;
-  pattern?: PreactErrorDetails<M, JSX.IntrinsicElements["input"]["pattern"], E>;
+  required?:
+    | PreactErrorDetails<M, JSX.IntrinsicElements["input"]["required"], E, R>
+    | ErrorMessage<R extends true ? M : string, E>;
+  minlength?: PreactErrorDetails<M, JSX.IntrinsicElements["input"]["minlength"], E, R>;
+  min?: PreactErrorDetails<M, JSX.IntrinsicElements["input"]["min"], E, R>;
+  maxlength?: PreactErrorDetails<M, JSX.IntrinsicElements["input"]["maxlength"], E, R>;
+  max?: PreactErrorDetails<M, JSX.IntrinsicElements["input"]["max"], E, R>;
+  step?: PreactErrorDetails<M, JSX.IntrinsicElements["input"]["step"], E, R>;
+  type?: PreactErrorDetails<M, JSX.IntrinsicElements["input"]["type"], E, R>;
+  pattern?: PreactErrorDetails<M, JSX.IntrinsicElements["input"]["pattern"], E, R>;
 }
 
 /** An augmentation of the core `ErrorDetails` type for `Preact`. */
-export type PreactErrorDetails<M, V, E extends ValidatableField = ValidatableField> =
+export type PreactErrorDetails<M, V, E extends ValidatableField = ValidatableField, R extends boolean = false> =
   | V
-  | { render: true; message: ErrorMessage<M, E>; value: V }
-  | { render?: false; message: ErrorMessage<string, E>; value: V };
+  | (R extends true
+      ?
+          | { render?: true; message: ErrorMessage<M, E>; value: V }
+          | { render: false; message: ErrorMessage<string, E>; value: V }
+      :
+          | { render: true; message: ErrorMessage<M, E>; value: V }
+          | { render?: false; message: ErrorMessage<string, E>; value: V });

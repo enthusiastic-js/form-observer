@@ -1,7 +1,8 @@
 import type { ErrorMessage, ValidationErrors, ValidatableField, FormValidityObserver } from "@form-observer/core";
 import type { InputHTMLAttributes } from "vue";
 
-export interface VueFormValidityObserver<M = string> extends Omit<FormValidityObserver<M>, "configure"> {
+export interface VueFormValidityObserver<M = string, R extends boolean = false>
+  extends Omit<FormValidityObserver<M, R>, "configure"> {
   /**
    * An enhanced version of {@link FormValidityObserver.configure} for `Vue`. In addition to configuring a field's
    * error messages, it generates the props that should be applied to the field based on the provided arguments.
@@ -21,7 +22,7 @@ export interface VueFormValidityObserver<M = string> extends Omit<FormValidityOb
    * <input v-bind="configure('comment', { maxlength: 10 })" />
    * <input name="another-comment" maxlength="10" />
    */
-  configure<E extends ValidatableField>(name: string, errorMessages: VueValidationErrors<M, E>): VueFieldProps;
+  configure<E extends ValidatableField>(name: string, errorMessages: VueValidationErrors<M, E, R>): VueFieldProps;
 
   /**
    * Creates a Vue function `ref` used to automatically setup and cleanup a form's observer.
@@ -49,21 +50,26 @@ export type VueFieldProps = Pick<
  * An augmetation of {@link ValidationErrors} for `Vue`. Represents the constraints that should be applied
  * to a form field, and the error messages that should be displayed when those constraints are broken.
  */
-export interface VueValidationErrors<M, E extends ValidatableField = ValidatableField>
-  extends Pick<ValidationErrors<M, E>, "badinput" | "validate"> {
+export interface VueValidationErrors<M, E extends ValidatableField = ValidatableField, R extends boolean = false>
+  extends Pick<ValidationErrors<M, E, R>, "badinput" | "validate"> {
   // Standard HTML Attributes
-  required?: VueErrorDetails<M, InputHTMLAttributes["required"], E> | ErrorMessage<string, E>;
-  minlength?: VueErrorDetails<M, InputHTMLAttributes["minlength"], E>;
-  min?: VueErrorDetails<M, InputHTMLAttributes["min"], E>;
-  maxlength?: VueErrorDetails<M, InputHTMLAttributes["maxlength"], E>;
-  max?: VueErrorDetails<M, InputHTMLAttributes["max"], E>;
-  step?: VueErrorDetails<M, InputHTMLAttributes["step"], E>;
-  type?: VueErrorDetails<M, InputHTMLAttributes["type"], E>;
-  pattern?: VueErrorDetails<M, InputHTMLAttributes["pattern"], E>;
+  required?: VueErrorDetails<M, InputHTMLAttributes["required"], E, R> | ErrorMessage<R extends true ? M : string, E>;
+  minlength?: VueErrorDetails<M, InputHTMLAttributes["minlength"], E, R>;
+  min?: VueErrorDetails<M, InputHTMLAttributes["min"], E, R>;
+  maxlength?: VueErrorDetails<M, InputHTMLAttributes["maxlength"], E, R>;
+  max?: VueErrorDetails<M, InputHTMLAttributes["max"], E, R>;
+  step?: VueErrorDetails<M, InputHTMLAttributes["step"], E, R>;
+  type?: VueErrorDetails<M, InputHTMLAttributes["type"], E, R>;
+  pattern?: VueErrorDetails<M, InputHTMLAttributes["pattern"], E, R>;
 }
 
 /** An augmentation of `ErrorDetails` for `Vue`. */
-export type VueErrorDetails<M, V, E extends ValidatableField = ValidatableField> =
+export type VueErrorDetails<M, V, E extends ValidatableField = ValidatableField, R extends boolean = false> =
   | V
-  | { render: true; message: ErrorMessage<M, E>; value: V }
-  | { render?: false; message: ErrorMessage<string, E>; value: V };
+  | (R extends true
+      ?
+          | { render?: true; message: ErrorMessage<M, E>; value: V }
+          | { render: false; message: ErrorMessage<string, E>; value: V }
+      :
+          | { render: true; message: ErrorMessage<M, E>; value: V }
+          | { render?: false; message: ErrorMessage<string, E>; value: V });

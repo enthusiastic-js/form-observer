@@ -24,12 +24,13 @@ const constraintsMap = Object.freeze({
  * @template {import("./index.d.ts").OneOrMany<import("./index.d.ts").EventType>} T
  * @template [M=string]
  * @template {import("./index.d.ts").ValidatableField} [E=import("./index.d.ts").ValidatableField]
+ * @template {boolean} [R=false]
  * @param {T} types
- * @param {import("./index.d.ts").FormValidityObserverOptions<M, E>} [options]
- * @returns {import("./types.d.ts").ReactFormValidityObserver<M>}
+ * @param {import("./index.d.ts").FormValidityObserverOptions<M, E, R>} [options]
+ * @returns {import("./types.d.ts").ReactFormValidityObserver<M, R>}
  */
 export default function createFormValidityObserver(types, options) {
-  const observer = /** @type {import("./types.d.ts").ReactFormValidityObserver<M>} */ (
+  const observer = /** @type {import("./types.d.ts").ReactFormValidityObserver<M, R>} */ (
     /** @type {unknown} */ (new FormValidityObserver(types, options))
   );
 
@@ -46,7 +47,7 @@ export default function createFormValidityObserver(types, options) {
   observer.clearFieldError = observer.clearFieldError.bind(observer);
 
   /** **Private** reference to the original `FormValidityObserver.configure` method */
-  const originalConfigure = /** @type {FormValidityObserver<M>["configure"]} */ (observer.configure.bind(observer));
+  const originalConfigure = /** @type {FormValidityObserver<M, R>["configure"]} */ (observer.configure.bind(observer));
 
   /* -------------------- Enhancements -------------------- */
   // Add automatic setup/teardown
@@ -70,11 +71,11 @@ export default function createFormValidityObserver(types, options) {
 
   // Enhanced `configure` method
   observer.configure = function configure(name, errorMessages) {
-    const keys = /** @type {Array<keyof import("./types.d.ts").ReactValidationErrors<M>>} */ (
+    const keys = /** @type {Array<keyof import("./types.d.ts").ReactValidationErrors<M, any, R>>} */ (
       Object.keys(errorMessages)
     );
     const props = /** @type {import("./types.d.ts").ReactFieldProps} */ ({ name });
-    const config = /** @type {import("./index.d.ts").ValidationErrors<M>} */ ({});
+    const config = /** @type {import("./index.d.ts").ValidationErrors<M, any, R>} */ ({});
 
     // Build `props` object and error `config` object from `errorMessages`
     for (let i = 0; i < keys.length; i++) {
