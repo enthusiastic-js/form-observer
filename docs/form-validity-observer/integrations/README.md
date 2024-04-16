@@ -459,7 +459,7 @@ export default function createFormValidityObserver<
 
       /* ----- Standrd HTML Attributes ----- */
       // Value Only
-      if (typeof errorMessages[constraint] !== "object") {
+      if (typeof errorMessages[constraint] !== "object" || !("message" in errorMessages[constraint])) {
         if (constraint === "required" && typeof errorMessages[constraint] !== "boolean") {
           config[constraint] = errorMessages[constraint];
         }
@@ -489,9 +489,9 @@ If you're encountering TypeScript errors with the code above, we'll address that
 Here in `configure`, we're looping over each of the properties provided in the `errorMessages` object so that we can A&rpar; Derive the error configuration that needs to be passed to the _original_ `FormValidityObserver.configure()` method, and B&rpar; Derive the field props that need to be returned from the _enhanced_ `configure` method. Hopefully, from the code and the comments, it's clear why the code is written as it is. But in case things aren't clear, here's a summary:
 
 1. If the constraint _value_ is `null` or `undefined`, then the constraint was omitted by the developer. There is nothing to add to the local error `config` or the returned constraint `props`. A `required` constraint with a value of `false` is treated as if it was `undefined`.
-2. If the _constraint_ is `badinput` or `validate`, it can be copied directly to the error `config`. There are no `props` to update here since `badinput` and `validate` are not valid HTML attributes.
+2. If the _constraint_ is `badinput` or `validate`, then its _value_ can be copied directly to the error `config`. There are no `props` to update here since `badinput` and `validate` are not valid HTML attributes.
 3. If the constraint _value_ is not a `SvelteErrorDetails` object, then we can assume that we have a raw constraint value. (For instance, we could have a raw `number` value for the `max` constraint.) The developer has indicated that they want to specify a field constraint without a custom error message; so only the constraint `props` are updated. <p>The exception to this rule is the `required` constraint. If the _constraint_ is `required` **and** the constraint _value_ is an `ErrorMessage`, then we assign this value to the error `config` instead of the `props` object. In this scenario, the _value_ for the `required` constraint is implicitly `true` (even if the value is an empty string).</p>
-4. If the constraint _value_ is a `SvelteErrorDetails` object, then we can give the `value` property on this object to the `props` object. For simplicity, the error `config` can be given the entire constraint object in this scenario, even though it won't use the attached `value` property. Notice also that here, yet again, a `required` constraint with a value of `false` is treated as if the constraint was `undefined`.
+4. If the constraint _value_ is a `SvelteErrorDetails` object (determined by the existence of a `message` property in the object), then we can give the `value` property on this object to the `props` object. For simplicity, the error `config` can be given the entire constraint object in this scenario, even though it won't use the attached `value` property. Notice also that here, yet again, a `required` constraint with a value of `false` is treated as if the constraint was `undefined`.
 
 After we finish looping over the properties in `errorMessages`, we configure the error messages for the field by calling the _core_ `FormValidityObserver.configure()` method with the error `config` object. Finally, we return any necessary form field `props`.
 
@@ -553,7 +553,7 @@ observer.configure = (name, errorMessages) => {
 
     /* ----- Standrd HTML Attributes ----- */
     // Value Only
-    if (typeof constraintValue !== "object") {
+    if (typeof constraintValue !== "object" || !("message" in constraintValue)) {
       if (constraint === "required" && typeof constraintValue !== "boolean") config[constraint] = constraintValue;
       props[constraint] = constraint === "required" ? true : constraintValue;
       continue;

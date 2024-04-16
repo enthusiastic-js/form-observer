@@ -304,6 +304,27 @@ describe("Create Form Validity Observer (Function)", () => {
         expect(observer.configure(name, {})).toStrictEqual({ name });
         expect(FormValidityObserver.prototype.configure).toHaveBeenCalledWith(name, {});
       });
+
+      describe("Bug Fixes", () => {
+        it("Does not mistake renderable error message objects for `PreactErrorDetails` objects", () => {
+          // Setup
+          type StringOrElement = { type: "DOMElement"; value: HTMLElement } | { type: "DOMString"; value: string };
+          const renderer = (_errorContainer: HTMLElement, _errorMessage: StringOrElement | null) => undefined;
+
+          vi.spyOn(FormValidityObserver.prototype, "configure");
+          const observer = createFormValidityObserver(types[0], { renderer, renderByDefault: true });
+
+          // Test a Renderable Error Message
+          const renderable = { type: "DOMString", value: "No" } as const;
+          expect(observer.configure(name, { required: renderable })).toStrictEqual({ name, required: true });
+          expect(FormValidityObserver.prototype.configure).toHaveBeenNthCalledWith(1, name, { required: renderable });
+
+          // Test an `ErrorDetails` Object
+          const errorDetails = { message: renderable, value: true } as const;
+          expect(observer.configure(name, { required: errorDetails })).toStrictEqual({ name, required: true });
+          expect(FormValidityObserver.prototype.configure).toHaveBeenNthCalledWith(2, name, { required: errorDetails });
+        });
+      });
     });
   });
 });

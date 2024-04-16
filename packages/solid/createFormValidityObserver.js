@@ -69,7 +69,7 @@ export default function createFormValidityObserver(types, options) {
 
       /* ----- Standrd HTML Attributes ----- */
       // Value Only
-      if (typeof constraintValue !== "object") {
+      if (typeof constraintValue !== "object" || !("message" in constraintValue)) {
         if (constraint === "required" && typeof constraintValue !== "boolean") config[constraint] = constraintValue;
         props[constraint] = constraint === "required" ? true : constraintValue;
         continue;

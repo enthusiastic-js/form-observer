@@ -346,7 +346,7 @@ class FormValidityObserver extends FormObserver {
       return true;
     }
 
-    if (typeof error === "object") {
+    if (typeof error === "object" && "message" in error) {
       this.setFieldError(field.name, /** @type {any} */ (error).message, /** @type {any} */ (error).render);
     } else this.setFieldError(field.name, /** @type {any} */ (error));
 

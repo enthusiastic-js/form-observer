@@ -1807,7 +1807,6 @@ describe("Form Validity Observer (Class)", () => {
 
         const formValidityObserver = new FormValidityObserver(types, { renderer });
         formValidityObserver.observe(form);
-        vi.spyOn(formValidityObserver, "setFieldError");
 
         const message = Infinity;
         formValidityObserver.configure(field.name, {
@@ -1931,6 +1930,48 @@ describe("Form Validity Observer (Class)", () => {
         expect(formValidityObserver.validateField(namelessField.name)).toBe(false); // "Failes" due to rejected field
         expect(formValidityObserver.clearFieldError).not.toHaveBeenCalled();
         expect(namelessField).toHaveAttribute(attrs["aria-invalid"], String(true));
+      });
+
+      describe("Bug Fixes", () => {
+        it("Does not mistake renderable error message objects for `ErrorDetails` objects", () => {
+          /* ---------- Setup ---------- */
+          // Render Field
+          const { form, field } = renderField(createElementWithProps("input", { name: "objects", required: true }));
+          renderErrorContainerForField(field);
+
+          // Setup `FormValidityObserver`
+          type StringOrElement = { type: "DOMElement"; value: HTMLElement } | { type: "DOMString"; value: string };
+          const renderer = vi.fn((errorContainer: HTMLElement, error: StringOrElement | null) => {
+            if (error === null) return errorContainer.replaceChildren();
+            errorContainer.replaceChildren(error.value);
+          });
+
+          const formValidityObserver = new FormValidityObserver(types, { renderer, renderByDefault: true });
+          formValidityObserver.observe(form);
+
+          const stringMessage = "I am a bad string, bro...";
+          const elementMessage = document.createElement("div");
+          elementMessage.textContent = "I'm all alone!!!";
+
+          formValidityObserver.configure(field.name, {
+            // @ts-expect-error -- `render` should get ignored here because no `message` property is present
+            required: { type: "DOMElement", value: elementMessage, render: false },
+            validate: () => ({ message: stringMessage, render: false }),
+          });
+
+          /* ---------- Run Assertions ---------- */
+          // Trigger `required` error
+          expect(formValidityObserver.validateField(field.name)).toBe(false);
+          expectErrorFor(field, elementMessage.textContent, "html");
+          expect(renderer).toHaveBeenCalledTimes(1);
+
+          // Trigger User-Defined Error
+          field.value = "`required` is Satisfied"; // Avoid triggering events
+
+          expect(formValidityObserver.validateField(field.name)).toBe(false);
+          expectErrorFor(field, stringMessage, "a11y");
+          expect(renderer).toHaveBeenCalledTimes(1); // `renderer` wasn't used this time
+        });
       });
     });
 
