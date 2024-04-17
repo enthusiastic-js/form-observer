@@ -5,6 +5,7 @@ Here you'll find helpful tips on how to use the `FormValidityObserver` effective
 - [Enabling/Disabling Accessible Error Messages](#enabling-accessible-error-messages-during-form-submissions)
 - [Keeping Track of Visited/Dirty Fields](#keeping-track-of-visiteddirty-fields)
 - [Getting the Most out of the `defaultErrors` option](#getting-the-most-out-of-the-defaulterrors-option)
+- [Managing Form Errors with State](#managing-form-errors-with-state)
 - [Keeping Track of Form Data](#keeping-track-of-form-data)
 - [Recommendations for Conditionally Rendered Fields](#recommendations-for-conditionally-rendered-fields)
 - [Recommendations for Styling Form Fields and Their Error Messages](#recommendations-for-styling-form-fields-and-their-error-messages)
@@ -13,9 +14,8 @@ Here you'll find helpful tips on how to use the `FormValidityObserver` effective
 <!--
 TODO: Some `Guides` that could be helpful:
 
-1) Using `renderByDefault` to render errors to stateful objects (instead of rendering to the DOM).
-2) Reconciling error messages sent by the server on the client side.
-3) MAYBE something on how to work with accessible error messages? (Should we also mention `aria-errormessage` vs. `aria-describedby` too? As well as the lack of support for `aria-errormessage`? Or does that belong somewhere else in the docs?)
+1) Reconciling error messages sent by the server on the client side.
+2) MAYBE something on how to work with accessible error messages? (Should we also mention `aria-errormessage` vs. `aria-describedby` too? As well as the lack of support for `aria-errormessage`? Or does that belong somewhere else in the docs?)
 -->
 
 ## Enabling Accessible Error Messages during Form Submissions
@@ -275,6 +275,87 @@ const observer = new FormValidityObserver("focusout", {
   },
 });
 ```
+
+## Managing Form Errors with State
+
+Typically, the `FormValidityObserver` renders error messages directly to the DOM when an [accessible error container](https://www.w3.org/WAI/WCAG21/Techniques/aria/ARIA21#example-2-identifying-errors-in-data-format) is present. But if you prefer to render your error messages in a different way (or to a different location), then you can leverage the observer's [`renderer`](./README.md#form-validity-observer-options-renderer) option to do so.
+
+For example, you might want to rely on React State (or another JS framework's state) to display error messages to your users. In that case, you can pass a `renderer` function to the `FormValidityObserver` that updates your local error state instead of updating the DOM. From there, you can let your framework do the work of updating the UI.
+
+> Note: We generally recommend keeping your forms stateless when possible, but sometimes your use case might require you to use state.
+
+<details open>
+  <summary><strong>Svelte Example</strong></summary>
+
+```svelte
+<form use:autoObserve>
+  <label for="username">Username</label>
+  <input id="username" name="username" type="text" required aria-describedby="username-error" />
+  <div id="username-error" role="alert">{errors["username-error"] ?? ""}</div>
+
+  <label for="email">Email</label>
+  <input id="email" name="email" type="email" required aria-describedby="email-error" />
+  <div id="email-error" role="alert">{errors["email-error"] ?? ""}</div>
+</form>
+
+<script lang="ts">
+  import { createFormValidityObserver } from "@form-observer/svelte";
+
+  let errors: Record<string, string | null> = {};
+  const { autoObserve } = createFormValidityObserver("input", {
+    renderByDefault: true,
+    renderer(errorContainer, errorMessage: (typeof errors)[string]) {
+      errors[errorContainer.id] = errorMessage;
+    },
+  });
+</script>
+```
+
+</details>
+
+<details open>
+  <summary><strong>React Example</strong></summary>
+
+```tsx
+import { useState, useMemo } from "react";
+import { createFormValidityObserver } from "@form-observer/react";
+
+export default function MyForm() {
+  const [errors, setErrors] = useState<Record<string, string | null>>({});
+  const { autoObserve } = useMemo(() => {
+    return createFormValidityObserver("input", {
+      renderByDefault: true,
+      renderer(errorContainer, errorMessage: (typeof errors)[string]) {
+        setErrors((e) => ({ ...e, [errorContainer.id]: errorMessage }));
+      },
+    });
+  }, []);
+
+  return (
+    <form ref={useMemo(autoObserve, [autoObserve])}>
+      <label htmlFor="username">Username</label>
+      <input id="username" name="username" type="text" required aria-describedby="username-error" />
+      <div id="username-error" role="alert">
+        {errors["username-error"]}
+      </div>
+
+      <label htmlFor="email">Email</label>
+      <input id="email" name="email" type="email" required aria-describedby="email-error" />
+      <div id="email-error" role="alert">
+        {errors["email-error"]}
+      </div>
+    </form>
+  );
+}
+```
+
+</details>
+
+With this approach, our error messages are "rendered" to our stateful `errors` object instead of being rendered to the DOM directly. Then, we let the JavaScript framework take responsibility for displaying any error messages that are present.
+
+Notice that we also supplied the [`renderByDefault: true`](./README.md#form-validity-observer-options-render-by-default) option to the `FormValidityObserver`. This option is important because it causes all error messages that are pure strings to be sent through our `renderer` function by default -- including the browser's default error messages. In other words, this option guarantees that all error messages which are generated for our form fields will be properly assigned to our stateful error object.
+
+You can find more detailed examples of using stateful error objects on [StackBlitz](https://stackblitz.com/@ITenthusiasm/collections/form-observer-examples).
 
 ## Keeping Track of Form Data
 
