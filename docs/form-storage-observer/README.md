@@ -76,7 +76,7 @@ const form = document.querySelector("form[name='example']");
 
 observer.observe(form);
 form.elements[0].value = "New Value";
-form.elements[0].dispatchEvent(new Event("change")); // Causes the first field's data to be saved to `localStorage`
+form.elements[0].dispatchEvent(new Event("change", { bubbles: true })); // Causes the first field's data to be saved to `localStorage`
 ```
 
 ### Static Method: `FormStorageObserver.load(form: HTMLFormElement, name?: string): void`
@@ -147,7 +147,7 @@ observer.observe(form); // Returns `true`, loads the _entire_ form's `localStora
 observer.observe(form); // Returns `false`, does nothing
 
 form.elements[0].value = "Some new value to save";
-form.elements[0].dispatchEvent(new Event("change")); // Field's data gets saved to `localStorage`
+form.elements[0].dispatchEvent(new Event("change", { bubbles: true })); // Field's data gets saved to `localStorage`
 ```
 
 ### Method: `FormStorageObserver.unobserve(form: HTMLFormElement): boolean`
@@ -165,11 +165,11 @@ observer.unobserve(form); // Returns `false`, does nothing
 
 observer.observe(form);
 form.elements[0].value = "Some new value to save";
-form.elements[0].dispatchEvent(new Event("change")); // Field's data gets saved to `localStorage`
+form.elements[0].dispatchEvent(new Event("change", { bubbles: true })); // Field's data gets saved to `localStorage`
 
 observer.unobserve(form); // Returns `true`, clears the _entire_ form's `localStorage` data
 form.elements[1].value = "A different value for a different field";
-form.elements[1].dispatchEvent(new Event("change")); // Does nothing, the form is no longer being observed
+form.elements[1].dispatchEvent(new Event("change", { bubbles: true })); // Does nothing, the form is no longer being observed
 ```
 
 ### Method: `FormStorageObserver.disconnect(): void`
@@ -192,10 +192,10 @@ observer.unobserve(form2);
 
 // Both actions do nothing because the forms were already `unobserve`d
 form1.elements[0].value = "Value in 1st Form";
-form1.elements[0].dispatchEvent(new Event("change"));
+form1.elements[0].dispatchEvent(new Event("change", { bubbles: true }));
 
 form2.elements[0].value = "Other Value in 2nd Form";
-form2.elements[0].dispatchEvent(new Event("change"));
+form2.elements[0].dispatchEvent(new Event("change", { bubbles: true }));
 ```
 
 ## `localStorage` Data Scoping

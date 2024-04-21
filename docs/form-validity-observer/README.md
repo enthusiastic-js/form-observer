@@ -184,7 +184,7 @@ const form = document.getElementById("my-form");
 observer.observe(form); // Returns `true`, sets up manual validation/error-handling methods
 observer.observe(form); // Returns `false`, does nothing
 
-form.elements[0].dispatchEvent(new InputEvent("input")); // Field gets validated
+form.elements[0].dispatchEvent(new InputEvent("input", { bubbles: true })); // Field gets validated
 ```
 
 ### Method: `FormValidityObserver.unobserve(form: HTMLFormElement): boolean`
@@ -201,10 +201,10 @@ const form = document.getElementById("my-form");
 observer.unobserve(form); // Returns `false`, does nothing
 
 observer.observe(form);
-form.elements[0].dispatchEvent(new Event("change")); // Field gets validated
+form.elements[0].dispatchEvent(new Event("change", { bubbles: true })); // Field gets validated
 
 observer.unobserve(form); // Returns `true`, disables manual validation/error-handling methods
-form.elements[1].dispatchEvent(new Event("change")); // Does nothing, the form is no longer being observed
+form.elements[1].dispatchEvent(new Event("change", { bubbles: true })); // Does nothing, the form is no longer being observed
 ```
 
 ### Method: `FormValidityObserver.disconnect(): void`
@@ -221,7 +221,7 @@ observer.observe(form);
 observer.disconnect(); // `unobserve`s the currently-watched form
 
 observer.unobserve(form); // Returns `false` because the form was already `unobserve`d
-form1.elements[0].dispatchEvent(new FocusEvent("focusout")); // Does nothing
+form1.elements[0].dispatchEvent(new FocusEvent("focusout", { bubbles: true })); // Does nothing
 ```
 
 ### Method: `FormValidityObserver.configure<E>(name: string, errorMessages: `[`ValidationErrors<M, E, R>`](./types.md#validationerrorsm-e-r)`): void`
@@ -266,12 +266,12 @@ observer.configure("credit-card", { pattern: "Card number must be 16 digits" });
 const creditCardField = document.querySelector("[name='credit-card']");
 
 // Browser's native error message for `required` fields will be ACCESSIBLY displayed.
-creditCardField.dispatchEvent(new FocusEvent("focusout"));
+creditCardField.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
 
 // Our custom error message for `pattern` will be ACCESSIBLY displayed,
 // _not_ the browser's native error message for the `pattern` attribute.
 creditCardField.value = "abcd";
-creditCardField.dispatchEvent(new FocusEvent("focusout"));
+creditCardField.dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
 ```
 
 ### Method: `FormValidityObserver.validateFields(options?: ValidateFieldsOptions): boolean | Promise<boolean>`

@@ -74,7 +74,7 @@ const form = document.getElementById("my-form");
 observer1.observe(form);
 observer2.observe(form);
 
-form.elements[0].dispatchEvent(new InputEvent("input")); // Triggers `listener` for `observer1`
+form.elements[0].dispatchEvent(new InputEvent("input", { bubbles: true })); // Triggers `listener` for `observer1`
 form.elements[1].focus(); // Triggers `listener` for `observer2`
 ```
 
@@ -94,7 +94,7 @@ const observer = new FormObserver(["input", "focusin"], listener, { capture: fal
 const form = document.getElementById("my-form");
 observer.observe(form);
 
-form.elements[0].dispatchEvent(new InputEvent("input")); // Triggers `listener`
+form.elements[0].dispatchEvent(new InputEvent("input", { bubbles: true })); // Triggers `listener`
 form.elements[1].focus(); // Triggers `listener`
 ```
 
@@ -120,7 +120,7 @@ const observer = new FormObserver(
 const form = document.getElementById("my-form");
 observer.observe(form);
 
-form.elements[0].dispatchEvent(new InputEvent("input")); // Triggers _only_ the `input` listener
+form.elements[0].dispatchEvent(new InputEvent("input", { bubbles: true })); // Triggers _only_ the `input` listener
 form.elements[1].focus(); // Triggers _only_ the `focus` listener
 ```
 
@@ -146,14 +146,14 @@ field1.click(); // Does nothing, the form was not observed yet
 
 const form2 = document.getElementById("form-2");
 const field2 = form2.elements[0];
-field2.dispatchEvent(new MouseEvent("click")); // Does nothing, the form was not observed yet
+field2.dispatchEvent(new MouseEvent("click", { bubbles: true })); // Does nothing, the form was not observed yet
 
 observer.observe(form1); // Returns `true`
 observer.observe(form1); // Returns `false`, does nothing
 field1.click(); // Triggers the `listener` function
 
 observer.observe(form2); // Returns `true`
-field2.dispatchEvent(new MouseEvent("click")); // Triggers the `listener` function
+field2.dispatchEvent(new MouseEvent("click", { bubbles: true })); // Triggers the `listener` function
 ```
 
 ### Method: `FormObserver.unobserve(form: HTMLFormElement): boolean`
@@ -199,7 +199,7 @@ observer.unobserve(form2);
 
 // Both actions do nothing because the forms were already `unobserve`d
 form1.elements[0].click();
-form2.elements[0].dispatchEvent(new MouseEvent("click"));
+form2.elements[0].dispatchEvent(new MouseEvent("click", { bubbles: true }));
 ```
 
 ## Gotchas
