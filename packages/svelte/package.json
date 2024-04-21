@@ -1,7 +1,7 @@
 {
   "name": "@form-observer/svelte",
   "type": "module",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "sideEffects": false,
   "description": "Convenience functions for the `@form-observer/core` package, designed for Svelte apps",
   "exports": {
@@ -29,7 +29,7 @@
     }
   },
   "peerDependencies": {
-    "@form-observer/core": "^0.7.1"
+    "@form-observer/core": "^0.8.0"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.1.0",

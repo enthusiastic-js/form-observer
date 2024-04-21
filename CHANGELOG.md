@@ -1,5 +1,17 @@
 # Changelog
 
+## 2023-04-21
+
+### v0.8.0 (All Packages)
+
+#### Features
+
+- Support rendering error messages to the DOM by default. (This opens the door for using JS framework state to render error messages to the DOM. It also opens the door for safely using a framework's `render` function to render error messages to the DOM. See [this PR](https://github.com/enthusiastic-js/form-observer/pull/6) for additional details.)
+
+#### Bug Fixes
+
+- Fixed a bug in `@form-observer/react`'s `useFormValidityObserver` function where updates to the `defaultErrors` option would not cause the hook to update its memoized value.
+
 ## 2023-02-11
 
 ### v0.7.2 (Solid, Lit, Preact)

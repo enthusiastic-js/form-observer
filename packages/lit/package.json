@@ -1,7 +1,7 @@
 {
   "name": "@form-observer/lit",
   "type": "module",
-  "version": "0.7.2",
+  "version": "0.8.0",
   "sideEffects": false,
   "description": "Convenience functions for the `@form-observer/core` package, designed for Lit apps",
   "exports": {
@@ -31,7 +31,7 @@
     }
   },
   "peerDependencies": {
-    "@form-observer/core": "^0.7.1",
+    "@form-observer/core": "^0.8.0",
     "lit": ">=3.0.0"
   },
   "author": "Isaiah Thomason",
