@@ -1,5 +1,11 @@
 # TODO
 
+## Priority
+
+- [ ] Update `@form-observer/lit` to automatically use `renderByDefault` and Lit's `render` function.
+- [ ] Add docs on how to reconcile error messages between server and client.
+- [ ] **Consider** adding some kind of `revalidateOn` option for the `FormValidityObserver`. (For example, after a field has become invalid `onfocusout`, someone might want that field to be continuously validated `oninput` until it is corrected.)
+
 ## Documentation
 
 - [ ] Add more detailed examples of how to use `Zod` with the `defaultErrors.validate` option.
