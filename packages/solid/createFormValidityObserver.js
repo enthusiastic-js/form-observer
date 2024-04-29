@@ -4,19 +4,19 @@ import { onMount, onCleanup } from "solid-js";
 /**
  * Creates an enhanced version of the {@link FormValidityObserver} that's more convenient for `Solid` apps
  *
- * @template {import("./index.d.ts").OneOrMany<import("./index.d.ts").EventType>} T
+ * @template {import("./index.d.ts").EventType} T
  * @template [M=string | import("solid-js").JSX.Element]
  * @template {import("./index.d.ts").ValidatableField} [E=import("./index.d.ts").ValidatableField]
  * @template {boolean} [R=false]
- * @param {T} types
+ * @param {T} type
  * @param {import("./index.d.ts").FormValidityObserverOptions<M, E, R>} [options]
  * @returns {import("./types.d.ts").SolidFormValidityObserver<M, R>}
  */
-export default function createFormValidityObserver(types, options) {
+export default function createFormValidityObserver(type, options) {
   const augmentedOptions = /** @type {typeof options} */ ({ renderer: defaultErrorRendererSolid, ...options });
 
   const observer = /** @type {import("./types.d.ts").SolidFormValidityObserver<M, R>} */ (
-    /** @type {unknown} */ (new FormValidityObserver(types, augmentedOptions))
+    /** @type {unknown} */ (new FormValidityObserver(type, augmentedOptions))
   );
 
   /* -------------------- Bindings -------------------- */

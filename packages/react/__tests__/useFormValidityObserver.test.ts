@@ -9,15 +9,15 @@ describe("useFormValidityObserver (Custom React Hook)", () => {
   beforeEach(vi.restoreAllMocks as () => void);
 
   it("Memoizes its calls to `createFormValidityObserver` (to prevent rerenders caused by reference inequality)", () => {
-    const types = ["input", "focusout"] satisfies EventType[];
+    const type = "input" satisfies EventType;
     const createFormValidityObserver = vi.spyOn(createFormValidityObserverImport, "default");
 
-    const { result, rerender } = renderHook((t) => useFormValidityObserver(t), { initialProps: types });
+    const { result, rerender } = renderHook((t) => useFormValidityObserver(t), { initialProps: type } as const);
     const originalObserver = result.current;
-    expect(createFormValidityObserver).toHaveBeenCalledWith(types, undefined);
+    expect(createFormValidityObserver).toHaveBeenCalledWith(type, undefined);
     expect(createFormValidityObserver).toHaveReturnedWith(originalObserver);
 
-    rerender(types);
+    rerender(type);
     expect(result.current).toBe(originalObserver);
   });
 

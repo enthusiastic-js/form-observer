@@ -12,6 +12,24 @@ This file is similar to a `Changelog`: It specifies the dates (in descending ord
 
 It's possible that the need for this is already captured in the concept of `PR` (Pull Request) history. We will try to run with this approach _and_ the approach of PRs before coming to a final decision on what to use to accomplish this history-preserving goal.
 
+## 2024-04-28
+
+### Only Allow One (1) Event Type to Be Passed to the `FormValidityObserver` Constructor
+
+Although this is a breaking change, it is one that will more easily allow us to support the `revalidateOn` feature that we mentioned on GitHub while also maintaining the parent-child relationship between the `FormObserver` and the `FormValidityObserver`. (We could technically choose to break that relationship, but the reusable `observe` and `unobserve` methods seem to be proving helpful right now.)
+
+It technically isn't _that_ difficult to continue supporting an array of strings for the `types` argument of the `FormValidityObserver` constructor. But the (very small) additional effort for this support did not seem worth it.
+
+Practically speaking, most (if not all) developers are likely going to choose only one event type anyway. And they'll have to choose one of the events that actually relate to user interaction (so that the form is only validated as users interact with it). The most common of these events are `input`, `focusout` (the bubbling version of the `blur` event), and `change`. But each of these events renders the other ones irrelevant.
+
+For example, the last `input` event that's triggered for a form field will always be triggered _before_ `change` or `focusout`. Consequently, it doesn't make sense to add `change` _or_ `focusout` to the `types` argument of the `FormValidityObserver` constructor when `input` is supplied. The developer would only need to specify the `input` event itself.
+
+Similarly, the `change` event is only fired a _subset_ of the times that the `focusout` event is fired. (There are technically exceptions to this rule, such as `<select>` and `<input type="checkbox">`. But practically speaking, this rule holds for all form controls -- including those.) So instead of specifying both events, a developer would only need to specify the `focusout` event. Finally, if a developer wants to respond to `change` events exclusively, then they will only specify _that_ event. Neither `focusout` nor `input` could be added in that scenario because it would cause the form controls to be validated too frequently.
+
+In the end, whichever event type is chosen, it is only practical for the developer to specify 1 event. Technically speaking, developers could try to specify custom events. But those events would likely be emitted in _response_ to `input`/`focusout`/`change` events anyway. So everything ultimately comes down to those 3 events.
+
+In conclusion, it will be simpler for us to only allow 1 event to be specified for the `types` argument moving forward. Since this is also what will happen naturally (and since enforcing this might protect some developers from unexpected footguns), this seems like a good change.
+
 ## 2023-08-20
 
 ### Deprecate the `FormValidityObserver.validateFields(names: string[])` Overload

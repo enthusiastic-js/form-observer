@@ -115,7 +115,7 @@ class FormValidityObserver extends FormObserver {
    * illegal generic constructors?
    */
   /**
-   * @template {import("./types.d.ts").OneOrMany<import("./types.d.ts").EventType>} T
+   * @template {import("./types.d.ts").EventType} T
    * @template [M=string]
    * @template {import("./types.d.ts").ValidatableField} [E=import("./types.d.ts").ValidatableField]
    * @template {boolean} [R=false]
@@ -124,16 +124,16 @@ class FormValidityObserver extends FormObserver {
    * Provides a way to validate an `HTMLFormElement`'s fields (and to display _accessible_ errors for those fields)
    * in response to the events that the fields emit.
    *
-   * @param {T} types The type(s) of event(s) that trigger(s) form field validation.
+   * @param {T} type The type of event that triggers form field validation.
    * @param {FormValidityObserverOptions<M, E, R>} [options]
    * @returns {FormValidityObserver<M, R>}
    */
 
   /**
-   * @param {import("./types.d.ts").OneOrMany<import("./types.d.ts").EventType>} types
+   * @param {import("./types.d.ts").EventType} type
    * @param {FormValidityObserverOptions<M, import("./types.d.ts").ValidatableField, R>} [options]
    */
-  constructor(types, options) {
+  constructor(type, options) {
     /**
      * Event listener used to validate form fields in response to user interactions
      *
@@ -145,7 +145,7 @@ class FormValidityObserver extends FormObserver {
       if (fieldName) this.validateField(fieldName);
     };
 
-    super(types, eventListener, { passive: true, capture: options?.useEventCapturing });
+    super(type, eventListener, { passive: true, capture: options?.useEventCapturing });
     this.#scrollTo = options?.scroller ?? defaultScroller;
     this.#renderError = /** @type {any} Necessary because of double `M`s */ (options?.renderer ?? defaultErrorRenderer);
     this.#renderByDefault = /** @type {any} Necessary because of double `R`s */ (options?.renderByDefault);

@@ -30,7 +30,7 @@ describe("Form Validity Observer (Class)", () => {
   const attrs = Object.freeze({ "aria-invalid": "aria-invalid", "aria-describedby": "aria-describedby" });
 
   // Form Validity Observer Constants
-  const types = Object.freeze(["change", "focusout"] as const) satisfies ReadonlyArray<EventType>;
+  const eventType = "focusout" satisfies EventType;
 
   /* ---------------------------------------- Global Helpers ---------------------------------------- */
   /** A **_native_** `HTMLElement` that is able to partake in form field validation */
@@ -74,13 +74,6 @@ describe("Form Validity Observer (Class)", () => {
   }
 
   /* ---------------------------------------- Test Setup ---------------------------------------- */
-  // General assertions that the test constants were set up correctly
-  beforeAll(() => {
-    expect(types.length).toBeGreaterThan(1); // Correct `types` count
-    expect(types).toHaveLength(new Set(types).size); // Unique types
-    expect(types.every((t) => typeof t === "string")).toBe(true); // Types are strings
-  });
-
   beforeEach(() => {
     // Keep things clean between each test by automatically restoring anything we may have spied on
     vi.restoreAllMocks();
@@ -91,13 +84,13 @@ describe("Form Validity Observer (Class)", () => {
 
   /* ---------------------------------------- Run Tests ---------------------------------------- */
   it("Is a child of the base `FormObserver` class", () => {
-    expect(new FormValidityObserver(types[0])).toEqual(expect.any(FormObserver));
+    expect(new FormValidityObserver(eventType)).toEqual(expect.any(FormObserver));
   });
 
   it("Determines the event phase for the validation event handler from the `options` (defaults to bubbling)", () => {
     /* ---------- Setup ---------- */
-    const formValidityObserverCapture = new FormValidityObserver(types[0], { useEventCapturing: true });
-    const formValidityObserverBubble = new FormValidityObserver(types[0]);
+    const formValidityObserverCapture = new FormValidityObserver(eventType, { useEventCapturing: true });
+    const formValidityObserverBubble = new FormValidityObserver(eventType);
     const form = document.body.appendChild(document.createElement("form"));
 
     const addEventListener = vi.spyOn(form.ownerDocument, "addEventListener");
@@ -151,7 +144,7 @@ describe("Form Validity Observer (Class)", () => {
       it("Extends the functionality of `FormObserver.observe`", () => {
         const form = document.createElement("form");
         vi.spyOn(FormObserver.prototype, "observe");
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Confirm that the method is an extension, not a direct copy
         formValidityObserver.observe(form);
@@ -162,7 +155,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Connects the provided `form` to the observer's validation methods", () => {
         const form = document.createElement("form");
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // The observer's validation methods first fail because no form is connected to them.
         expectValidationMethodsToBeEnabled(formValidityObserver, false);
@@ -174,7 +167,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Only allows 1 `form` to be observed at a time", () => {
         const originalForm = document.createElement("form");
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
         expect(() => formValidityObserver.observe(originalForm)).not.toThrow();
 
         expect(() => formValidityObserver.observe(document.createElement("form"))).toThrowErrorMatchingInlineSnapshot(
@@ -187,7 +180,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Returns `true` if the received `form` was NOT already being observed (and `false` otherwise)", () => {
         const form = document.createElement("form");
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Returns `true` because the `form` was not originally being observed
         expect(formValidityObserver.observe(form)).toBe(true);
@@ -205,7 +198,7 @@ describe("Form Validity Observer (Class)", () => {
       it("Extends the functionality of `FormObserver.unobserve`", () => {
         const form = document.createElement("form");
         vi.spyOn(FormObserver.prototype, "unobserve");
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Confirm that the method is an extension, not a direct copy
         formValidityObserver.unobserve(form);
@@ -216,7 +209,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Disconnects the provided `form` from the observer's validation methods IF it was being observed", () => {
         const form = document.createElement("form");
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         formValidityObserver.observe(form);
         formValidityObserver.unobserve(document.createElement("form"));
@@ -231,7 +224,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Resets the error messages for the provided `form`'s fields IF it was being observed", async () => {
         const errorMessage = "You owe me a value.";
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
         renderField(createElementWithProps("input", { name: "first-name", type: "text", required: true }));
 
         const form = screen.getByRole<HTMLFormElement>("form");
@@ -259,7 +252,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Returns `true` if the received `form` was ALREADY being observed (and `false` otherwise)", () => {
         const form = document.createElement("form");
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Returns `false` because the `form` was not originally being observed
         expect(formValidityObserver.unobserve(form)).toBe(false);
@@ -273,7 +266,7 @@ describe("Form Validity Observer (Class)", () => {
     describe("disconnect (Method)", () => {
       it("`Unobserve`s the currently-observed `form`", () => {
         const form = document.createElement("form");
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
         vi.spyOn(formValidityObserver, "unobserve");
 
         formValidityObserver.observe(form);
@@ -282,7 +275,7 @@ describe("Form Validity Observer (Class)", () => {
       });
 
       it("Does nothing if no `form` is currently being observed", () => {
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
         vi.spyOn(formValidityObserver, "unobserve");
 
         expect(() => formValidityObserver.disconnect()).not.toThrow();
@@ -474,7 +467,7 @@ describe("Form Validity Observer (Class)", () => {
     describe("setFieldError (Method)", () => {
       it("Marks a field as invalid (`aria-invalid`) and gives it the provided error message", () => {
         const errorMessage = "This field isn't correct!";
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Render Form
         const { form, fields } = renderEmptyFields();
@@ -490,7 +483,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Gives the FIRST radio button the provided error message and marks its ACCESSIBLE GROUP as invalid", () => {
         const errorMessage = "Cool radio buttons only!";
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Render Form
         const { form, fieldset } = renderEmptyFields();
@@ -509,7 +502,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Gives a field the error message returned the provided error function", () => {
         const errorFunc = vi.fn((field: FormField) => `Element "${field.tagName}" of type "${field.type}" is bad!`);
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Render Form
         const { form, fieldset, fields } = renderEmptyFields();
@@ -543,7 +536,7 @@ describe("Form Validity Observer (Class)", () => {
       it("Gives a field an accessible error message whenever possible", () => {
         const errorMessage = "This field isn't correct!";
         const errorFunc = (field: FormField) => `Element "${field.tagName}" of type "${field.type}" is bad!`;
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Render Form
         const { form, fieldset, fields } = renderEmptyFields();
@@ -581,7 +574,7 @@ describe("Form Validity Observer (Class)", () => {
       it("Renders ACCESSIBLE error messages to the DOM as HTML when `render` is true (default renderer)", () => {
         const errorMessage = "<div>This field isn't correct!</div>";
         const errorFunc = (field: FormField) => `<div>Element "${field.tagName}" of type "${field.type}" is bad!</div>`;
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Render Form
         const { form, fieldset, fields } = renderEmptyFields();
@@ -622,7 +615,7 @@ describe("Form Validity Observer (Class)", () => {
       it("Renders error messages to the DOM by default when the `renderByDefault` config option is `true`", () => {
         const errorMessage = "<div>This field isn't correct!</div>";
         const errorFunc = (field: FormField) => `<div>Element "${field.tagName}" of type "${field.type}" is bad!</div>`;
-        const formValidityObserver = new FormValidityObserver(types, { renderByDefault: true });
+        const formValidityObserver = new FormValidityObserver(eventType, { renderByDefault: true });
 
         // Render Form
         const { form, fieldset, fields } = renderEmptyFields();
@@ -676,7 +669,7 @@ describe("Form Validity Observer (Class)", () => {
       // eslint-disable-next-line vitest/no-disabled-tests -- TODO: Bring this test back when browser support is better.
       it.skip("SECURELY renders error messages to the DOM as HTML whenever possible (default renderer)", () => {
         const errorFunc = (field: FormField) => `<div>Element "${field.tagName}" of type "${field.type}" is bad!</div>`;
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
         const setHTML = vi.fn(function setHTML(this: HTMLElement, htmlString: string) {
           this.innerHTML = htmlString;
         });
@@ -720,7 +713,7 @@ describe("Form Validity Observer (Class)", () => {
         const renderer = vi.fn((errorContainer: HTMLElement, error: number) => {
           errorContainer.replaceChildren(`You can't count to ${error}???`);
         });
-        const formValidityObserver = new FormValidityObserver(types, { renderer });
+        const formValidityObserver = new FormValidityObserver(eventType, { renderer });
 
         // Render Form
         const { form, fieldset, fields } = renderEmptyFields();
@@ -771,7 +764,7 @@ describe("Form Validity Observer (Class)", () => {
         const renderer = vi.fn((errorContainer: HTMLElement, error: HTMLElement) => {
           errorContainer.replaceChildren(error);
         });
-        const formValidityObserver = new FormValidityObserver(types, { renderer });
+        const formValidityObserver = new FormValidityObserver(eventType, { renderer });
 
         // Render Form
         const { form, fieldset, fields } = renderEmptyFields();
@@ -804,7 +797,7 @@ describe("Form Validity Observer (Class)", () => {
       it("Ignores fields that do not belong to the observed `form`", () => {
         const fieldName = "orphan-field";
         const errorMessage = "This field is UNREAL!!!";
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Render Form
         const { form } = renderEmptyFields();
@@ -824,7 +817,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Ignores fields that do not have a `name`", () => {
         const errorMessage = "This field is ANONYMOUS!!!";
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Render Form
         const { form } = renderEmptyFields();
@@ -845,7 +838,7 @@ describe("Form Validity Observer (Class)", () => {
         const role = "radiogroup";
         const fieldName = "rogue-radios";
         const errorMessage = "These radio buttons don't have what it takes...";
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Render Form
         const { form } = renderEmptyFields();
@@ -886,7 +879,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Does nothing if an error message is not provided", () => {
         const errorMessages = Object.freeze(["", () => ""] as const);
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Render Form
         const { form, fieldset, fields } = renderEmptyFields();
@@ -904,7 +897,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Does not attempt to render INACCESSIBLE error messages as HTML", () => {
         const errorMessage = "No users will benefit from me...";
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Render Form
         const { form, fieldset, fields } = renderEmptyFields();
@@ -940,7 +933,7 @@ describe("Form Validity Observer (Class)", () => {
       const errors = Object.freeze([errorString, errorFunc] as const);
 
       it("Marks a field as valid (via `aria-invalid`) and removes its error message", () => {
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Render Forms
         const { form, fieldset, fields } = renderEmptyFields();
@@ -980,7 +973,7 @@ describe("Form Validity Observer (Class)", () => {
        * test separately to prove (in the previous test) that nothing crashes if no accessible error messages exist.
        */
       it("Removes a field's ACCESSIBLE error message if it exists", () => {
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Render Forms
         const { form, fieldset, fields } = renderEmptyFields();
@@ -1013,7 +1006,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Ignores fields that do not belong to the observed `form`", () => {
         const fieldName = "orphaned-field";
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Render Forms
         const { form } = renderEmptyFields();
@@ -1038,7 +1031,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Ignores fields that do not have a `name`", () => {
         const fieldName = "transient-field";
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Render Forms
         const { form } = renderEmptyFields();
@@ -1062,7 +1055,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Rejects radio buttons that do not belong to an ACCESSIBLE GROUP (`fieldset[role='radiogroup']`)", () => {
         const role = "radiogroup";
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
 
         // Render Form
         const { form, fieldset } = renderEmptyFields();
@@ -1101,7 +1094,7 @@ describe("Form Validity Observer (Class)", () => {
       it("Returns `true` when a field PASSES validation and `false` when a field FAILS validation", () => {
         // Render Field
         const { form, field } = renderField(createElementWithProps("input", { name: "input", required: true }));
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
 
         // Failure (Missing Value)
@@ -1115,7 +1108,7 @@ describe("Form Validity Observer (Class)", () => {
       it("Returns `true` when a field cannot participate in constraint validation, even if it is invalid", () => {
         // Render Field
         const { form, field } = renderField(createElementWithProps("input", { name: "input", required: true }));
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
 
         expect(field.validity.valid).toBe(false);
@@ -1134,7 +1127,7 @@ describe("Form Validity Observer (Class)", () => {
       it("Sets the field's error when it fails validation", () => {
         // Setup
         const { form, field } = renderField(createElementWithProps("input", { name: "input", required: true }));
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
 
         vi.spyOn(formValidityObserver, "setFieldError");
@@ -1150,7 +1143,7 @@ describe("Form Validity Observer (Class)", () => {
       it("Clears the field's error when it passes validation", () => {
         // Setup
         const { form, field } = renderField(createElementWithProps("input", { name: "input", required: true }));
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
 
         vi.spyOn(formValidityObserver, "setFieldError");
@@ -1174,7 +1167,7 @@ describe("Form Validity Observer (Class)", () => {
         // Render Field
         const badValue = "LAME";
         const { form, field } = renderField(createElementWithProps("input", { name: "input", value: badValue }));
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
 
         // Setup Test Details
@@ -1209,7 +1202,7 @@ describe("Form Validity Observer (Class)", () => {
         // Render Field
         const badValue = "Unfaithful";
         const { form, field } = renderField(createElementWithProps("input", { name: "input", value: badValue }));
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
 
         // Setup Test Details
@@ -1271,7 +1264,7 @@ describe("Form Validity Observer (Class)", () => {
           validate: (field) => `Field ${field.name} failed validation` as const,
         } as const satisfies ValidationErrors<string>;
 
-        const observer = new FormValidityObserver(types[0], { defaultErrors });
+        const observer = new FormValidityObserver(eventType, { defaultErrors });
         observer.observe(form);
 
         const customPatternError = "Numbers only, please.";
@@ -1319,7 +1312,7 @@ describe("Form Validity Observer (Class)", () => {
         const error = "You Failed :\\";
         const validate = vi.fn().mockReturnValue(error);
 
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
         formValidityObserver.configure(field.name, { validate });
 
@@ -1382,7 +1375,7 @@ describe("Form Validity Observer (Class)", () => {
         const error = "We WILL NOT accept the RADIO BUTTON";
         const validate = vi.fn().mockReturnValue(error);
 
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
         formValidityObserver.configure(firstRadio.name, { validate });
 
@@ -1423,7 +1416,7 @@ describe("Form Validity Observer (Class)", () => {
         const validate = vi.fn().mockReturnValue(error);
         const scroller = vi.fn();
 
-        const formValidityObserver = new FormValidityObserver(types[0], { scroller });
+        const formValidityObserver = new FormValidityObserver(eventType, { scroller });
         formValidityObserver.observe(form);
         [input, firstRadio].forEach((f) => formValidityObserver.configure(f.name, { validate }));
 
@@ -1460,7 +1453,7 @@ describe("Form Validity Observer (Class)", () => {
       it("HIERARCHICALLY displays the error message(s) for the constraint(s) that the field has broken", () => {
         /* ---------- Setup ---------- */
         const { form, field } = renderField(createElementWithProps("input", { name: "overriden", value: "RIP" }));
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         vi.spyOn(formValidityObserver, "setFieldError");
         vi.spyOn(formValidityObserver, "clearFieldError");
 
@@ -1587,7 +1580,7 @@ describe("Form Validity Observer (Class)", () => {
         );
 
         // Setup `FormValidityObserver`
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
         vi.spyOn(formValidityObserver, "setFieldError");
 
@@ -1637,7 +1630,7 @@ describe("Form Validity Observer (Class)", () => {
         });
 
         // Setup `FormValidityObserver`
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
         vi.spyOn(formValidityObserver, "setFieldError");
 
@@ -1681,7 +1674,7 @@ describe("Form Validity Observer (Class)", () => {
           errorContainer.replaceChildren(`You can't count to ${error}???`);
         });
 
-        const formValidityObserver = new FormValidityObserver(types, { renderer });
+        const formValidityObserver = new FormValidityObserver(eventType, { renderer });
         formValidityObserver.observe(form);
         vi.spyOn(formValidityObserver, "setFieldError");
 
@@ -1724,11 +1717,11 @@ describe("Form Validity Observer (Class)", () => {
         });
 
         // Setup `FormValidityObserver`s
-        const formValidityObserver1 = new FormValidityObserver(types[0], { defaultErrors: { required: error } });
+        const formValidityObserver1 = new FormValidityObserver(eventType, { defaultErrors: { required: error } });
         formValidityObserver1.observe(form);
         vi.spyOn(formValidityObserver1, "setFieldError");
 
-        const formValidityObserver2 = new FormValidityObserver(types[0], {
+        const formValidityObserver2 = new FormValidityObserver(eventType, {
           renderByDefault: true,
           defaultErrors: { required: error },
         });
@@ -1805,7 +1798,7 @@ describe("Form Validity Observer (Class)", () => {
           errorContainer.replaceChildren(`You can't count to ${error}???`);
         });
 
-        const formValidityObserver = new FormValidityObserver(types, { renderer });
+        const formValidityObserver = new FormValidityObserver(eventType, { renderer });
         formValidityObserver.observe(form);
 
         const message = Infinity;
@@ -1840,7 +1833,7 @@ describe("Form Validity Observer (Class)", () => {
         );
 
         // Setup `FormValidityObserver`
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
 
         const errorConfiguration = { required: customError } as const;
@@ -1866,7 +1859,7 @@ describe("Form Validity Observer (Class)", () => {
 
       it("Ignores fields that aren't associated with the observed `form`", () => {
         const fieldName = "orphan-field";
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
         vi.spyOn(formValidityObserver, "setFieldError");
         vi.spyOn(formValidityObserver, "clearFieldError");
 
@@ -1900,7 +1893,7 @@ describe("Form Validity Observer (Class)", () => {
       });
 
       it("Ignores fields that don't have a `name`", () => {
-        const formValidityObserver = new FormValidityObserver(types);
+        const formValidityObserver = new FormValidityObserver(eventType);
         vi.spyOn(formValidityObserver, "setFieldError");
         vi.spyOn(formValidityObserver, "clearFieldError");
 
@@ -1946,7 +1939,7 @@ describe("Form Validity Observer (Class)", () => {
             errorContainer.replaceChildren(error.value);
           });
 
-          const formValidityObserver = new FormValidityObserver(types, { renderer, renderByDefault: true });
+          const formValidityObserver = new FormValidityObserver(eventType, { renderer, renderByDefault: true });
           formValidityObserver.observe(form);
 
           const stringMessage = "I am a bad string, bro...";
@@ -1979,7 +1972,7 @@ describe("Form Validity Observer (Class)", () => {
       it("Validates ALL of the observed form's (`named`) fields", () => {
         // Render Form
         const { form } = renderEmptyFields();
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
         vi.spyOn(formValidityObserver, "validateField");
 
@@ -2001,7 +1994,7 @@ describe("Form Validity Observer (Class)", () => {
         /* ---------- (Initial) Setup ---------- */
         // Render Form
         const { form } = renderEmptyFields();
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
 
         // ALL form controls should be valid
@@ -2021,7 +2014,7 @@ describe("Form Validity Observer (Class)", () => {
         /* ---------- (Initial) Setup ---------- */
         // Render Form
         const { form } = renderEmptyFields();
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
 
         // ALL form controls should START OUT valid
@@ -2078,7 +2071,7 @@ describe("Form Validity Observer (Class)", () => {
         `;
 
         // Observe Form + Configure Errors
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
         Object.entries(validators).forEach(([name, validate]) => formValidityObserver.configure(name, { validate }));
 
@@ -2149,7 +2142,7 @@ describe("Form Validity Observer (Class)", () => {
         `;
 
         // Observe Form + Configure Errors
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
         Object.entries(validators).forEach(([name, validate]) => formValidityObserver.configure(name, { validate }));
 
@@ -2190,7 +2183,7 @@ describe("Form Validity Observer (Class)", () => {
           }),
         };
 
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
         formValidityObserver.configure(syncField.name, { validate: validators.sync });
         formValidityObserver.configure(asyncField.name, { validate: validators.async });
@@ -2271,7 +2264,7 @@ describe("Form Validity Observer (Class)", () => {
         const error = "You didn't get it right...";
         const validate = vi.fn().mockReturnValue(error);
 
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
         [firstRadio, ...fields].forEach((f) => formValidityObserver.configure(f.name, { validate }));
 
@@ -2319,7 +2312,7 @@ describe("Form Validity Observer (Class)", () => {
         const validate = vi.fn().mockReturnValue(error);
         const scroller = vi.fn();
 
-        const formValidityObserver = new FormValidityObserver(types[0], { scroller });
+        const formValidityObserver = new FormValidityObserver(eventType, { scroller });
         formValidityObserver.observe(form);
         [firstRadio, ...fields].forEach((f) => formValidityObserver.configure(f.name, { validate }));
 
@@ -2367,7 +2360,7 @@ describe("Form Validity Observer (Class)", () => {
           `;
 
         // Observe Form
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
         vi.spyOn(formValidityObserver, "validateField");
 
@@ -2389,7 +2382,7 @@ describe("Form Validity Observer (Class)", () => {
           `;
 
         // Observe Form
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
         vi.spyOn(formValidityObserver, "validateField");
 
@@ -2426,7 +2419,7 @@ describe("Form Validity Observer (Class)", () => {
         expect(Array.from(form.elements).every((e) => e.getAttribute("name"))).toBeTruthy();
 
         // Observe Form
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
         vi.spyOn(formValidityObserver, "validateField");
 
@@ -2468,7 +2461,7 @@ describe("Form Validity Observer (Class)", () => {
         });
 
         // Observer Form
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
 
         // Run Assertions
@@ -2487,7 +2480,7 @@ describe("Form Validity Observer (Class)", () => {
 
         // Render Form
         const { form, field } = renderField(createElementWithProps("input", { name: "weird-field", required: true }));
-        const formValidityObserver = new FormValidityObserver(types[0]);
+        const formValidityObserver = new FormValidityObserver(eventType);
         formValidityObserver.observe(form);
 
         // Delete `window` to simulate a non-browser environment
@@ -2561,7 +2554,7 @@ describe("Form Validity Observer (Class)", () => {
           root.appendChild(form);
 
           // Observe Form
-          const formValidityObserver = new FormValidityObserver(types[0]);
+          const formValidityObserver = new FormValidityObserver(eventType);
           formValidityObserver.observe(form);
 
           /* ---------- Run Assertions ---------- */
@@ -2696,7 +2689,7 @@ describe("Form Validity Observer (Class)", () => {
               });
 
               // Configure Error Message
-              const formValidityObserver = new FormValidityObserver(types[1]);
+              const formValidityObserver = new FormValidityObserver(eventType);
               vi.spyOn(formValidityObserver, "validateField");
 
               formValidityObserver.observe(screen.getByRole<HTMLFormElement>("form"));
@@ -2731,7 +2724,7 @@ describe("Form Validity Observer (Class)", () => {
               select.append(...testOptions.map((value) => createElementWithProps("option", { value })));
 
               // Configure Error Message
-              const formValidityObserver = new FormValidityObserver(types);
+              const formValidityObserver = new FormValidityObserver(eventType);
               vi.spyOn(formValidityObserver, "validateField");
 
               formValidityObserver.observe(screen.getByRole("form") as HTMLFormElement);
@@ -2746,6 +2739,7 @@ describe("Form Validity Observer (Class)", () => {
 
               // Test Valid Field Case
               await userEvent.selectOptions(select, testOptions[0]);
+              await userEvent.type(select, "{Tab}");
 
               expectNoErrorsFor(select);
               expect(formValidityObserver.validateField).toHaveBeenCalledTimes(2);
@@ -2761,7 +2755,7 @@ describe("Form Validity Observer (Class)", () => {
               const textarea = screen.getByRole<HTMLSelectElement>("textbox");
 
               // Configure Error Message
-              const formValidityObserver = new FormValidityObserver(types[1]);
+              const formValidityObserver = new FormValidityObserver(eventType);
               vi.spyOn(formValidityObserver, "validateField");
 
               formValidityObserver.observe(screen.getByRole("form") as HTMLFormElement);
@@ -2794,7 +2788,7 @@ describe("Form Validity Observer (Class)", () => {
                 const { field } = renderField(createElementWithProps(tag, { name: tag }), { accessible });
 
                 // Configure Error Message
-                const formValidityObserver = new FormValidityObserver(types[1]);
+                const formValidityObserver = new FormValidityObserver(eventType);
                 vi.spyOn(formValidityObserver, "validateField");
 
                 const validate = vi.fn(() => Promise.resolve(errorDetails));
@@ -2834,26 +2828,25 @@ describe("Form Validity Observer (Class)", () => {
    * false positives for code coverage.
    */
   return;
-  const event1 = "beforeinput" satisfies keyof DocumentEventMap; // Correlates to `InputEvent`
-  const event2 = "click" satisfies keyof DocumentEventMap; // Correlates to `MouseEvent`
+  const event = "beforeinput" satisfies EventType; // Correlates to `InputEvent`
 
   /* -------------------- Constructor Type Tests -------------------- */
   // Single Type
-  new FormValidityObserver(event1);
-  new FormValidityObserver(event1, {});
-  new FormValidityObserver(event1, { scroller: () => undefined });
-  new FormValidityObserver(event1, { useEventCapturing: true });
+  new FormValidityObserver(event);
+  new FormValidityObserver(event, {});
+  new FormValidityObserver(event, { scroller: () => undefined });
+  new FormValidityObserver(event, { useEventCapturing: true });
 
   // Multiple Types
-  new FormValidityObserver([event1, event2]);
-  new FormValidityObserver([event1, event2], {});
-  new FormValidityObserver([event1, event2], { scroller: undefined });
-  new FormValidityObserver([event1, event2], { useEventCapturing: undefined });
+  new FormValidityObserver(event);
+  new FormValidityObserver(event, {});
+  new FormValidityObserver(event, { scroller: undefined });
+  new FormValidityObserver(event, { useEventCapturing: undefined });
 
-  new FormValidityObserver([event1, event2] as const);
-  new FormValidityObserver([event1, event2] as const, {});
-  new FormValidityObserver([event1, event2] as const, { scroller: (f) => f.scrollIntoView() });
-  new FormValidityObserver([event1, event2] as const, { useEventCapturing: false });
+  new FormValidityObserver(event);
+  new FormValidityObserver(event, {});
+  new FormValidityObserver(event, { scroller: (f) => f.scrollIntoView() });
+  new FormValidityObserver(event, { useEventCapturing: false });
 
   /* -------------------- Renderer Type Tests --> `setFieldError` -------------------- */
   const name = "my-field";
@@ -2870,99 +2863,99 @@ describe("Form Validity Observer (Class)", () => {
 
   /* ---------- Default Renderer ---------- */
   // Success Cases
-  new FormValidityObserver(event1).setFieldError(name, staticErrorString);
-  new FormValidityObserver(event1).setFieldError(name, dynamicErrorString);
+  new FormValidityObserver(event).setFieldError(name, staticErrorString);
+  new FormValidityObserver(event).setFieldError(name, dynamicErrorString);
 
-  new FormValidityObserver(event1).setFieldError(name, staticErrorString, false);
-  new FormValidityObserver(event1).setFieldError(name, dynamicErrorString, false);
+  new FormValidityObserver(event).setFieldError(name, staticErrorString, false);
+  new FormValidityObserver(event).setFieldError(name, dynamicErrorString, false);
 
-  new FormValidityObserver(event1).setFieldError(name, staticErrorString, true);
-  new FormValidityObserver(event1).setFieldError(name, dynamicErrorString, true);
+  new FormValidityObserver(event).setFieldError(name, staticErrorString, true);
+  new FormValidityObserver(event).setFieldError(name, dynamicErrorString, true);
 
   // Failure Cases
   // @ts-expect-error -- Only `string` messages are allowed
-  new FormValidityObserver(event1).setFieldError(name, staticCustomError);
+  new FormValidityObserver(event).setFieldError(name, staticCustomError);
   // @ts-expect-error -- Only `string` messages are allowed
-  new FormValidityObserver(event1).setFieldError(name, dynamicCustomError);
+  new FormValidityObserver(event).setFieldError(name, dynamicCustomError);
 
   // @ts-expect-error -- Only `string` messages are allowed
-  new FormValidityObserver(event1).setFieldError(name, 1, false);
+  new FormValidityObserver(event).setFieldError(name, 1, false);
   // @ts-expect-error -- Only `string` messages are allowed
-  new FormValidityObserver(event1).setFieldError(name, (field) => field.childElementCount, false);
+  new FormValidityObserver(event).setFieldError(name, (field) => field.childElementCount, false);
 
   // @ts-expect-error -- Only `string` messages are allowed
-  new FormValidityObserver(event1).setFieldError(name, staticCustomError, true);
+  new FormValidityObserver(event).setFieldError(name, staticCustomError, true);
   // @ts-expect-error -- Only `string` messages are allowed
-  new FormValidityObserver(event1).setFieldError(name, dynamicCustomError, true);
+  new FormValidityObserver(event).setFieldError(name, dynamicCustomError, true);
 
   // @ts-expect-error -- Only `string` messages are allowed
-  new FormValidityObserver(event1).setFieldError(name, 1, true);
+  new FormValidityObserver(event).setFieldError(name, 1, true);
   // @ts-expect-error -- Only `string` messages are allowed
-  new FormValidityObserver(event1).setFieldError(name, (field) => field.childElementCount, true);
+  new FormValidityObserver(event).setFieldError(name, (field) => field.childElementCount, true);
 
   /* ---------- Custom Renderer ---------- */
   // Success Cases
-  new FormValidityObserver(event1, { renderer }).setFieldError(name, staticErrorString);
-  new FormValidityObserver(event1, { renderer }).setFieldError(name, dynamicErrorString);
+  new FormValidityObserver(event, { renderer }).setFieldError(name, staticErrorString);
+  new FormValidityObserver(event, { renderer }).setFieldError(name, dynamicErrorString);
 
-  new FormValidityObserver(event1, { renderer }).setFieldError(name, staticErrorString, false);
-  new FormValidityObserver(event1, { renderer }).setFieldError(name, dynamicErrorString, false);
+  new FormValidityObserver(event, { renderer }).setFieldError(name, staticErrorString, false);
+  new FormValidityObserver(event, { renderer }).setFieldError(name, dynamicErrorString, false);
 
-  new FormValidityObserver(event1, { renderer }).setFieldError(name, staticCustomError, true);
-  new FormValidityObserver(event1, { renderer }).setFieldError(name, dynamicCustomError, true);
+  new FormValidityObserver(event, { renderer }).setFieldError(name, staticCustomError, true);
+  new FormValidityObserver(event, { renderer }).setFieldError(name, dynamicCustomError, true);
 
   // Failure Cases
   // @ts-expect-error -- Only `string`s are allowed for unrendered messages
-  new FormValidityObserver(event1, { renderer }).setFieldError(name, staticCustomError);
+  new FormValidityObserver(event, { renderer }).setFieldError(name, staticCustomError);
   // @ts-expect-error -- Only `string`s are allowed for unrendered messages
-  new FormValidityObserver(event1, { renderer }).setFieldError(name, dynamicCustomError);
+  new FormValidityObserver(event, { renderer }).setFieldError(name, dynamicCustomError);
 
   // @ts-expect-error -- Only `string`s are allowed for unrendered messages
-  new FormValidityObserver(event1, { renderer }).setFieldError(name, staticCustomError, false);
+  new FormValidityObserver(event, { renderer }).setFieldError(name, staticCustomError, false);
   // @ts-expect-error -- Only `string`s are allowed for unrendered messages
-  new FormValidityObserver(event1, { renderer }).setFieldError(name, dynamicCustomError, false);
+  new FormValidityObserver(event, { renderer }).setFieldError(name, dynamicCustomError, false);
 
   // @ts-expect-error -- Cannot render message types not supported by `renderer`
-  new FormValidityObserver(event1, { renderer }).setFieldError(name, staticErrorString, true);
+  new FormValidityObserver(event, { renderer }).setFieldError(name, staticErrorString, true);
   // @ts-expect-error -- Cannot render message types not supported by `renderer`
-  new FormValidityObserver(event1, { renderer }).setFieldError(name, staticErrorString, true);
+  new FormValidityObserver(event, { renderer }).setFieldError(name, staticErrorString, true);
 
   // @ts-expect-error -- Cannot render message types not supported by `renderer`
-  new FormValidityObserver(event1, { renderer }).setFieldError(name, 1, true);
+  new FormValidityObserver(event, { renderer }).setFieldError(name, 1, true);
   // @ts-expect-error -- Cannot render message types not supported by `renderer`
-  new FormValidityObserver(event1, { renderer }).setFieldError(name, (field) => field.childElementCount, true);
+  new FormValidityObserver(event, { renderer }).setFieldError(name, (field) => field.childElementCount, true);
 
   /* ---------- Custom Renderer with `renderByDefault=true` ---------- */
   // Success Cases
-  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, staticCustomError);
-  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, dynamicCustomError);
+  new FormValidityObserver(event, { renderer, renderByDefault: true }).setFieldError(name, staticCustomError);
+  new FormValidityObserver(event, { renderer, renderByDefault: true }).setFieldError(name, dynamicCustomError);
 
-  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, staticErrorString, false);
-  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, dynamicErrorString, false);
+  new FormValidityObserver(event, { renderer, renderByDefault: true }).setFieldError(name, staticErrorString, false);
+  new FormValidityObserver(event, { renderer, renderByDefault: true }).setFieldError(name, dynamicErrorString, false);
 
-  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, staticCustomError, true);
-  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, dynamicCustomError, true);
+  new FormValidityObserver(event, { renderer, renderByDefault: true }).setFieldError(name, staticCustomError, true);
+  new FormValidityObserver(event, { renderer, renderByDefault: true }).setFieldError(name, dynamicCustomError, true);
 
   // Failure Cases
   // @ts-expect-error -- Cannot render message types not supported by `renderer`
-  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, staticErrorString);
+  new FormValidityObserver(event, { renderer, renderByDefault: true }).setFieldError(name, staticErrorString);
   // @ts-expect-error -- Cannot render message types not supported by `renderer`
-  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, dynamicErrorString);
+  new FormValidityObserver(event, { renderer, renderByDefault: true }).setFieldError(name, dynamicErrorString);
 
   // @ts-expect-error -- Only `string`s are allowed for unrendered messages
-  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, staticCustomError, false);
+  new FormValidityObserver(event, { renderer, renderByDefault: true }).setFieldError(name, staticCustomError, false);
   // @ts-expect-error -- Only `string`s are allowed for unrendered messages
-  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, dynamicCustomError, false);
+  new FormValidityObserver(event, { renderer, renderByDefault: true }).setFieldError(name, dynamicCustomError, false);
 
   // @ts-expect-error -- Cannot render message types not supported by `renderer`
-  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, staticErrorString, true);
+  new FormValidityObserver(event, { renderer, renderByDefault: true }).setFieldError(name, staticErrorString, true);
   // @ts-expect-error -- Cannot render message types not supported by `renderer`
-  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, staticErrorString, true);
+  new FormValidityObserver(event, { renderer, renderByDefault: true }).setFieldError(name, staticErrorString, true);
 
   // @ts-expect-error -- Cannot render message types not supported by `renderer`
-  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(name, 1, true);
+  new FormValidityObserver(event, { renderer, renderByDefault: true }).setFieldError(name, 1, true);
 
-  new FormValidityObserver(event1, { renderer, renderByDefault: true }).setFieldError(
+  new FormValidityObserver(event, { renderer, renderByDefault: true }).setFieldError(
     name,
     // @ts-expect-error -- Cannot render message types not supported by `renderer`
     (field) => field.childElementCount,
@@ -2972,7 +2965,7 @@ describe("Form Validity Observer (Class)", () => {
   /* -------------------- Renderer Type Tests --> `configure` -------------------- */
   /* ---------- Default Renderer ---------- */
   // Success Cases
-  new FormValidityObserver(event1).configure(name, {
+  new FormValidityObserver(event).configure(name, {
     badinput: staticErrorString,
     required: dynamicErrorString,
 
@@ -2992,7 +2985,7 @@ describe("Form Validity Observer (Class)", () => {
   });
 
   // Failure Cases
-  new FormValidityObserver(event1).configure(name, {
+  new FormValidityObserver(event).configure(name, {
     // @ts-expect-error -- Only `string` messages are allowed
     badinput: staticCustomError,
     // @ts-expect-error -- Only `string` messages are allowed
@@ -3022,7 +3015,7 @@ describe("Form Validity Observer (Class)", () => {
 
   /* ---------- Custom Renderer ---------- */
   // Success Cases
-  new FormValidityObserver(event1, { renderer }).configure(name, {
+  new FormValidityObserver(event, { renderer }).configure(name, {
     badinput: staticErrorString,
     required: dynamicErrorString,
 
@@ -3043,7 +3036,7 @@ describe("Form Validity Observer (Class)", () => {
   });
 
   // Failure Cases
-  new FormValidityObserver(event1, { renderer }).configure(name, {
+  new FormValidityObserver(event, { renderer }).configure(name, {
     // @ts-expect-error -- Only `string`s are allowed for unrendered messages
     badinput: staticCustomError,
     // @ts-expect-error -- Only `string`s are allowed for unrendered messages
@@ -3076,7 +3069,7 @@ describe("Form Validity Observer (Class)", () => {
 
   /* ---------- Custom Renderer with `renderByDefault=true` ---------- */
   // Success Cases
-  new FormValidityObserver(event1, { renderer, renderByDefault: true }).configure(name, {
+  new FormValidityObserver(event, { renderer, renderByDefault: true }).configure(name, {
     badinput: staticCustomError,
     required: dynamicCustomError,
 
@@ -3097,7 +3090,7 @@ describe("Form Validity Observer (Class)", () => {
   });
 
   // Failure Cases
-  new FormValidityObserver(event1, { renderer, renderByDefault: true }).configure(name, {
+  new FormValidityObserver(event, { renderer, renderByDefault: true }).configure(name, {
     // @ts-expect-error -- Cannot render message types not supported by `renderer`
     badinput: staticErrorString,
     // @ts-expect-error -- Cannot render message types not supported by `renderer`
@@ -3133,7 +3126,7 @@ describe("Form Validity Observer (Class)", () => {
   // uses the same type for the error message configuration, we'll just do some quick happy-path tests here.
 
   // Default Renderer
-  new FormValidityObserver(event1, {
+  new FormValidityObserver(event, {
     defaultErrors: {
       badinput: staticErrorString,
       required: dynamicErrorString,
@@ -3149,7 +3142,7 @@ describe("Form Validity Observer (Class)", () => {
   });
 
   // Custom Renderer
-  new FormValidityObserver(event1, {
+  new FormValidityObserver(event, {
     renderer,
     defaultErrors: {
       max: { message: staticErrorString, render: false },
@@ -3167,7 +3160,7 @@ describe("Form Validity Observer (Class)", () => {
   });
 
   // Custom Renderer with `renderByDefault=true`
-  new FormValidityObserver(event1, {
+  new FormValidityObserver(event, {
     renderer,
     renderByDefault: true,
     defaultErrors: {
@@ -3194,25 +3187,25 @@ describe("Form Validity Observer (Class)", () => {
   /* -------------------- Type Tests for Dynamic Fields -------------------- */
   /* ---------- `setFieldError` ---------- */
   // Both specific AND general types work
-  new FormValidityObserver(event1).setFieldError(name, (_: HTMLSelectElement) => "");
-  new FormValidityObserver(event1).setFieldError(name, (_: HTMLInputElement) => "");
-  new FormValidityObserver(event1).setFieldError(name, (_: ValidatableField) => "");
-  new FormValidityObserver(event1).setFieldError(name, (_: FormField) => "");
+  new FormValidityObserver(event).setFieldError(name, (_: HTMLSelectElement) => "");
+  new FormValidityObserver(event).setFieldError(name, (_: HTMLInputElement) => "");
+  new FormValidityObserver(event).setFieldError(name, (_: ValidatableField) => "");
+  new FormValidityObserver(event).setFieldError(name, (_: FormField) => "");
 
   /* ---------- `configure`d Error Messages ---------- */
   // Both specific AND general types work
-  new FormValidityObserver(event1).configure(name, { required: (_: HTMLTextAreaElement) => "" });
-  new FormValidityObserver(event1).configure(name, { required: (_: HTMLInputElement) => "" });
-  new FormValidityObserver(event1).configure(name, { required: (_: ValidatableField) => "" });
-  new FormValidityObserver(event1).configure(name, { required: (_: FormField) => "" });
+  new FormValidityObserver(event).configure(name, { required: (_: HTMLTextAreaElement) => "" });
+  new FormValidityObserver(event).configure(name, { required: (_: HTMLInputElement) => "" });
+  new FormValidityObserver(event).configure(name, { required: (_: ValidatableField) => "" });
+  new FormValidityObserver(event).configure(name, { required: (_: FormField) => "" });
 
-  new FormValidityObserver(event1).configure(name, { validate: (_: HTMLTextAreaElement) => "" });
-  new FormValidityObserver(event1).configure(name, { validate: (_: HTMLInputElement) => "" });
-  new FormValidityObserver(event1).configure(name, { validate: (_: ValidatableField) => "" });
-  new FormValidityObserver(event1).configure(name, { validate: (_: FormField) => "" });
+  new FormValidityObserver(event).configure(name, { validate: (_: HTMLTextAreaElement) => "" });
+  new FormValidityObserver(event).configure(name, { validate: (_: HTMLInputElement) => "" });
+  new FormValidityObserver(event).configure(name, { validate: (_: ValidatableField) => "" });
+  new FormValidityObserver(event).configure(name, { validate: (_: FormField) => "" });
 
   // Fields must be consistent/compatible, however
-  new FormValidityObserver(event1).configure(name, {
+  new FormValidityObserver(event).configure(name, {
     required: (_: HTMLInputElement) => "",
     // @ts-expect-error -- Incompatible with the `HTMLInputElement` specified earlier
     validate: (_: HTMLSelectElement) => "",
@@ -3221,18 +3214,18 @@ describe("Form Validity Observer (Class)", () => {
   /* ---------- Default Error Messages ---------- */
   // Both specific AND general types work.
   // (Because `configure` uses the same type for the error message configuration, we'll only do some quick tests here.)
-  new FormValidityObserver(event1, { defaultErrors: { required: (_: HTMLTextAreaElement) => "" } });
-  new FormValidityObserver(event1, { defaultErrors: { required: (_: HTMLInputElement) => "" } });
-  new FormValidityObserver(event1, { defaultErrors: { required: (_: ValidatableField) => "" } });
-  new FormValidityObserver(event1, { defaultErrors: { required: (_: FormField) => "" } });
+  new FormValidityObserver(event, { defaultErrors: { required: (_: HTMLTextAreaElement) => "" } });
+  new FormValidityObserver(event, { defaultErrors: { required: (_: HTMLInputElement) => "" } });
+  new FormValidityObserver(event, { defaultErrors: { required: (_: ValidatableField) => "" } });
+  new FormValidityObserver(event, { defaultErrors: { required: (_: FormField) => "" } });
 
-  new FormValidityObserver(event1, { defaultErrors: { validate: (_: HTMLTextAreaElement) => "" } });
-  new FormValidityObserver(event1, { defaultErrors: { validate: (_: HTMLInputElement) => "" } });
-  new FormValidityObserver(event1, { defaultErrors: { validate: (_: ValidatableField) => "" } });
-  new FormValidityObserver(event1, { defaultErrors: { validate: (_: FormField) => "" } });
+  new FormValidityObserver(event, { defaultErrors: { validate: (_: HTMLTextAreaElement) => "" } });
+  new FormValidityObserver(event, { defaultErrors: { validate: (_: HTMLInputElement) => "" } });
+  new FormValidityObserver(event, { defaultErrors: { validate: (_: ValidatableField) => "" } });
+  new FormValidityObserver(event, { defaultErrors: { validate: (_: FormField) => "" } });
 
   // Fields must be consistent/compatible, however
-  new FormValidityObserver(event1, {
+  new FormValidityObserver(event, {
     defaultErrors: {
       required: (_: HTMLInputElement) => "",
       // @ts-expect-error -- Incompatible with the `HTMLInputElement` specified earlier

@@ -9,13 +9,13 @@ import type { PreactValidationErrors } from "../types.d.ts";
 import type { EventType, FormField, ValidatableField } from "../index.d.ts";
 
 describe("Create Form Validity Observer (Function)", () => {
-  const types = Object.freeze(["input", "focusout"] as const) satisfies ReadonlyArray<EventType>;
+  const type = "input" satisfies EventType;
 
   // Keep things clean between each test by automatically restoring anything we may have spied on
   beforeEach(vi.restoreAllMocks as () => void);
 
   it("Generates a `FormValidityObserver` (enhanced)", () => {
-    expect(createFormValidityObserver(types)).toEqual(expect.any(FormValidityObserver));
+    expect(createFormValidityObserver(type)).toEqual(expect.any(FormValidityObserver));
   });
 
   it("Exposes `bound` versions of the `FormValidityObserver`'s methods (excluding `configure`)", () => {
@@ -33,7 +33,7 @@ describe("Create Form Validity Observer (Function)", () => {
     boundMethods.forEach((method) => vi.spyOn(FormValidityObserver.prototype[method], "bind"));
 
     /* ---------- Run Assertions ---------- */
-    const observer = createFormValidityObserver(types);
+    const observer = createFormValidityObserver(type);
 
     boundMethods.forEach((method) => {
       expect(FormValidityObserver.prototype[method].bind).toHaveBeenCalledTimes(1);
@@ -48,7 +48,7 @@ describe("Create Form Validity Observer (Function)", () => {
     vi.spyOn(FormValidityObserver.prototype[configure], "bind");
 
     // Run Assertions
-    const observer = createFormValidityObserver(types);
+    const observer = createFormValidityObserver(type);
     expect(FormValidityObserver.prototype[configure].bind).toHaveBeenCalledTimes(1);
     expect(FormValidityObserver.prototype[configure].bind).toHaveBeenCalledWith(observer);
     expect(FormValidityObserver.prototype[configure].bind).not.toHaveReturnedWith(observer[configure]);
@@ -58,7 +58,7 @@ describe("Create Form Validity Observer (Function)", () => {
   // eslint-disable-next-line vitest/no-disabled-tests
   it.skip("Uses a default `renderer` that accepts `Renderable Preact Values`", () => {
     /* ---------- Setup ---------- */
-    const { autoObserve, setFieldError, clearFieldError } = createFormValidityObserver(types[0]);
+    const { autoObserve, setFieldError, clearFieldError } = createFormValidityObserver(type);
 
     const { unmount } = render(
       <form ref={autoObserve()}>
@@ -132,7 +132,7 @@ describe("Create Form Validity Observer (Function)", () => {
         const message = "Only numbers are allowed!";
         vi.spyOn(FormValidityObserver.prototype, "observe");
         vi.spyOn(FormValidityObserver.prototype, "unobserve");
-        const { autoObserve, configure } = createFormValidityObserver(types[0]);
+        const { autoObserve, configure } = createFormValidityObserver(type);
 
         /* ---------- Assertions ---------- */
         const { unmount } = render(
@@ -170,9 +170,9 @@ describe("Create Form Validity Observer (Function)", () => {
         const labels = { default: "Default Config", true: "Explicit True Option", false: "Explicit False Option" };
         const novalidate = "novalidate";
 
-        const { autoObserve: autoObserveDefault } = createFormValidityObserver(types[0]);
-        const { autoObserve: autoObserveTrue } = createFormValidityObserver(types[0]);
-        const { autoObserve: autoObserveFalse } = createFormValidityObserver(types[0]);
+        const { autoObserve: autoObserveDefault } = createFormValidityObserver(type);
+        const { autoObserve: autoObserveTrue } = createFormValidityObserver(type);
+        const { autoObserve: autoObserveFalse } = createFormValidityObserver(type);
 
         // Assertions
         render(
@@ -196,7 +196,7 @@ describe("Create Form Validity Observer (Function)", () => {
 
       it("ONLY configures the error messages for the custom validation properties", () => {
         vi.spyOn(FormValidityObserver.prototype, "configure");
-        const observer = createFormValidityObserver(types[0]);
+        const observer = createFormValidityObserver(type);
 
         const errorMessages: Pick<ConstraintValues, "badinput" | "validate"> = {
           badinput: (field) => `This ${field.tagName} element isn't looking good` as const,
@@ -209,7 +209,7 @@ describe("Create Form Validity Observer (Function)", () => {
 
       it("ONLY configures the props for the HTML attributes when the value-only variant is used", () => {
         vi.spyOn(FormValidityObserver.prototype, "configure");
-        const observer = createFormValidityObserver(types[0]);
+        const observer = createFormValidityObserver(type);
 
         const errorMessages: Omit<ConstraintValues, "badinput" | "validate"> = {
           required: true,
@@ -228,7 +228,7 @@ describe("Create Form Validity Observer (Function)", () => {
 
       it("Configures the prop AND the error for the `required` constraint when its value is an error message", () => {
         vi.spyOn(FormValidityObserver.prototype, "configure");
-        const observer = createFormValidityObserver(types[0]);
+        const observer = createFormValidityObserver(type);
 
         // Regular Error Message
         const configWithErrorMessage = { required: "This field is bad" };
@@ -243,7 +243,7 @@ describe("Create Form Validity Observer (Function)", () => {
 
       it("Configures the props AND the error messages for the HTML attributes when the object variant is used", () => {
         vi.spyOn(FormValidityObserver.prototype, "configure");
-        const observer = createFormValidityObserver(types[0]);
+        const observer = createFormValidityObserver(type);
 
         const errorMessages: Omit<ConstraintValues, "badinput" | "validate"> = {
           required: { value: true, message: (field) => `<p>${field.tagName} required</p>`, render: true },
@@ -264,7 +264,7 @@ describe("Create Form Validity Observer (Function)", () => {
 
       it("DOES NOT configure any props OR error messages when `undefined` is used", () => {
         vi.spyOn(FormValidityObserver.prototype, "configure");
-        const observer = createFormValidityObserver(types[0]);
+        const observer = createFormValidityObserver(type);
 
         // Undefined Configurations
         const undefinedErrorMessages: PreactValidationErrors<string> = {
@@ -286,7 +286,7 @@ describe("Create Form Validity Observer (Function)", () => {
 
       it("DOES NOT configure the prop OR the error for the `required` constraint when its value is `false`", () => {
         vi.spyOn(FormValidityObserver.prototype, "configure");
-        const observer = createFormValidityObserver(types[0]);
+        const observer = createFormValidityObserver(type);
 
         // `required = false` via Value-Only Variant
         expect(observer.configure(name, { required: false })).toStrictEqual({ name });
@@ -299,7 +299,7 @@ describe("Create Form Validity Observer (Function)", () => {
 
       it("Always returns the `name` prop for the field", () => {
         vi.spyOn(FormValidityObserver.prototype, "configure");
-        const observer = createFormValidityObserver(types[0]);
+        const observer = createFormValidityObserver(type);
 
         expect(observer.configure(name, {})).toStrictEqual({ name });
         expect(FormValidityObserver.prototype.configure).toHaveBeenCalledWith(name, {});
@@ -312,7 +312,7 @@ describe("Create Form Validity Observer (Function)", () => {
           const renderer = (_errorContainer: HTMLElement, _errorMessage: StringOrElement | null) => undefined;
 
           vi.spyOn(FormValidityObserver.prototype, "configure");
-          const observer = createFormValidityObserver(types[0], { renderer, renderByDefault: true });
+          const observer = createFormValidityObserver(type, { renderer, renderByDefault: true });
 
           // Test a Renderable Error Message
           const renderable = { type: "DOMString", value: "No" } as const;

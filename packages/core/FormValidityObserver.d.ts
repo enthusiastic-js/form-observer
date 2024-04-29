@@ -4,7 +4,7 @@
  * - https://github.com/microsoft/TypeScript/issues/55919 (generic constructors)
  * - https://github.com/microsoft/TypeScript/issues/40451 (generic constructors)
  */
-import type { OneOrMany, EventType, ValidatableField } from "./types.d.ts";
+import type { EventType, ValidatableField } from "./types.d.ts";
 
 export type ErrorMessage<M, E extends ValidatableField = ValidatableField> = M | ((field: E) => M);
 
@@ -95,15 +95,10 @@ interface FormValidityObserverConstructor {
    * Provides a way to validate an `HTMLFormElement`'s fields (and to display _accessible_ errors for those fields)
    * in response to the events that the fields emit.
    *
-   * @param types The type(s) of event(s) that trigger(s) form field validation.
+   * @param type The type of event that triggers form field validation.
    */
-  new <
-    T extends OneOrMany<EventType>,
-    M = string,
-    E extends ValidatableField = ValidatableField,
-    R extends boolean = false,
-  >(
-    types: T,
+  new <T extends EventType, M = string, E extends ValidatableField = ValidatableField, R extends boolean = false>(
+    type: T,
     options?: FormValidityObserverOptions<M, E, R>,
   ): FormValidityObserver<M, R>;
 }

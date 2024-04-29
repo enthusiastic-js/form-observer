@@ -87,9 +87,9 @@ As expected for any form validation library, we also support the following featu
 The `FormValidityObserver()` constructor creates a new observer and configures it with the `options` that you pass in. Because the `FormValidityObserver` only focuses on one task, it has a simple constructor with no overloads.
 
 <dl>
-  <dt id="form-validity-observer-parameters-types"><code>types</code></dt>
+  <dt id="form-validity-observer-parameters-types"><code>type: EventType</code></dt>
   <dd>
-    A string <em>or</em> an array of strings representing the type(s) of event(s) that should cause a form's field to be validated. As with the <code>FormObserver</code>, the string(s) can be <a href="https://developer.mozilla.org/en-US/docs/Web/Events">commonly recognized</a> event types <em>or</em> your own <a href="../form-observer/guides.md#supporting-custom-event-types">custom</a> event types.
+    A string representing the type of event that should cause a form's field to be validated. As with the <code>FormObserver</code>, the string can be a <a href="https://developer.mozilla.org/en-US/docs/Web/Events">commonly recognized</a> event type <em>or</em> your own <a href="../form-observer/guides.md#supporting-custom-event-types">custom</a> event type. But in the case of the <code>FormValidityObserver</code>, only one event type may be specified.
   </dd>
 
   <dt id="form-validity-observer-parameters-options"><code>options</code> (Optional)</dt>

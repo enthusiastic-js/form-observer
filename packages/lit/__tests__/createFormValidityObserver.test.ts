@@ -4,14 +4,14 @@ import createFormValidityObserver from "../createFormValidityObserver.js";
 import type { EventType } from "../index.d.ts";
 
 describe("Create Form Validity Observer (Function)", () => {
-  const types = Object.freeze(["input", "focusout"] as const) satisfies ReadonlyArray<EventType>;
+  const type = "input" satisfies EventType;
 
   // TODO: Can we get rid of the weird `void` thing?
   // Keep things clean between each test by automatically restoring anything we may have spied on
   beforeEach(vi.restoreAllMocks as () => void);
 
   it("Generates a `FormValidityObserver` (enhanced)", () => {
-    expect(createFormValidityObserver(types)).toEqual(expect.any(FormValidityObserver));
+    expect(createFormValidityObserver(type)).toEqual(expect.any(FormValidityObserver));
   });
 
   it("Exposes `bound` versions of the `FormValidityObserver`'s methods", () => {
@@ -29,7 +29,7 @@ describe("Create Form Validity Observer (Function)", () => {
     boundMethods.forEach((method) => vi.spyOn(FormValidityObserver.prototype[method], "bind"));
 
     /* ---------- Run Assertions ---------- */
-    const observer = createFormValidityObserver(types);
+    const observer = createFormValidityObserver(type);
 
     boundMethods.forEach((method) => {
       expect(FormValidityObserver.prototype[method].bind).toHaveBeenCalledTimes(1);
