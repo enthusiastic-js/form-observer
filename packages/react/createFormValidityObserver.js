@@ -21,7 +21,7 @@ const constraintsMap = Object.freeze({
 /**
  * Creates an enhanced version of the {@link FormValidityObserver} that's more convenient for `React` apps
  *
- * @template {import("./index.d.ts").EventType} T
+ * @template {import("./index.d.ts").EventType | null} T
  * @template [M=string]
  * @template {import("./index.d.ts").ValidatableField} [E=import("./index.d.ts").ValidatableField]
  * @template {boolean} [R=false]

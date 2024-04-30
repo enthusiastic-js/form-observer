@@ -115,7 +115,7 @@ class FormValidityObserver extends FormObserver {
    * illegal generic constructors?
    */
   /**
-   * @template {import("./types.d.ts").EventType} T
+   * @template {import("./types.d.ts").EventType | null} T
    * @template [M=string]
    * @template {import("./types.d.ts").ValidatableField} [E=import("./types.d.ts").ValidatableField]
    * @template {boolean} [R=false]
@@ -124,28 +124,30 @@ class FormValidityObserver extends FormObserver {
    * Provides a way to validate an `HTMLFormElement`'s fields (and to display _accessible_ errors for those fields)
    * in response to the events that the fields emit.
    *
-   * @param {T} type The type of event that triggers form field validation.
+   * @param {T} type The type of event that triggers form field validation. (If you _only_ want to validate fields
+   * manually, you can specify `null` instead of an event type.)
    * @param {FormValidityObserverOptions<M, E, R>} [options]
    * @returns {FormValidityObserver<M, R>}
    */
 
   /**
-   * @param {import("./types.d.ts").EventType} type
+   * @param {import("./types.d.ts").EventType | null} type
    * @param {FormValidityObserverOptions<M, import("./types.d.ts").ValidatableField, R>} [options]
    */
   constructor(type, options) {
-    /**
-     * Event listener used to validate form fields in response to user interactions
-     *
-     * @param {Event & { target: import("./types.d.ts").ValidatableField }} event
-     * @returns {void}
-     */
-    const eventListener = (event) => {
-      const fieldName = event.target.name;
-      if (fieldName) this.validateField(fieldName);
-    };
+    /** @type {import("./types.d.ts").EventType[]} */ const types = [];
+    /** @type {((event: Event & {target: import("./types.d.ts").ValidatableField }) => void)[]} */ const listeners = [];
 
-    super(type, eventListener, { passive: true, capture: options?.useEventCapturing });
+    // NOTE: We know this looks like overkill for something so simple. It'll make sense when we support `revalidateOn`.
+    if (typeof type === "string") {
+      types.push(type);
+      listeners.push((event) => {
+        const fieldName = event.target.name;
+        if (fieldName) this.validateField(fieldName);
+      });
+    }
+
+    super(types, listeners, { passive: true, capture: options?.useEventCapturing });
     this.#scrollTo = options?.scroller ?? defaultScroller;
     this.#renderError = /** @type {any} Necessary because of double `M`s */ (options?.renderer ?? defaultErrorRenderer);
     this.#renderByDefault = /** @type {any} Necessary because of double `R`s */ (options?.renderByDefault);

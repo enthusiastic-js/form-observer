@@ -95,9 +95,15 @@ interface FormValidityObserverConstructor {
    * Provides a way to validate an `HTMLFormElement`'s fields (and to display _accessible_ errors for those fields)
    * in response to the events that the fields emit.
    *
-   * @param type The type of event that triggers form field validation.
+   * @param type The type of event that triggers form field validation. (If you _only_ want to validate fields manually,
+   * you can specify `null` instead of an event type.)
    */
-  new <T extends EventType, M = string, E extends ValidatableField = ValidatableField, R extends boolean = false>(
+  new <
+    T extends EventType | null,
+    M = string,
+    E extends ValidatableField = ValidatableField,
+    R extends boolean = false,
+  >(
     type: T,
     options?: FormValidityObserverOptions<M, E, R>,
   ): FormValidityObserver<M, R>;

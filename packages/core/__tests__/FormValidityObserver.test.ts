@@ -115,6 +115,26 @@ describe("Form Validity Observer (Class)", () => {
     expect(removeEventListener).toHaveBeenNthCalledWith(2, expect.anything(), expect.anything(), bubbleOptions);
   });
 
+  it("Does not register any event listeners when `null` is used for the event `type` (Manual Mode)", () => {
+    /* ---------- Setup ---------- */
+    const formValidityObserverManual = new FormValidityObserver(null);
+    const form = document.body.appendChild(document.createElement("form"));
+
+    const addEventListener = vi.spyOn(form.ownerDocument, "addEventListener");
+    const removeEventListener = vi.spyOn(form.ownerDocument, "removeEventListener");
+
+    /* ---------- Run Assertions ---------- */
+    // Test `observe`
+    formValidityObserverManual.observe(form);
+    expect(addEventListener).not.toHaveBeenCalled();
+    expect(() => formValidityObserverManual.validateFields()).not.toThrow();
+
+    // Test `unobserve`
+    formValidityObserverManual.unobserve(form);
+    expect(removeEventListener).not.toHaveBeenCalled();
+    expect(() => formValidityObserverManual.validateFields()).toThrow();
+  });
+
   describe("Overriden Core Methods", () => {
     /* -------------------- Assertion Helpers for Core Methods -------------------- */
     function expectValidationMethodsToBeEnabled(observer: FormValidityObserver, enabled = true): void {
@@ -2838,10 +2858,10 @@ describe("Form Validity Observer (Class)", () => {
   new FormValidityObserver(event, { useEventCapturing: true });
 
   // Multiple Types
-  new FormValidityObserver(event);
-  new FormValidityObserver(event, {});
-  new FormValidityObserver(event, { scroller: undefined });
-  new FormValidityObserver(event, { useEventCapturing: undefined });
+  new FormValidityObserver(null);
+  new FormValidityObserver(null, {});
+  new FormValidityObserver(null, { scroller: undefined });
+  new FormValidityObserver(null, { useEventCapturing: undefined });
 
   new FormValidityObserver(event);
   new FormValidityObserver(event, {});

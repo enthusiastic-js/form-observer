@@ -87,9 +87,14 @@ As expected for any form validation library, we also support the following featu
 The `FormValidityObserver()` constructor creates a new observer and configures it with the `options` that you pass in. Because the `FormValidityObserver` only focuses on one task, it has a simple constructor with no overloads.
 
 <dl>
-  <dt id="form-validity-observer-parameters-types"><code>type: EventType</code></dt>
+  <dt id="form-validity-observer-parameters-types"><code>type: EventType | null</code></dt>
   <dd>
-    A string representing the type of event that should cause a form's field to be validated. As with the <code>FormObserver</code>, the string can be a <a href="https://developer.mozilla.org/en-US/docs/Web/Events">commonly recognized</a> event type <em>or</em> your own <a href="../form-observer/guides.md#supporting-custom-event-types">custom</a> event type. But in the case of the <code>FormValidityObserver</code>, only one event type may be specified.
+    <p>
+      A string representing the type of event that should cause a form's field to be validated. As with the <code>FormObserver</code>, the string can be a <a href="https://developer.mozilla.org/en-US/docs/Web/Events">commonly recognized</a> event type <em>or</em> your own <a href="../form-observer/guides.md#supporting-custom-event-types">custom</a> event type. But in the case of the <code>FormValidityObserver</code>, only one event type may be specified.
+    </p>
+    <p>
+      If you <em>only</em> want to validate fields manually, you can specify <code>null</code> instead of an event type. This can be useful, for instance, if you only want to validate your fields <code>onsubmit</code>. (You would still need to call <a href="#method-formvalidityobservervalidatefieldsoptions-validatefieldsoptions-boolean--promiseboolean"><code>FormValidityObserver.validateFields()</code></a> manually in your <code>submit</code> handler in that scenario.)
+    </p>
   </dd>
 
   <dt id="form-validity-observer-parameters-options"><code>options</code> (Optional)</dt>
@@ -169,7 +174,7 @@ const observer = new FormValidityObserver("focusout", {
 
 ### Method: `FormValidityObserver.observe(form: HTMLFormElement): boolean`
 
-Instructs the observer to validate any fields (belonging to the provided form) that a user interacts with, and registers the observer's validation methods with the provided form. Automatic field validation will only occur when a field belonging to the form emits an event matching one of the `types` that were specified during the observer's construction. Unlike the `FormObserver` and the `FormStorageObserver`, _the `FormValidityObserver` may only observe 1 form at a time_.
+Instructs the observer to validate any fields (belonging to the provided form) that a user interacts with, and registers the observer's validation methods with the provided form. Automatic field validation will only occur when a field belonging to the form emits an event matching the `type` that was specified during the observer's construction. Unlike the `FormObserver` and the `FormStorageObserver`, _the `FormValidityObserver` may only observe 1 form at a time_.
 
 Note that the `name` attribute is what the observer uses to [identify fields](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormControlsCollection/namedItem) during manual form validation and error handling. Therefore, a valid `name` is required for all validated fields. **If a field does not have a `name`, then it _will not_ participate in form validation.** Since the [web specification](https://www.w3.org/TR/html401/interact/forms.html#successful-controls) does not allow nameless fields to participate in form submission, this is likely a requirement that your application already satisfies.
 

@@ -128,16 +128,16 @@ We'll walk you through the process by going step-by-step on how we made our `Sve
 The first step is easy. Just create a function that instantiates and returns a `FormValidityObserver`. Because this function will only be creating an augmented `FormValidityObserver`, it should accept the same arguments as the class's [constructor](../README.md#constructor-formvalidityobservertypes-options). The return type will be an `interface` that represents the enhanced observer, but we won't add anything to it yet.
 
 ```ts
-import type { EventType, OneOrMany, ValidatableField, FormValidityObserverOptions } from "@form-observer/core";
+import type { EventType, ValidatableField, FormValidityObserverOptions } from "@form-observer/core";
 import FormValidityObserver from "@form-observer/core/FormValidityObserver";
 
 function createFormValidityObserver<
-  T extends OneOrMany<EventType>,
+  T extends EventType | null,
   M = string,
   E extends ValidatableField = ValidatableField,
   R extends boolean = false,
->(types: T, options?: FormValidityObserverOptions<M, E, R>): SvelteFormValidityObserver<M, R> {
-  const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M, R>;
+>(type: T, options?: FormValidityObserverOptions<M, E, R>): SvelteFormValidityObserver<M, R> {
+  const observer = new FormValidityObserver(type, options) as unknown as SvelteFormValidityObserver<M, R>;
   return observer;
 }
 
@@ -161,12 +161,12 @@ In order to ensure that all of the `FormValidityObserver`'s methods function pro
 // Imports ...
 
 function createFormValidityObserver<
-  T extends OneOrMany<EventType>,
+  T extends EventType | null,
   M = string,
   E extends ValidatableField = ValidatableField,
   R extends boolean = false,
->(types: T, options?: FormValidityObserverOptions<M, E, R>): SvelteFormValidityObserver<M, R> {
-  const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M, R>;
+>(type: T, options?: FormValidityObserverOptions<M, E, R>): SvelteFormValidityObserver<M, R> {
+  const observer = new FormValidityObserver(type, options) as unknown as SvelteFormValidityObserver<M, R>;
 
   /* ---------- Bindings ---------- */
   // Form Observer Methods
@@ -199,17 +199,17 @@ In this step, we create a reusable utility function that will enable us to autom
 Most JS frameworks create a way for you to accomplish this easily with utility functions. In [`React`](https://react.dev/reference/react-dom/components/common#ref-callback) or [`Vue`](https://vuejs.org/api/built-in-special-attributes.html#ref), you would pass a `ref` callback to an `HTMLFormElement`. In `Svelte`, the idiomatic way to accomplish this is with [`actions`](https://learn.svelte.dev/tutorial/actions):
 
 ```ts
-import type { EventType, OneOrMany, ValidatableField, FormValidityObserverOptions } from "@form-observer/core";
+import type { EventType, ValidatableField, FormValidityObserverOptions } from "@form-observer/core";
 import FormValidityObserver from "@form-observer/core/FormValidityObserver";
 import type { ActionReturn } from "svelte/action";
 
 function createFormValidityObserver<
-  T extends OneOrMany<EventType>,
+  T extends EventType | null,
   M = string,
   E extends ValidatableField = ValidatableField,
   R extends boolean = false,
->(types: T, options?: FormValidityObserverOptions<M, E, R>): SvelteFormValidityObserver<M, R> {
-  const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M, R>;
+>(type: T, options?: FormValidityObserverOptions<M, E, R>): SvelteFormValidityObserver<M, R> {
+  const observer = new FormValidityObserver(type, options) as unknown as SvelteFormValidityObserver<M, R>;
 
   /* ---------- Bindings ---------- */
   // Apply all bindings...
@@ -305,7 +305,6 @@ Now that we've specified all of the requirements, let's implement this functiona
 ```ts
 import type {
   EventType,
-  OneOrMany,
   ErrorMessage,
   ValidationErrors,
   ValidatableField,
@@ -421,12 +420,12 @@ The hardest part of this process is defining the TypeScript types. With that out
 // Imports ...
 
 export default function createFormValidityObserver<
-  T extends OneOrMany<EventType>,
+  T extends EventType | null,
   M = string,
   E extends ValidatableField = ValidatableField,
   R extends boolean = false,
->(types: T, options?: FormValidityObserverOptions<M, E, R>): SvelteFormValidityObserver<M, R> {
-  const observer = new FormValidityObserver(types, options) as unknown as SvelteFormValidityObserver<M, R>;
+>(type: T, options?: FormValidityObserverOptions<M, E, R>): SvelteFormValidityObserver<M, R> {
+  const observer = new FormValidityObserver(type, options) as unknown as SvelteFormValidityObserver<M, R>;
 
   /* ---------- Bindings ---------- */
   // Apply bindings for exposed methods ...
