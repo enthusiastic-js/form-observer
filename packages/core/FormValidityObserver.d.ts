@@ -58,6 +58,12 @@ export interface FormValidityObserverOptions<
   scroller?(fieldOrRadiogroup: ValidatableField): void;
 
   /**
+   * The type of event that will cause a form field to be revalidated. (Revalidation for a form field
+   * is enabled after it is validated at least once -- whether manually or automatically).
+   */
+  revalidateOn?: EventType;
+
+  /**
    * The function used to render error messages to the DOM when a validation constraint's `render` option is `true`.
    * (It will be called with `null` when a field passes validation.) Defaults to a function that accepts a string
    * and renders it to the DOM as raw HTML.
@@ -83,11 +89,21 @@ export interface FormValidityObserverOptions<
 export interface ValidateFieldOptions {
   /** Indicates that the field should be focused if it fails validation. Defaults to `false`. */
   focus?: boolean;
+  /**
+   * Enables revalidation for the validated field. Defaults to `true`.
+   * (This option is only relevant if a value was provided for the observer's `revalidateOn` constructor option.)
+   */
+  enableRevalidation?: boolean;
 }
 
 export interface ValidateFieldsOptions {
   /** Indicates that the _first_ field in the DOM that fails validation should be focused. Defaults to `false`. */
   focus?: boolean;
+  /**
+   * Enables revalidation for **all** of the form's fields. Defaults to `true`.
+   * (This option is only relevant if a value was provided for the observer's `revalidateOn` constructor option.)
+   */
+  enableRevalidation?: boolean;
 }
 
 interface FormValidityObserverConstructor {

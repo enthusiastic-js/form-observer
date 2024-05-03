@@ -109,6 +109,15 @@ The `FormValidityObserver()` constructor creates a new observer and configures i
       <dd>
         The function used to scroll a field (or radiogroup) that has failed validation into view. Defaults to a function that calls <a href="https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView"><code>scrollIntoView()</code></a> on the field (or radiogroup) that failed validation.
       </dd>
+      <dt id="form-validity-observer-options-revalidate-on"><code>revalidateOn: EventType</code></dt>
+      <dd>
+        <p>
+          The type of event that will cause a form field to be revalidated. (Revalidation for a form field is enabled after it is validated at least once -- whether manually or automatically.)
+        </p>
+        <p>
+          This can be helpful, for example, if you want to validate your fields <code>oninput</code>, but only after the user has visited them. In that case, you could write <code>new FormValidityObserver("focusout", { revalidateOn: "input" })</code>. Similarly, you might only want to validate your fields <code>oninput</code> after your form has been submitted. In that case, you could write <code>new FormValidityObserver(null, { revalidateOn: "input" })</code>.
+        </p>
+      </dd>
       <dt id="form-validity-observer-options-renderer"><code>renderer: (errorContainer: HTMLElement, errorMessage: M | null) => void</code></dt>
       <dd>
         <p>
@@ -292,9 +301,17 @@ Validates all of the observed form's fields, returning `true` if _all_ of the va
   <dd>
     <p>Indicates that the <em>first</em> field in the DOM that fails validation should be focused. Defaults to <code>false</code>.</p>
   </dd>
+  <dt><code>enableRevalidation</code></dt>
+  <dd>
+    <p>
+      Enables revalidation for <strong>all</strong> of the form's fields. Defaults to <code>true</code>. (This option is only relevant if a value was provided for the observer's <a href="#form-validity-observer-options-revalidate-on"><code>revalidateOn</code></a> option.)
+    </p>
+  </dd>
 </dl>
 
 When the `focus` option is `false`, you can consider `validateFields()` to be an enhanced version of `form.checkValidity()`. When the `focus` option is `true`, you can consider `validateFields()` to be an enhanced version of [`form.reportValidity()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/reportValidity).
+
+Note that the `enableRevalidation` option can prevent field revalidation from being turned on, but it cannot be used to _turn off_ revalidation.
 
 ### Method: `FormValidityObserver.validateField(name: string, options?: ValidateFieldOptions): boolean | Promise<boolean>`
 
@@ -314,11 +331,19 @@ Validates the form field with the specified `name`, returning `true` if the fiel
     <dl>
       <dt><code>focus</code></dt>
       <dd>Indicates that the field should be focused if it fails validation. Defaults to <code>false</code>.</dd>
+      <dt><code>enableRevalidation</code></dt>
+      <dd>
+        <p>
+          Enables revalidation for the validated field. Defaults to <code>true</code>. (This option is only relevant if a value was provided for the observer's <a href="#form-validity-observer-options-revalidate-on"><code>revalidateOn</code></a> option.)
+        </p>
+      </dd>
     </dl>
   </dd>
 </dl>
 
 When the `focus` option is `false`, you can consider `validateField()` to be an enhanced version of [`field.checkValidity()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/checkValidity). When the `focus` option is `true`, you can consider `validateField()` to be an enhanced version of [`field.reportValidity()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/reportValidity).
+
+Note that the `enableRevalidation` option can prevent field revalidation from being turned on, but it cannot be used to _turn off_ revalidation.
 
 ### Method: `FormValidityObserver.setFieldError<E>(name: string, message: `[`ErrorMessage<string, E>`](./types.md#errormessagem-e)`|`[`ErrorMessage<M, E>`](./types.md#errormessagem-e)`, render?: boolean): void`
 

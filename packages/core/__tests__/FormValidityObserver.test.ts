@@ -1808,6 +1808,107 @@ describe("Form Validity Observer (Class)", () => {
         expect(formValidityObserver2.setFieldError).toHaveBeenNthCalledWith(4, field.name, error);
       });
 
+      it("Enables revalidation for a form field when the `options` require it (defaults to `true`)", async () => {
+        /* ---------- Setup ---------- */
+        // Render Fields
+        document.body.innerHTML = `
+          <form aria-label="form">
+            <input name="textbox" type="text" pattern="\\d+" />
+            <select name="combobox" required>
+              <option value="">Empty</option>
+              <option value="something" selected>Something</option>
+            </select>
+          </form>
+        `;
+
+        const form = screen.getByRole<HTMLFormElement>("form");
+        const textbox = screen.getByRole<HTMLInputElement>("textbox");
+        const combobox = screen.getByRole<HTMLSelectElement>("combobox");
+        [textbox, combobox].forEach(renderErrorContainerForField);
+
+        // Setup `FormValidityObserver`
+        const formValidityObserver = new FormValidityObserver(null, { revalidateOn: "input" });
+        formValidityObserver.observe(form);
+
+        /* ---------- Default Behavior ---------- */
+        // Nothing happens because revalidation is not enabled
+        await userEvent.type(textbox, "abc");
+        expect(textbox.validationMessage).not.toBe("");
+        expect(textbox).not.toHaveAttribute("aria-invalid");
+        expect(textbox).not.toHaveAccessibleDescription();
+
+        // Revalidation is enabled during field validation by default
+        await userEvent.clear(textbox);
+        expect(formValidityObserver.validateField(textbox.name)).toBe(true);
+
+        // Now revalidation kicks in
+        await userEvent.type(textbox, "abc");
+        expect(textbox.validationMessage).not.toBe("");
+        expect(textbox).toHaveAttribute("aria-invalid", String(true));
+        expect(textbox).toHaveAccessibleDescription(textbox.validationMessage);
+
+        /* ---------- Behavior with the `enableRevalidation` Option Explicitly Provided ---------- */
+        // Nothing happens because revalidation is not enabled
+        await userEvent.selectOptions(combobox, "Empty");
+        expect(combobox.validationMessage).not.toBe("");
+        expect(combobox).not.toHaveAttribute("aria-invalid");
+        expect(combobox).not.toHaveAccessibleDescription();
+
+        // Revalidation REMAINS DISABLED after field validation because of the provided options
+        await userEvent.selectOptions(combobox, "Something");
+        expect(formValidityObserver.validateField(combobox.name, { enableRevalidation: false })).toBe(true);
+
+        // Again, nothing happens because revalidation was never enabled for this field
+        await userEvent.selectOptions(combobox, "Empty");
+        expect(combobox.validationMessage).not.toBe("");
+        expect(combobox).not.toHaveAttribute("aria-invalid", String(true));
+        expect(combobox).not.toHaveAccessibleDescription();
+
+        // Revalidation is EXPLICITLY turned on during field validation with the provided options
+        await userEvent.selectOptions(combobox, "Something");
+        expect(formValidityObserver.validateField(combobox.name, { enableRevalidation: true })).toBe(true);
+
+        // Now revalidation finally kicks in
+        await userEvent.selectOptions(combobox, "Empty");
+        expect(combobox.validationMessage).not.toBe("");
+        expect(combobox).toHaveAttribute("aria-invalid", String(true));
+        expect(combobox).toHaveAccessibleDescription(combobox.validationMessage);
+      });
+
+      it("Does not enable revalidation for fields that don't partake in form validation", async () => {
+        // Render Field
+        const { form, field } = renderField(createElementWithProps("input", { name: "revalidate", pattern: "\\d+" }));
+        renderErrorContainerForField(field);
+
+        // Setup `FormValidityObserver`
+        const formValidityObserver = new FormValidityObserver(null, { revalidateOn: "input" });
+        formValidityObserver.observe(form);
+
+        // Revalidation REMAINS DISABLED because `disabled` fields don't partake in form validation
+        field.disabled = true;
+        expect(field.willValidate).toBe(false);
+        expect(formValidityObserver.validateField(field.name, { enableRevalidation: true })).toBe(true);
+
+        // Mark field as a candidate for form validation
+        field.disabled = false;
+        expect(field.willValidate).toBe(true);
+
+        // Nothing happens because revalidation was never enabled for this field
+        await userEvent.type(field, "abc");
+        expect(field.validationMessage).not.toBe("");
+        expect(field).not.toHaveAttribute("aria-invalid");
+        expect(field).not.toHaveAccessibleDescription();
+
+        // Now that the field partakes in form validation, revalidation should be enabled during field validation
+        await userEvent.clear(field);
+        expect(formValidityObserver.validateField(field.name, { enableRevalidation: true })).toBe(true);
+
+        await userEvent.type(field, "abc");
+        expect(field.validationMessage).not.toBe("");
+        expect(field).toHaveAttribute("aria-invalid", String(true));
+        expect(field).toHaveAccessibleDescription(field.validationMessage);
+      });
+
       it("Rejects non-`string` error messages when the `render` option is not `true`", () => {
         // Render Field
         const { form, field } = renderField(createElementWithProps("input", { name: "renderer", required: true }));
@@ -2007,7 +2108,9 @@ describe("Form Validity Observer (Class)", () => {
         // Run Assertions
         formValidityObserver.validateFields();
         expect(formValidityObserver.validateField).toHaveBeenCalledTimes(uniqueFieldNames.size);
-        validatableFields.forEach((f) => expect(formValidityObserver.validateField).toHaveBeenCalledWith(f.name));
+        validatableFields.forEach((f) =>
+          expect(formValidityObserver.validateField).toHaveBeenCalledWith(f.name, { enableValidation: undefined }),
+        );
       });
 
       it("Returns `true` if ALL of the validated fields PASS validation", () => {
@@ -2367,17 +2470,54 @@ describe("Form Validity Observer (Class)", () => {
         expect(firstRadio.reportValidity).not.toHaveBeenCalled();
       });
 
+      /*
+       * Note: This test might be a bit odd because it's highly implementation-specific. In fact, even the
+       * test name itself is highly implementation-specific. However, in order to reduce code duplication,
+       * we actually WANT to verify that `validateFields()` correctly calls and passes options to the `validateField()`
+       * method. So this oddity is intentional.
+       */
+      it("Passes its `enableRevalidation` option to the `validateField()` method", () => {
+        // Render Form
+        const { form, fields } = renderEmptyFields();
+        const validatableFieldCount = fields.length + 1; // Note: The "+1" accounts for the `radiogroup`
+
+        // Setup `FormValidityObserver`
+        const formValidityObserver = new FormValidityObserver(eventType, { revalidateOn: "change" });
+        formValidityObserver.observe(form);
+        const validateField = vi.spyOn(formValidityObserver, "validateField");
+
+        /* ---------- Assertions ---------- */
+        // With no `enableRevalidation` option provided
+        formValidityObserver.validateFields();
+        expect(validateField).toHaveBeenCalledTimes(validatableFieldCount);
+        validateField.mock.calls.forEach((args) => expect(args[1]).toStrictEqual({ enableRevalidation: undefined }));
+
+        // With the `enableRevalidation` option disabled
+        validateField.mockClear();
+        formValidityObserver.validateFields({ enableRevalidation: false });
+
+        expect(validateField).toHaveBeenCalledTimes(validatableFieldCount);
+        validateField.mock.calls.forEach((args) => expect(args[1]).toStrictEqual({ enableRevalidation: false }));
+
+        // With the `enableRevalidation` option enabled
+        validateField.mockClear();
+        formValidityObserver.validateFields({ enableRevalidation: true });
+
+        expect(validateField).toHaveBeenCalledTimes(validatableFieldCount);
+        validateField.mock.calls.forEach((args) => expect(args[1]).toStrictEqual({ enableRevalidation: true }));
+      });
+
       it("Does not validate the same `radiogroup` more than once (Performance Test)", () => {
         const radioName = "radio";
 
         // Render Form
         document.body.innerHTML = `
-            <form aria-label="Radio Button Group Testing">
-              <fieldset role="radiogroup">
-                ${testOptions.map((v) => `<input name="${radioName}" type="radio" value=${v} />`).join("")}
-              </fieldset>
-            </form>
-          `;
+          <form aria-label="Radio Button Group Testing">
+            <fieldset role="radiogroup">
+              ${testOptions.map((v) => `<input name="${radioName}" type="radio" value=${v} />`).join("")}
+            </fieldset>
+          </form>
+        `;
 
         // Observe Form
         const formValidityObserver = new FormValidityObserver(eventType);
@@ -2387,7 +2527,7 @@ describe("Form Validity Observer (Class)", () => {
         // Run Assertions
         formValidityObserver.validateFields();
         expect(formValidityObserver.validateField).toHaveBeenCalledTimes(1);
-        expect(formValidityObserver.validateField).toHaveBeenCalledWith(radioName);
+        expect(formValidityObserver.validateField).toHaveBeenCalledWith(radioName, { enableRevalidation: undefined });
       });
 
       it("Ignores form controls that don't have a `name`", () => {
@@ -2395,11 +2535,11 @@ describe("Form Validity Observer (Class)", () => {
 
         // Render HTML
         document.body.innerHTML = `
-            <form aria-label="Test Form>
-              <input type="text" />
-              <input name="${validatableFieldName}" type="text" />
-            </form>
-          `;
+          <form aria-label="Test Form>
+            <input type="text" />
+            <input name="${validatableFieldName}" type="text" />
+          </form>
+        `;
 
         // Observe Form
         const formValidityObserver = new FormValidityObserver(eventType);
@@ -2409,7 +2549,9 @@ describe("Form Validity Observer (Class)", () => {
         // Run Assertions
         formValidityObserver.validateFields();
         expect(formValidityObserver.validateField).toHaveBeenCalledTimes(1);
-        expect(formValidityObserver.validateField).toHaveBeenCalledWith(validatableFieldName);
+        expect(formValidityObserver.validateField).toHaveBeenCalledWith(validatableFieldName, {
+          enableRevalidation: undefined,
+        });
       });
 
       /*
@@ -2427,13 +2569,13 @@ describe("Form Validity Observer (Class)", () => {
 
         // Render Form
         document.body.innerHTML = `
-            <form aria-label="Form with Unsupported Elements">
-              <output name="output">My Output</output>
-              <object name="object"></object>
-              <fieldset name="fieldset"></fieldset>
-              <input name="${validatableFieldName}" type="text" />
-            </form>
-          `;
+          <form aria-label="Form with Unsupported Elements">
+            <output name="output">My Output</output>
+            <object name="object"></object>
+            <fieldset name="fieldset"></fieldset>
+            <input name="${validatableFieldName}" type="text" />
+          </form>
+        `;
 
         const form = screen.getByRole<HTMLFormElement>("form");
         expect(Array.from(form.elements).every((e) => e.getAttribute("name"))).toBeTruthy();
@@ -2446,7 +2588,9 @@ describe("Form Validity Observer (Class)", () => {
         // Run Assertions (unsupported elements are ignored)
         formValidityObserver.validateFields();
         expect(formValidityObserver.validateField).toHaveBeenCalledTimes(1);
-        expect(formValidityObserver.validateField).toHaveBeenCalledWith(validatableFieldName);
+        expect(formValidityObserver.validateField).toHaveBeenCalledWith(validatableFieldName, {
+          enableRevalidation: undefined,
+        });
       });
     });
 
@@ -2678,6 +2822,43 @@ describe("Form Validity Observer (Class)", () => {
             expect(field).not.toHaveAttribute("aria-invalid");
             expect(field).not.toHaveAccessibleDescription();
           }
+        });
+
+        it("Automatically enables revalidation for form fields", async () => {
+          // Render Form
+          const { form, field } = renderField(
+            createElementWithProps("input", { name: "auto", required: true, pattern: "\\d+" }),
+            { accessible: true },
+          );
+
+          // Setup `FormValidityObserver`
+          const formValidityObserver = new FormValidityObserver("focusout", { revalidateOn: "input" });
+          formValidityObserver.observe(form);
+
+          /* ---------- Assertions ---------- */
+          // Nothing happens. (Validation hasn't happened yet, AND revalidation is not enabled yet.)
+          await userEvent.type(field, "abc");
+          expect(field.validationMessage).not.toBe("");
+          expect(field).not.toHaveAttribute("aria-invalid");
+          expect(field).not.toHaveAccessibleDescription();
+
+          // Again, nothing happens. (Still no validation or revalidation.)
+          await userEvent.clear(field);
+          expect(field.validationMessage).not.toBe("");
+          expect(field).not.toHaveAttribute("aria-invalid");
+          expect(field).not.toHaveAccessibleDescription();
+
+          // Trigger automatic field validation
+          await userEvent.type(field, "{Tab}");
+          expect(field.validationMessage).not.toBe("");
+          expect(field).toHaveAttribute("aria-invalid", String(true));
+          expect(field).toHaveAccessibleDescription(field.validationMessage);
+
+          // Now revalidation kicks in (enabled by the automatic field validation)
+          await userEvent.type(field, "123");
+          expect(field.validationMessage).toBe("");
+          expect(field).toHaveAttribute("aria-invalid", String(false));
+          expect(field).not.toHaveAccessibleDescription();
         });
 
         describe.each(testCases)("for %s", (testCase) => {

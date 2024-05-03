@@ -1,7 +1,11 @@
 import FormObserver from "./FormObserver.js";
 
 const radiogroupSelector = "fieldset[role='radiogroup']";
-const attrs = Object.freeze({ "aria-describedby": "aria-describedby", "aria-invalid": "aria-invalid" });
+const attrs = Object.freeze({
+  "aria-describedby": "aria-describedby",
+  "aria-invalid": "aria-invalid",
+  "data-fvo-revalidate": "data-fvo-revalidate",
+});
 
 // NOTE: Generic `T` = Event TYPE. Generic `M` = Error MESSAGE. Generic `E` = ELEMENT. Generic `R` = RENDER by default.
 
@@ -68,6 +72,10 @@ const attrs = Object.freeze({ "aria-describedby": "aria-describedby", "aria-inva
  * scroll a `field` (or `radiogroup`) that has failed validation into view. Defaults to a function that calls
  * `fieldOrRadiogroup.scrollIntoView()`.
  *
+ * @property {import("./types.d.ts").EventType} [revalidateOn] The type of event that will cause a form field to be
+ * revalidated. (Revalidation for a form field is enabled after it is validated at least once -- whether manually or
+ * automatically).
+ *
  * @property {(errorContainer: HTMLElement, errorMessage: M | null) => void} [renderer] The function used to render
  * error messages to the DOM when a validation constraint's `render` option is `true`. (It will be called with `null`
  * when a field passes validation.) Defaults to a function that accepts a string and renders it to the DOM as raw HTML.
@@ -85,12 +93,20 @@ const attrs = Object.freeze({ "aria-describedby": "aria-describedby", "aria-inva
 /**
  * @typedef {Object} ValidateFieldOptions
  * @property {boolean} [focus] Indicates that the field should be focused if it fails validation. Defaults to `false`.
+ *
+ * @property {boolean} [enableRevalidation] Enables revalidation for the validated field. Defaults to `true`.
+ * (This option is only relevant if a value was provided for the observer's
+ * {@link FormValidityObserverOptions.revalidateOn `revalidateOn`} option.)
  */
 
 /**
  * @typedef {Object} ValidateFieldsOptions
  * @property {boolean} [focus] Indicates that the _first_ field in the DOM that fails validation should be focused.
  * Defaults to `false`.
+ *
+ * @property {boolean} [enableRevalidation] Enables revalidation for **all** of the form's fields. Defaults to `true`.
+ * (This option is only relevant if a value was provided for the observer's
+ * {@link FormValidityObserverOptions.revalidateOn `revalidateOn`} option.)
  */
 
 /** @template [M=string] @template {boolean} [R=false] */
@@ -138,12 +154,19 @@ class FormValidityObserver extends FormObserver {
     /** @type {import("./types.d.ts").EventType[]} */ const types = [];
     /** @type {((event: Event & {target: import("./types.d.ts").ValidatableField }) => void)[]} */ const listeners = [];
 
-    // NOTE: We know this looks like overkill for something so simple. It'll make sense when we support `revalidateOn`.
     if (typeof type === "string") {
       types.push(type);
       listeners.push((event) => {
         const fieldName = event.target.name;
         if (fieldName) this.validateField(fieldName);
+      });
+    }
+
+    if (typeof options?.revalidateOn === "string") {
+      types.push(options.revalidateOn);
+      listeners.push((event) => {
+        const field = event.target;
+        if (field.hasAttribute(attrs["data-fvo-revalidate"])) this.validateField(field.name);
       });
     }
 
@@ -214,6 +237,7 @@ class FormValidityObserver extends FormObserver {
   validateFields(options) {
     assertFormExists(this.#form);
     let syncValidationPassed = true;
+    /** @type {ValidateFieldOptions} */ const validatorOptions = { enableRevalidation: options?.enableRevalidation };
 
     /** @type {Promise<boolean>[] | undefined} */
     let pendingValidations;
@@ -238,7 +262,7 @@ class FormValidityObserver extends FormObserver {
       if (field.type === "radio") validatedRadiogroups.add(name);
 
       // Validate Field and Update Internal State
-      const result = this.validateField(name);
+      const result = this.validateField(name, validatorOptions);
       if (result === true) continue;
       if (result === false) {
         syncValidationPassed = false;
@@ -313,6 +337,7 @@ class FormValidityObserver extends FormObserver {
     const field = this.#getTargetField(name);
     if (!field) return false; // TODO: should we give a warning that the field doesn't exist? Same for other methods.
     if (!field.willValidate) return true;
+    if (options?.enableRevalidation ?? true) field.setAttribute(attrs["data-fvo-revalidate"], "");
 
     field.setCustomValidity?.(""); // Reset the custom error message in case a default browser error is displayed next.
 
