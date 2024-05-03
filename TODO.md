@@ -2,9 +2,13 @@
 
 ## Priority
 
-- [ ] Update `@form-observer/lit` to automatically use `renderByDefault` and Lit's `render` function.
+- [ ] REVIEW OUR ENTIRE `FormValidityObserver` DOCUMENTATION to make sure it's looking correct. This would include our sub-bullet point below.
+  - [ ] We need to update the `Integration` docs for the `FormValidityObserver`. Our example on how to create one's own integration needs to include the new change where we only use a singular `type` (instead of allowing an array of types).
+- [ ] ALSO deprecate `useFormValidityObserver` in favor of `useMemo(() => createFormValidityObserver())`. We may also want to update the `DESIGN_DECISIONS` docs when we do this.
+- [ ] Release `0.9.0` after doing everything ABOVE this task.
+- [ ] CONSIDER updating `@form-observer/lit` to automatically use `renderByDefault` and Lit's `render` function.
 - [ ] Add docs on how to reconcile error messages between server and client.
-- [ ] **Consider** adding some kind of `revalidateOn` option for the `FormValidityObserver`. (For example, after a field has become invalid `onfocusout`, someone might want that field to be continuously validated `oninput` until it is corrected.)
+  - [ ] Consider doing this AFTER releasing `0.9.0` if you need to.
 
 ## Documentation
 
@@ -47,6 +51,7 @@
 - [ ] Perhaps we should dispatch the `invalid` event when validation fails? Just like the browser does? If we're claiming to _enhance_ the browser's functionality, then we don't really want to _take away_ anything that the browser does. Instead, we want to _add_ to it (as effectively, powerfully, and minimalistically as possible). **Edit**: We won't be supporting this any time soon unless people explicitly request it. See our [Development Notes](./docs/extras/development-notes.md#why-doesnt-the-formvalidityobserver-dispatch-invalid-events-when-an-accessible-error-gets-displayed)
 - [ ] Would it make sense to support default error messages for the various native browser constraints? For instance, oftentimes the same static (but custom) error message is used for `required` fields. Having configurable default error messages can help save people from duplicating code unnecessarily. This should be pretty easy to add if people want it...
 - [ ] Currently, we _technically_ allow developers to do both _accessible_ error messaging and _native_ error messaging simultaneously. It isn't encouraged, but it might be helpful for developers transitioning from one mode to another. Even so, this could be a source of confusion. This already makes our code a little confusing sometimes (potentially) since we effectively determine whether or not a field uses accessible errors based on its `aria-describedby` attribute. If we had an option for the `FormValidityObserver` constructor that let the developer determine whether they were using accessible errors or native errors from the start, that could potentially be more useful/clear... It would at least be more helpful from a maintainability standpoint... well, potentially. Is it worth trying? Or not?
+- [ ] Consider adding a `silent: boolean` option to the `validateField()` and `validateFields()` methods. Perhaps there are some people who want to be able to validate their field(s) manually without displaying the error message(s) to users? We don't know how common that use case is... But this feature would provide greater alignment with methods like `field.checkValidity()` and `form.checkValidity()`, which avoid generating noise for users. (Ideally, we'd want developers to be able to use enhanced versions of both `field.reportValidity()`/`form.reportValidity()` **_and_** `field.checkValidity()`/`form.checkValidity()` so that they don't "lose" any browser features.)
 
 ## TypeScript
 
