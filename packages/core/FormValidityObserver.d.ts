@@ -105,7 +105,7 @@ export interface FormValidityObserverOptions<
 }
 
 export interface ValidateFieldOptions {
-  /** Indicates that the field should be focused if it fails validation. Defaults to `false`. */
+  /** Indicates that the field should be focused and scrolled into view if it fails validation. Defaults to `false`. */
   focus?: boolean;
   /**
    * Enables revalidation for the validated field. Defaults to `true`.
@@ -115,7 +115,10 @@ export interface ValidateFieldOptions {
 }
 
 export interface ValidateFieldsOptions {
-  /** Indicates that the _first_ field in the DOM that fails validation should be focused. Defaults to `false`. */
+  /**
+   * Indicates that the _first_ field in the DOM that fails validation should be focused and scrolled into view.
+   * Defaults to `false`.
+   */
   focus?: boolean;
   /**
    * Enables revalidation for **all** of the form's fields. Defaults to `true`.

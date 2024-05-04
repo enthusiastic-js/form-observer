@@ -2,11 +2,10 @@
 
 ## Priority
 
-- [ ] REVIEW OUR ENTIRE `FormValidityObserver` DOCUMENTATION to make sure it's looking correct. This would include our sub-bullet point below.
-  - [ ] We need to update the `Integration` docs for the `FormValidityObserver`. Our example on how to create one's own integration needs to include the new change where we only use a singular `type` (instead of allowing an array of types).
 - [ ] ALSO deprecate `useFormValidityObserver` in favor of `useMemo(() => createFormValidityObserver())`. We may also want to update the `DESIGN_DECISIONS` docs when we do this.
 - [ ] Release `0.9.0` after doing everything ABOVE this task.
 - [ ] CONSIDER updating `@form-observer/lit` to automatically use `renderByDefault` and Lit's `render` function.
+  - [ ] Alternatively, consider updating our StackBlitz Lit example to have a renderer example and a default-renderer example.
 - [ ] Add docs on how to reconcile error messages between server and client.
   - [ ] Consider doing this AFTER releasing `0.9.0` if you need to.
 

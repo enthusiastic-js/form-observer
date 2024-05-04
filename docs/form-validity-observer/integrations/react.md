@@ -11,7 +11,7 @@ Additional Topics:
 
 - [`Usage with Class Components`](#usage-with-class-components)
 
-## Function: `createFormValidityObserver(types, options)`
+## Function: `createFormValidityObserver(type, options)`
 
 Creates an enhanced version of the `FormValidityObserver`, known as the `ReactFormValidityObserver`. It accepts the exact same arguments as the [`FormValidityObserver`'s constructor](../README.md#constructor-formvalidityobservertypes-options).
 

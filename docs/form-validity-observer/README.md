@@ -299,19 +299,23 @@ Validates all of the observed form's fields, returning `true` if _all_ of the va
 <dl>
   <dt><code>focus</code></dl>
   <dd>
-    <p>Indicates that the <em>first</em> field in the DOM that fails validation should be focused. Defaults to <code>false</code>.</p>
+    <p>
+      Indicates that the <em>first</em> field in the DOM that fails validation should be focused and scrolled into view. Defaults to <code>false</code>.
+    </p>
+    <p>
+      When the <code>focus</code> option is <code>false</code>, you can consider <code>validateFields()</code> to be an enhanced version of <code>form.checkValidity()</code>. When the <code>focus</code> option is <code>true</code>, you can consider <code>validateFields()</code> to be an enhanced version of <a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/reportValidity"><code>form.reportValidity()</code></a>.
+    </p>
   </dd>
   <dt><code>enableRevalidation</code></dt>
   <dd>
     <p>
       Enables revalidation for <strong>all</strong> of the form's fields. Defaults to <code>true</code>. (This option is only relevant if a value was provided for the observer's <a href="#form-validity-observer-options-revalidate-on"><code>revalidateOn</code></a> option.)
     </p>
+    <p>
+      Note that the <code>enableRevalidation</code> option can prevent field revalidation from being turned on, but it cannot be used to <em>turn off</em> revalidation.
+    </p>
   </dd>
 </dl>
-
-When the `focus` option is `false`, you can consider `validateFields()` to be an enhanced version of `form.checkValidity()`. When the `focus` option is `true`, you can consider `validateFields()` to be an enhanced version of [`form.reportValidity()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/reportValidity).
-
-Note that the `enableRevalidation` option can prevent field revalidation from being turned on, but it cannot be used to _turn off_ revalidation.
 
 ### Method: `FormValidityObserver.validateField(name: string, options?: ValidateFieldOptions): boolean | Promise<boolean>`
 
@@ -330,20 +334,24 @@ Validates the form field with the specified `name`, returning `true` if the fiel
     <p>An object used to configure the <code>validateField()</code> method. The following properties are supported:</p>
     <dl>
       <dt><code>focus</code></dt>
-      <dd>Indicates that the field should be focused if it fails validation. Defaults to <code>false</code>.</dd>
+      <dd>
+        <p>Indicates that the field should be focused and scrolled into view if it fails validation. Defaults to <code>false</code>.
+        <p>
+          When the <code>focus</code> option is <code>false</code>, you can consider <code>validateField()</code> to be an enhanced version of <a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/checkValidity"><code>field.checkValidity()</code></a>. When the <code>focus</code> option is <code>true</code>, you can consider <code>validateField()</code> to be an enhanced version of <a href="https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/reportValidity"><code>field.reportValidity()</code></a>.
+        </p>
+      </dd>
       <dt><code>enableRevalidation</code></dt>
       <dd>
         <p>
           Enables revalidation for the validated field. Defaults to <code>true</code>. (This option is only relevant if a value was provided for the observer's <a href="#form-validity-observer-options-revalidate-on"><code>revalidateOn</code></a> option.)
         </p>
+        <p>
+          Note that the <code>enableRevalidation</code> option can prevent field revalidation from being turned on, but it cannot be used to <em>turn off</em> revalidation.
+        </p>
       </dd>
     </dl>
   </dd>
 </dl>
-
-When the `focus` option is `false`, you can consider `validateField()` to be an enhanced version of [`field.checkValidity()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/checkValidity). When the `focus` option is `true`, you can consider `validateField()` to be an enhanced version of [`field.reportValidity()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/reportValidity).
-
-Note that the `enableRevalidation` option can prevent field revalidation from being turned on, but it cannot be used to _turn off_ revalidation.
 
 ### Method: `FormValidityObserver.setFieldError<E>(name: string, message: `[`ErrorMessage<string, E>`](./types.md#errormessagem-e)`|`[`ErrorMessage<M, E>`](./types.md#errormessagem-e)`, render?: boolean): void`
 

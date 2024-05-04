@@ -71,7 +71,7 @@ customElements.define("my-form", MyForm);
 
 > Note: If you prefer, you can call `observe` and `unobserve`/`disconnect` manually instead.
 
-## Function: `createFormValidityObserver(types, options)`
+## Function: `createFormValidityObserver(type, options)`
 
 Creates a `FormValidityObserver` whose methods can be safely destructured. It accepts the exact same arguments as the [`FormValidityObserver`'s constructor](../README.md#constructor-formvalidityobservertypes-options). If you don't need to destructure any of the observer's methods, then you are free to use the `FormValidityObserver`'s constructor directly.
 

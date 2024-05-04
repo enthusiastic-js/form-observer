@@ -2,7 +2,7 @@
 
 A _convenience_ API for reducing code repetition in a [Vue](https://vuejs.org/) application using the [`FormValidityObserver`](../README.md).
 
-## Function: `createFormValidityObserver(types, options)`
+## Function: `createFormValidityObserver(type, options)`
 
 Creates an enhanced version of the `FormValidityObserver`, known as the `VueFormValidityObserver`. It accepts the exact same arguments as the [`FormValidityObserver`'s constructor](../README.md#constructor-formvalidityobservertypes-options).
 
