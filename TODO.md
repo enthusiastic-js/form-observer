@@ -2,9 +2,6 @@
 
 ## Priority
 
-- [ ] Release `0.9.0` after doing everything ABOVE this task.
-- [ ] CONSIDER updating `@form-observer/lit` to automatically use `renderByDefault` and Lit's `render` function.
-  - [ ] Alternatively, consider updating our StackBlitz Lit example to have a renderer example and a default-renderer example.
 - [ ] Add docs on how to reconcile error messages between server and client.
   - [ ] Consider doing this AFTER releasing `0.9.0` if you need to.
 
