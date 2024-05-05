@@ -21,14 +21,6 @@
       "types": "./createFormValidityObserver.d.ts",
       "default": "./createFormValidityObserver.js"
     },
-    "./useFormValidityObserver": {
-      "require": {
-        "types": "./useFormValidityObserver.d.cts",
-        "default": "./useFormValidityObserver.cjs"
-      },
-      "types": "./useFormValidityObserver.d.ts",
-      "default": "./useFormValidityObserver.js"
-    },
     "./types": {
       "require": {
         "types": "./types.d.cts"

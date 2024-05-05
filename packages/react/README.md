@@ -29,10 +29,10 @@ Here's an example of how to automatically validate your form fields when a user 
 
 ```jsx
 import { useMemo } from "react";
-import { useFormValidityObserver } from "@form-observer/react";
+import { createFormValidityObserver } from "@form-observer/react";
 
 function MyForm() {
-  const { autoObserve, configure, validateFields } = useFormValidityObserver("focusout");
+  const { autoObserve, configure, validateFields } = useMemo(() => createFormValidityObserver("focusout"), []);
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -128,7 +128,7 @@ class MyForm extends Component {
 }
 ```
 
-For more details on what `createFormValidityObserver` and `useFormValidityObserver` can do (like custom validation, manual error handling, and more), see our [documentation](https://github.com/enthusiastic-js/form-observer/blob/main/docs/form-validity-observer/integrations/react.md).
+For more details on what `createFormValidityObserver` can do (like custom validation, manual error handling, and more), see our [documentation](https://github.com/enthusiastic-js/form-observer/blob/main/docs/form-validity-observer/integrations/react.md).
 
 ## Other Uses
 

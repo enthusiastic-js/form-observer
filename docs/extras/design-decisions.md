@@ -12,6 +12,85 @@ This file is similar to a `Changelog`: It specifies the dates (in descending ord
 
 It's possible that the need for this is already captured in the concept of `PR` (Pull Request) history. We will try to run with this approach _and_ the approach of PRs before coming to a final decision on what to use to accomplish this history-preserving goal.
 
+## 2024-05-04
+
+### Deprecate the `useFormValidityObserver` React Hook
+
+Originally, we thought that it would be a good idea to memoize the `FormValidityObserver` for the React developers who would use our tool. That was the idea behind our `useFormValidityObserver` hook: It would enable developers to use the `FormValidityObserver` without having to think about memoization. It's a great idea! And when possible, I think that maintainers should take this route! But unfortunately, this approach is not always an option...
+
+Consider a scenario where a developer uses the `useFormValidityObserver` hook with a complex configuration:
+
+```tsx
+import { useFormValidityObserver } from "@form-observer/react";
+
+function MyForm() {
+  const { configure, ...rest } = useFormValidityObserver("focusout", {
+    revalidateOn: "input",
+    renderer(errorContainer, errorMessage) {
+      // Implementation ...
+    },
+    defaultErrors: {
+      // Default error message configuration ...
+    },
+  });
+}
+```
+
+The result returned by `useFormValidityObserver` is memoized. However, the `useMemo` hook (which the function calls internally) uses the function's `type` argument and object options as its dependencies. If the `MyForm` component re-renders for any reason, the `"focusout"` and `"input"` strings will remain constant. But the `renderer` function and the `defaultErrors` object will be re-defined during re-renders, causing the `useMemo` hook to create a new `FormValidityObserver`. So those options need to be memoized.
+
+```tsx
+import { useMemo, useCallback } from "react";
+import { useFormValidityObserver } from "@form-observer/react";
+
+function MyForm() {
+  const { configure, ...rest } = useFormValidityObserver("focusout", {
+    revalidateOn: "input",
+    renderer: useCallback((errorContainer, errorMessage) => {
+      // Implementation
+    }, []),
+    defaultErrors: useMemo(
+      () => ({
+        // ... Default error message configuration
+      }),
+      [],
+    ),
+  });
+}
+```
+
+As you can see, this code becomes very ugly very quickly. Even worse, _the code becomes less performant_. Why? Well, because memoization comes with a cost. And the more that memoization is used, the more costs users will have to pay. Yes, memoization is helpful. Yes, under the right circumstances, memoization can bring performance benefits. But it should be used as little as possible and only where it's truly needed.
+
+Here in our example, we're performing 3 memoizations for a single function call. (One for `defaultErrors`, one for `renderer`, and one for `useFormValidityObserver`'s internal call to `useMemo`.) That's not good. A better solution is to memoize the entire result once. But wait... Couldn't we just do that with `createFormValidityObserver`?
+
+```tsx
+import { useMemo } from "react";
+import { createFormValidityObserver } from "@form-observer/react";
+
+function MyForm() {
+  const { configure, ...rest } = useMemo(() => {
+    return createFormValidityObserver("focusout", {
+      revalidateOn: "input",
+      renderer(errorContainer, errorMessage) {
+        // Implementation
+      },
+      defaultErrors: {
+        // ... Default error message configuration
+      },
+    });
+  }, []);
+}
+```
+
+In fact, this is _more performant_ than `useFormValidityObserver`! If we memoize the result from `useFormValidityObserver`, then we perform _2_ memoizations. (One for `useFormValidityObserver`'s internal call to `useMemo`, and one for _our own_ call to `useMemo` on the function's result). But if we simply memoize the result of `createFormValidityObserver` directly, then we only have to perform _1_ memoization.
+
+What does all of this mean? Well... It means that by default, even in the most ideal scenario, `useFormValidityObserver` will never be more performant than calling `useMemo` on `createFormValidityObserver` directly. And in most cases, `useFormValidityObserver` will be _less_ performant. Moreover, many developers won't even be aware of the concerns that we've discussed so far; so they're much more likely to footgun themselves if they use the flashy `useFormValidityObserver` hook!
+
+We wanted to find a way to protect developers from `useMemo`, but we couldn't. (And honestly, no developer who wants to be skilled with React can avoid learning about `useMemo` in this day and age -- not until React Forget stabilizes, at least.) This dilemma is just an unavoidable downside of how React decides to operate as a framework, and we sadly can't do anything to fix that. What we _can_ do is guide developers on how to use `createFormValidityObserver` in React easily and performantly. And that's exactly what we've decided to do instead: Add clearer documentation as a better alternative.
+
+Thankfully, things really aren't that complicated. People just need to wrap `createFormValidityObserver` inside `useMemo` (when using functional components). That's it.
+
+Sidenote: Although we're removing the `useFormValidityObserver` hook, we aren't removing React as a peer dependency [yet]. The reason for this is that we're trying to figure out how to prepare for [React 19's changes to ref callbacks](https://react.dev/blog/2024/04/25/react-19#cleanup-functions-for-refs) (for the sake of `autoObserve`), and we're debating using the React package to help us with this. For example, we could use the React package to tell us the React version being used. Then, we could return one kind of `autoObserve` function if the React version is less than 19, and return a different kind of `autoObserve` function if the React version is greater than or equal to 19. But maybe that's a bad idea? Maybe we should just maintain different versions of our `@form-observer/react` package? Then again, it might not be a bad idea either since it seems like `import { version } from "react"` is [permitted](https://github.com/facebook/react/blob/main/packages/react/index.js#L78) (at least as of today). We'll see...
+
 ## 2024-04-28
 
 ### Only Allow One (1) Event Type to Be Passed to the `FormValidityObserver` Constructor

@@ -2,7 +2,6 @@
 
 ## Priority
 
-- [ ] ALSO deprecate `useFormValidityObserver` in favor of `useMemo(() => createFormValidityObserver())`. We may also want to update the `DESIGN_DECISIONS` docs when we do this.
 - [ ] Release `0.9.0` after doing everything ABOVE this task.
 - [ ] CONSIDER updating `@form-observer/lit` to automatically use `renderByDefault` and Lit's `render` function.
   - [ ] Alternatively, consider updating our StackBlitz Lit example to have a renderer example and a default-renderer example.

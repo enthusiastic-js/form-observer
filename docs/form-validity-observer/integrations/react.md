@@ -2,20 +2,9 @@
 
 A _convenience_ API for reducing code repetition in a [React](https://react.dev/) application using the [`FormValidityObserver`](../README.md).
 
-Utilities:
-
-- [`createFormValidityObserver`](#function-createformvalidityobservertypes-options)
-- [`useFormValidityObserver`](#custom-hook-useformvalidityobservertypes-options)
-
-Additional Topics:
-
-- [`Usage with Class Components`](#usage-with-class-components)
-
 ## Function: `createFormValidityObserver(type, options)`
 
 Creates an enhanced version of the `FormValidityObserver`, known as the `ReactFormValidityObserver`. It accepts the exact same arguments as the [`FormValidityObserver`'s constructor](../README.md#constructor-formvalidityobservertypes-options).
-
-This function acts as the foundation for the [`useFormValidityObserver`](#custom-hook-useformvalidityobservertypes-options) hook. For those using class components, you can use `createFormValidityObserver` directly.
 
 ### Return Type: `ReactFormValidityObserver<M, R>`
 
@@ -220,34 +209,35 @@ function MyForm() {
 
 The return type of `configure` is simply an object containing the props that should be applied to the configured field. In addition to the field's `name`, this object will include any validation props that were configured by the function (e.g., `required`, `minLength`, `maxLength`, `pattern`, etc.).
 
-## Custom Hook: `useFormValidityObserver(types, options)`
+## Gotchas: Remember to Memoize Your Observer Instance(s) When Necessary
 
-A custom React Hook that creates an enhanced version of the `FormValidityObserver` and [memoizes](https://react.dev/reference/react/useMemo) its value.
+As we mentioned previously, React has a unique re-rendering model. Whenever a state change happens in a React functional component, _the entire component function_ is re-run. If you're instantiating classes (such as the `FormValidityObserver`) in the body of your component's function, then React may re-instantiate the class during a re-render -- even if you don't want that to happen. Sometimes this can lead to inconsistent/unexpected outcomes.
+
+To circumvent this problem, React provides the [`useMemo`](https://react.dev/reference/react/useMemo) hook. This hook guarantees that a given value will not change or be recalculated between re-renders. (If you ever want the value to be recalculated, you can provide an array of dependencies that indicate when the value should be recalculated. In the case of the `FormValidityObserver`, we only want to instantiate it _once_, so no dependencies are necessary.) Below is an example of how to use `useMemo` with the `createFormValidityObserver` function.
 
 ```tsx
 import { useMemo } from "react";
-import { useFormValidityObserver } from "@form-observer/react";
+import { createFormValidityObserver } from "@form-observer/react";
 
 function MyForm() {
-  const { autoObserve, configure } = useFormValidityObserver("focusout");
-
-  return (
-    // If your component does not re-render, you don't need to memoize `autoObserve`'s return value.
-    <form ref={useMemo(autoObserve, [autoObserve])}>
-      <input {...configure("first-name", { required: "We need to know who you are!" })} />
-    </form>
-  );
+  const { autoObserve, configure } = useMemo(() => createFormValidityObserver("focusout"), []);
+  return <form ref={useMemo(autoObserve, [])}>{/* Form Fields */}</form>;
 }
 ```
 
-The purpose of the memoization is two-fold:
+Note: If you are using React's ESLint Rules for hooks, the linter will sometimes tell you to list invalid/unnecessary dependencies for `useMemo`. For example, in the code above, ESLint may tell you to list `autoObserve` as a dependency for the 2nd call to `useMemo`. But because the call to `createFormValidityObserver` is memoized, the `autoObserve` value will never change. Consequently, the 2nd call to `useMemo` should have no dependencies at all.
 
-1. When the component employing `useFormValidityObserver` re-renders (whether due to state changes or prop updates), the memoization prevents the observer from being re-created/reset. (This is likely not a practical concern if `configure` is only used inside your component's returned JSX.)
-2. Because the outputs of `useFormValidityObserver` are memoized, they won't cause unnecessary re-renders in [memoized children](https://react.dev/reference/react/memo), nor will they cause or unnecessary function re-runs in hooks that depend on them (such as `useEffect`, `useCallback`, and custom hooks that have dependency arrays).
+You can choose to disable the ESLint rule in cases like this one where the rule is incorrect, or you can explicitly list the dependency like so:
 
-If you don't need to worry about these scenarios, then you are free to use [`createFormValidityObserver`](#function-createformvalidityobservertypes-options) instead; it will give you the exact same result (unmemoized). If you _do_ need to worry about these scenarios, then bear in mind that **the observer will be recreated whenever the arguments to the hook change, whether by value _or_ by reference**.
+```tsx
+<form ref={useMemo(autoObserve, [autoObserve])}>{/* Form Fields */}</form>
+```
 
-Note that this is a very small hook created solely for your convenience. If you want, you can use `useMemo` directly to wrap any calls to `createFormValidityObserver` instead. For more details on memoization, see React's documentation on [`useMemo`](https://react.dev/reference/react/useMemo) and [`memo`](https://react.dev/reference/react/memo). You can also read [_When to useMemo and useCallback_](https://kentcdodds.com/blog/usememo-and-usecallback) by Kent C. Dodds.
+Since `autoObserve` will never change, the `useMemo` hook will never run any recalculations when `autoObserve` is passed as a dependency. So in the end, you're free to decide how to handle your lint warnings in these situations -- whether by appeasing the linter or by disabling it locally.
+
+If you know that a functional component using `createFormValidityObserver` will never re-render, then you can ditch the `useMemo` hook entirely. For more details on memoization, see React's documentation on [`useMemo`](https://react.dev/reference/react/useMemo) and [`memo`](https://react.dev/reference/react/memo). You can also read [_When to useMemo and useCallback_](https://kentcdodds.com/blog/usememo-and-usecallback) by Kent C. Dodds.
+
+> Note: For those using class components, "memoization" happens automatically as long as the observer is created only once (i.e., during the class's construction).
 
 ## Usage with Class Components
 

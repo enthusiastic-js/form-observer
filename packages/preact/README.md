@@ -29,10 +29,10 @@ Here's an example of how to automatically validate your form fields when a user 
 
 ```jsx
 import { useMemo } from "preact/hooks";
-import { useFormValidityObserver } from "@form-observer/preact";
+import { createFormValidityObserver } from "@form-observer/preact";
 
 function MyForm() {
-  const { autoObserve, configure, validateFields } = useFormValidityObserver("focusout");
+  const { autoObserve, configure, validateFields } = useMemo(() => createFormValidityObserver("focusout"), []);
 
   function handleSubmit(event) {
     event.preventDefault();
