@@ -1,5 +1,23 @@
 # Changelog
 
+## 2024-05-05
+
+### v0.9.0 (All Packages)
+
+#### Features
+
+- Field revalidation is now supported with the `FormValidityObserver` via the `revalidateOn` option.
+- You can now pass `null` to the `type` argument of the `FormValidityObserver` to use it in "Manual Mode".
+
+Please see the [documentation](./docs/form-validity-observer/README.md) for more details on how to use these new features.
+
+#### Breaking Changes
+
+- Arrays are no longer supported for the `FormValidityObserver`'s `type` constructor argument.
+- The `useFormValidityObserver` React hook has been removed because it isn't genuinely useful. (**React only**)
+
+If you'd like to understand why these breaking changes were made, please see the [Design Decisions](./docs/extras/design-decisions.md) document.
+
 ## 2024-04-21
 
 ### v0.8.0 (All Packages)
