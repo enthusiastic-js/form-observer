@@ -1,6 +1,6 @@
 # Changelog
 
-## 2023-04-21
+## 2024-04-21
 
 ### v0.8.0 (All Packages)
 
@@ -12,7 +12,7 @@
 
 - Fixed a bug in `@form-observer/react`'s `useFormValidityObserver` function where updates to the `defaultErrors` option would not cause the hook to update its memoized value.
 
-## 2023-02-11
+## 2024-02-11
 
 ### v0.7.2 (Solid, Lit, Preact)
 
