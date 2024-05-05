@@ -166,8 +166,8 @@ class FormValidityObserver extends FormObserver {
     if (typeof options?.revalidateOn === "string") {
       types.push(options.revalidateOn);
       listeners.push((event) => {
-        const field = event.target;
-        if (field.hasAttribute(attrs["data-fvo-revalidate"])) this.validateField(field.name);
+        const field = this.#getTargetField(event.target.name);
+        if (field?.hasAttribute(attrs["data-fvo-revalidate"])) this.validateField(field.name);
       });
     }
 

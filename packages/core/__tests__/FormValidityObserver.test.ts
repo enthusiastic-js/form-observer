@@ -2086,6 +2086,51 @@ describe("Form Validity Observer (Class)", () => {
           expectErrorFor(field, stringMessage, "a11y");
           expect(renderer).toHaveBeenCalledTimes(1); // `renderer` wasn't used this time
         });
+
+        it("Correctly handles field revalidation for `radiogroup`s", async () => {
+          /* ---------- Setup ---------- */
+          // Render Form
+          document.body.innerHTML = `
+            <form aria-label="Test Form">
+              <fieldset role="radiogroup" aria-describedby="radio-error">
+                <input name="radio" type="radio" value="1" required />
+                <input name="radio" type="radio" value="2" />
+                <input name="radio" type="radio" value="3" />
+              </fieldset>
+
+              <div id="radio-error" role="alert"></div>
+            </form>
+          `;
+
+          const form = screen.getByRole<HTMLFormElement>("form");
+          const radiogroup = screen.getByRole<HTMLFieldSetElement>("radiogroup");
+          const radios = screen.getAllByRole<HTMLInputElement>("radio");
+
+          // Setup `FormValidityObserver`
+          const formValidityObserver = new FormValidityObserver(null, { revalidateOn: "input" });
+          formValidityObserver.observe(form);
+
+          /* ---------- Assertions ---------- */
+          // Activate revalidation for the `radiogroup`
+          expect(formValidityObserver.validateField(radios[0].name, { enableRevalidation: true })).toBe(false);
+          expect(radios[0].validationMessage).not.toBe("");
+          expect(radiogroup).toHaveAttribute("aria-invalid", String(true));
+          expect(radiogroup).toHaveAccessibleDescription(radios[0].validationMessage);
+
+          /*
+           * Note: Yes, manual DOM manipulation is ugly... But `userEvent` has a bug where it dispatches `input` events
+           * on the wrong `radio` button(s) during User Keyboard Interactions. So we have to do things manually, sadly.
+           * (Perhaps we should try `Playwright` in the future, after all...)
+           */
+          // Use revalidation to clear the error message for the `radiogroup`.
+          // DO NOT select the first radio button! (Otherwise, the bug won't surface properly.)
+          radios[radios.length - 1].checked = true;
+          radios[radios.length - 1].dispatchEvent(new InputEvent("input", { bubbles: true }));
+
+          expect(radios[0].validationMessage).toBe("");
+          expect(radiogroup).toHaveAttribute("aria-invalid", String(false));
+          expect(radiogroup).not.toHaveAccessibleDescription();
+        });
       });
     });
 
