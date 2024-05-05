@@ -2,6 +2,12 @@
 
 ## 2024-05-05
 
+### v0.9.1 (All Packages)
+
+#### Bug Fixes
+
+- Enable `radiogroup`s to properly partake in field <strong><em>re</em></strong>validation.
+
 ### v0.9.0 (All Packages)
 
 #### Features
