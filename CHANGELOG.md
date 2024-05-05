@@ -20,7 +20,7 @@ Please see the [documentation](./docs/form-validity-observer/README.md) for more
 #### Breaking Changes
 
 - Arrays are no longer supported for the `FormValidityObserver`'s `type` constructor argument.
-- The `useFormValidityObserver` React hook has been removed because it isn't genuinely useful. (**React only**)
+- The `useFormValidityObserver` React hook has been removed because it isn't genuinely useful. The new recommendation is to replace all calls to `useFormValidityObserver` with [memoized](https://react.dev/reference/react/useMemo) calls to `createFormValidityObserver`. (**React only**)
 
 If you'd like to understand why these breaking changes were made, please see the [Design Decisions](./docs/extras/design-decisions.md) document.
 
