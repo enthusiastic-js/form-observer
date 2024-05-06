@@ -6,6 +6,7 @@ Here you'll find helpful tips on how to use the `FormValidityObserver` effective
 - [Keeping Track of Visited/Dirty Fields](#keeping-track-of-visiteddirty-fields)
 - [Getting the Most out of the `defaultErrors` option](#getting-the-most-out-of-the-defaulterrors-option)
 - [Managing Form Errors with State](#managing-form-errors-with-state)
+- [Reconciling Server Errors with Client Errors in Forms](#reconciling-server-errors-with-client-errors-in-forms)
 - [Keeping Track of Form Data](#keeping-track-of-form-data)
 - [Recommendations for Conditionally Rendered Fields](#recommendations-for-conditionally-rendered-fields)
 - [Recommendations for Styling Form Fields and Their Error Messages](#recommendations-for-styling-form-fields-and-their-error-messages)
@@ -14,8 +15,7 @@ Here you'll find helpful tips on how to use the `FormValidityObserver` effective
 <!--
 TODO: Some `Guides` that could be helpful:
 
-1) Reconciling error messages sent by the server on the client side.
-2) MAYBE something on how to work with accessible error messages? (Should we also mention `aria-errormessage` vs. `aria-describedby` too? As well as the lack of support for `aria-errormessage`? Or does that belong somewhere else in the docs?)
+1) MAYBE something on how to work with accessible error messages? (Should we also mention `aria-errormessage` vs. `aria-describedby` too? As well as the lack of support for `aria-errormessage`? Or does that belong somewhere else in the docs?)
 -->
 
 ## Enabling Accessible Error Messages during Form Submissions
@@ -356,6 +356,205 @@ With this approach, our error messages are "rendered" to our stateful `errors` o
 Notice that we also supplied the [`renderByDefault: true`](./README.md#form-validity-observer-options-render-by-default) option to the `FormValidityObserver`. This option is important because it causes all error messages that are pure strings to be sent through our `renderer` function by default -- including the browser's default error messages. In other words, this option guarantees that all error messages which are generated for our form fields will be properly assigned to our stateful error object.
 
 You can find more detailed examples of using stateful error objects on [StackBlitz](https://stackblitz.com/@ITenthusiasm/collections/form-observer-examples).
+
+## Reconciling Server Errors with Client Errors in Forms
+
+It's common for server-rendered applications to have both server-side validation logic and client-side validation logic for forms. Usually, the validation logic is the same between the client and the server. But in some situations, you may have validation logic that you _only_ want to run on the server. For example, the logic for verifying that a user + password combination is correct should only be run on the server. In cases like these, you'll need a way to combine/reconcile your server-side errors with your client-side errors so that your users will know what they need to fix.
+
+There are multiple ways to go about this. We'll be showing 2 approaches that use [`Remix`](https://remix.run/) and [`Zod`](https://zod.dev/), and we'll be managing our error messages [with state](#managing-form-errors-with-state) (instead of manipulating the DOM directly). The examples that you see below should be easily transferrable to other frameworks (such as `SvelteKit`) and other validators (such as `yup`, or even your own server logic). If you're interested in manipulating the DOM directly (instead of using state), you're free to do that as well.
+
+### 1&rpar; Using `Zod` for Server-side Validation and the Browser for Client-side Validation
+
+In this first approach, we _will not_ use `Zod` on the frontend. Oftentimes, the browser is sufficient for running client-side validation. One of the biggest benefits of using the browser's validation logic is that it works even when your users have [no access to JavaScript](https://www.kryogenix.org/code/browser/everyonehasjs.html). In such cases, the browser will be able to tell your users how to correct their forms _without_ making roundtrips to your server. Additionally, by keeping `Zod` out of your client bundle, you save a significant amount of space (roughly 13.8 kb).
+
+```tsx
+import { json } from "@remix-run/node";
+import type { ActionFunction } from "@remix-run/node";
+import { Form, useActionData } from "@remix-run/react";
+import { useState, useEffect, useMemo } from "react";
+import { createFormValidityObserver } from "@form-observer/react";
+import { z } from "zod";
+
+/* -------------------- Browser -------------------- */
+// Note: We are omitting the definition of a `handleSubmit` function to make it
+// easier to test error reconciliation between the client and the server.
+export default function SignupForm() {
+  const serverErrors = useActionData<typeof action>();
+  const [errors, setErrors] = useState(serverErrors);
+  useEffect(() => setErrors(serverErrors), [serverErrors]);
+
+  const { autoObserve, configure } = useMemo(() => {
+    return createFormValidityObserver("input", {
+      renderByDefault: true,
+      renderer(errorContainer, errorMessage) {
+        const name = errorContainer.id.replace(/-error$/, "") as FieldNames;
+
+        setErrors((e) =>
+          e
+            ? { ...e, fieldErrors: { ...e.fieldErrors, [name]: errorMessage } }
+            : { formErrors: [], fieldErrors: { [name]: errorMessage } },
+        );
+      },
+    });
+  }, []);
+
+  return (
+    <Form ref={useMemo(autoObserve, [])} method="POST">
+      <label htmlFor="username">Username</label>
+      <input
+        id="username"
+        type="text"
+        aria-describedby="username-error"
+        {...configure("username", {
+          required: "Username is required",
+          minlength: { value: 5, message: "Minimum length is 5 characters" },
+        })}
+      />
+      <div id="username-error" role="alert">
+        {errors?.fieldErrors.username}
+      </div>
+
+      <label htmlFor="email">Email</label>
+      <input
+        id="email"
+        aria-describedby="email-error"
+        {...configure("email", {
+          required: "Email is required",
+          type: { value: "email", message: "Email is not valid" },
+        })}
+      />
+      <div id="email-error" role="alert">
+        {errors?.fieldErrors.email}
+      </div>
+
+      {/* Other Fields ... */}
+      <button type="submit">Submit</button>
+    </Form>
+  );
+}
+
+/* -------------------- Server -------------------- */
+/** Replaces empty strings in the `FormData` with `undefined` values */
+function nonEmptyString<T extends z.ZodTypeAny>(schema: T) {
+  return z.preprocess((v) => (v === "" ? undefined : v), schema);
+}
+
+type FieldNames = keyof (typeof schema)["shape"];
+const schema = z.object({
+  username: nonEmptyString(
+    z.string({ required_error: "Username is required" }).min(5, "Minimum length is 5 characters"),
+  ),
+  email: nonEmptyString(z.string({ required_error: "Email is required" }).email("Email is not valid")),
+  // Other fields ...
+});
+
+// Note: We've excluded a success response for brevity
+export const action = (async ({ request }) => {
+  const formData = Object.fromEntries(await request.formData());
+  const result = schema.safeParse(formData);
+
+  if (result.error) {
+    return json(result.error.flatten());
+  }
+}) satisfies ActionFunction;
+```
+
+Although this approach does allow us to keep our client bundle smaller, you'll notice that it also results in us having to duplicate our error messages on the server and the client. One way around this problem is to create an `errorMessages` object that both the server and the client can share, like so:
+
+```ts
+const errorMessages = {
+  username: { required: "Username is required", minlength: "Minimum length is 5 characters" },
+  email: { required: "Email is required", format: "Email is not valid" },
+} as const;
+```
+
+Then, our frontend could use this object to define its error messages:
+
+```tsx
+<input
+  id="email"
+  aria-describedby="email-error"
+  {...configure("email", {
+    required: errorMessages.email.required,
+    type: { value: "email", message: errorMessages.email.format },
+  })}
+/>
+```
+
+And our Zod schema definition could do the same:
+
+```ts
+const schema = z.object({
+  username: nonEmptyString(
+    z.string({ required_error: errorMessages.username.required }).min(5, errorMessages.username.minlength),
+  ),
+  email: nonEmptyString(z.string({ required_error: errorMessages.email.required }).email(errorMessages.email.format)),
+});
+```
+
+This approach allows us to reduce code duplication between the client and the server with ease _while also keeping our client bundle smaller_. So it's worth considering!
+
+### 2&rpar; Using `Zod` Exclusively for Both Server _and_ Client-side Validation
+
+If you're really bothered by the idea of having to create an `errorMessages` object that both the server and the client can share, then another alternative is to just use Zod on _both_ the server _and_ the client. Be warned: _This will noticeably increase your client's JavaScript bundle size_, and it might have more impacts on performance/maintainability than you expect (especially for complex forms). Additionally, you will no longer be able to take advantage of the browser's validation logic. This means that when users of your application lack access to JavaScript, they will keep having to make roundtrips to your server to know how to fix their forms (instead of having the browser tell them immediately without making any network requests).
+
+Nonetheless, this approach removes the need for an `errorMessages` object. So, if that is your preferred approach, please see below. (We will only show the code for the frontend here because that is the only code that needs to change.)
+
+```tsx
+/* -------------------- Browser -------------------- */
+// Note: We are omitting the definition of a `handleSubmit` function to make it
+// easier to test error reconciliation between the client and the server.
+export default function SignupForm() {
+  const serverErrors = useActionData<typeof action>();
+  const [errors, setErrors] = useState(serverErrors);
+  useEffect(() => setErrors(serverErrors), [serverErrors]);
+
+  const { autoObserve, configure } = useMemo(() => {
+    return createFormValidityObserver("input", {
+      renderByDefault: true,
+      renderer(errorContainer, errorMessage) {
+        const name = errorContainer.id.replace(/-error$/, "") as FieldNames;
+
+        setErrors((e) =>
+          e
+            ? { ...e, fieldErrors: { ...e.fieldErrors, [name]: errorMessage } }
+            : { formErrors: [], fieldErrors: { [name]: errorMessage } },
+        );
+      },
+      defaultErrors: {
+        validate(field: HTMLInputElement) {
+          const result = schema.shape[field.name as FieldNames].safeParse(field.value);
+          if (result.success) return;
+          return result.error.issues[0].message;
+        },
+      },
+    });
+  }, []);
+
+  return (
+    <Form ref={useMemo(autoObserve, [])} method="POST">
+      <label htmlFor="username">Username</label>
+      <input id="username" name="username" type="text" aria-describedby="username-error" />
+      <div id="username-error" role="alert">
+        {errors?.fieldErrors.username}
+      </div>
+
+      <label htmlFor="email">Email</label>
+      <input id="email" name="email" aria-describedby="email-error" />
+      <div id="email-error" role="alert">
+        {errors?.fieldErrors.email}
+      </div>
+
+      {/* Other Fields ... */}
+      <button type="submit">Submit</button>
+    </Form>
+  );
+}
+```
+
+In the end, it's up to you to decide how you want to handle these trade-offs. There is no "perfect" solution.
+
+There is potential for a third option that would allow you to pull benefits from both of the approaches shown above. However, that third option would also pull _drawbacks_ from both of those approaches. (We can never avoid the difficulties of making real trade-offs.) If you're interested in that third option being supported, feel free to comment on [this issue](https://github.com/enthusiastic-js/form-observer/issues/7).
 
 ## Keeping Track of Form Data
 

@@ -2,8 +2,7 @@
 
 ## Priority
 
-- [ ] Add docs on how to reconcile error messages between server and client.
-  - [ ] Consider doing this AFTER releasing `0.9.0` if you need to.
+- [ ] Update `SuperTokens + Remix` and `SuperTokens + SvelteKit` examples with the stateful `errors` object approach (if it would be easier to understand/read).
 
 ## Documentation
 
