@@ -1,9 +1,5 @@
 # TODO
 
-## Priority
-
-- [ ] Update `SuperTokens + Remix` and `SuperTokens + SvelteKit` examples with the stateful `errors` object approach (if it would be easier to understand/read).
-
 ## Documentation
 
 - [ ] Add more detailed examples of how to use `Zod` with the `defaultErrors.validate` option.
