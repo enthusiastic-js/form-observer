@@ -9,7 +9,11 @@
 
 ## Repository
 
-- [ ] Consider adding `Releases` to GitHub and automating the publishing of NPM Packages. (Maybe for the _next_ version? Maybe?)
+- [ ] Consider automating the process of publishing NPM Packages (with [provenance](https://docs.npmjs.com/generating-provenance-statements)) using GitHub Releases.
+  - Seriously. This seems super easy. You should _definitely_ do/try this the next time you release a new package version.
+    - https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages
+    - https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions
+  - For the `build-packages.js` script, you might need to conditionally copy GitHub CI's `.npmrc` file to all of the workspace folders. This logic would be added to the `addNPMFilesTo()` function. (The condition is that this should only happen on CI. You can check GitHub CI's `process.env.CI` environment variable for this.) Then you can try `npm publish --workspaces --provenance --access=public` (after running the build script). But if you're unsure about how reliable the `--workspaces` option is, perhaps you can try looping through the folders on CI instead? (Let's hope that `--workspaces` works just fine...)
 - [ ] Consider adding some badges to our Repository's homepage (e.g., Test Coverage).
 
 ## `FormValidityObserver`
