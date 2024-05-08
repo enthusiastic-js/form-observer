@@ -556,6 +556,50 @@ In the end, it's up to you to decide how you want to handle these trade-offs. Th
 
 There is potential for a third option that would allow you to pull benefits from both of the approaches shown above. However, that third option would also pull _drawbacks_ from both of those approaches. (We can never avoid the difficulties of making real trade-offs.) If you're interested in that third option being supported, feel free to comment on [this issue](https://github.com/enthusiastic-js/form-observer/issues/7).
 
+### The `submit` Event Handler
+
+If you want to know how to write a submission handler that includes form validation for the `Remix` examples listed above, the process is very simple.
+
+If all of your form fields are validated _synchronously_, then the handler is very easy to write:
+
+```ts
+const handleSubmit = (event: React.FormEvent) => (validateFields({ focus: true }) ? undefined : event.preventDefault());
+```
+
+If _any_ of your form fields are validated _asynchronously_ then `Remix` will require a little more effort from your event handler. **The following will not work** because `event.preventDefault()` won't be called until _after_ `Remix` has already submitted the form.
+
+```ts
+const handleSubmit = async (event: React.FormEvent) => {
+  const success = await validateFields({ focus: true });
+  if (!success) event.preventDefault();
+};
+```
+
+Instead, we need to leverage `Remix`'s [`submit`](https://remix.run/docs/en/main/hooks/use-submit) function like so:
+
+```ts
+import { Form, useActionData, useSubmit } from "@remix-run/react";
+import type { FormMethod } from "@remix-run/react";
+// Other imports ...
+
+export default function SignupForm() {
+  // Other Code ...
+
+  const submit = useSubmit();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const form = event.target as HTMLFormElement;
+
+    const success = await validateFields({ focus: true });
+    if (success) return submit(form, { method: form.method as FormMethod });
+  };
+
+  // Returnd JSX ...
+}
+```
+
+Note that you might want to memoize your submission handler with [`useCallback`](https://react.dev/reference/react/useCallback) to prevent `Remix`'s `<Form>` component from re-rendering unnecessarily. Whether or not you choose to do this is up to you, however.
+
 ## Keeping Track of Form Data
 
 Many form libraries offer stateful solutions for managing the data in your forms as JSON. But there are a few disadvantages to this approach:
