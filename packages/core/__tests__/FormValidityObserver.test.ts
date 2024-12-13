@@ -2250,9 +2250,9 @@ describe("Form Validity Observer (Class)", () => {
         expect(validators.sync).toHaveNthReturnedWith(1, expect.stringMatching(/\w+/));
 
         expect(await failingPromiseSyncValidator).toBe(false);
-        expect(validators.async).toHaveNthReturnedWith(1, undefined);
-        expect(validators["async-mid"]).toHaveNthReturnedWith(1, undefined);
-        expect(validators["async-long"]).toHaveNthReturnedWith(1, "");
+        await expect(validators.async).toHaveNthResolvedWith(1, undefined);
+        await expect(validators["async-mid"]).toHaveNthResolvedWith(1, undefined);
+        await expect(validators["async-long"]).toHaveNthResolvedWith(1, "");
 
         // Sync + Async Failure
         validators["async-mid"].mockImplementation(createAsyncValidator(500, "Async Failure!"));
@@ -2262,9 +2262,9 @@ describe("Form Validity Observer (Class)", () => {
         expect(validators.sync).toHaveNthReturnedWith(2, expect.stringMatching(/\w+/));
 
         expect(await failingPromiseBothValidators).toBe(false);
-        expect(validators.async).toHaveNthReturnedWith(2, undefined);
-        expect(validators["async-mid"]).toHaveNthReturnedWith(2, expect.stringMatching(/\w+/));
-        expect(validators["async-long"]).toHaveNthReturnedWith(2, "");
+        await expect(validators.async).toHaveNthResolvedWith(2, undefined);
+        await expect(validators["async-mid"]).toHaveNthResolvedWith(2, expect.stringMatching(/\w+/));
+        await expect(validators["async-long"]).toHaveNthResolvedWith(2, "");
 
         // Async Failure Only
         validators.sync.mockReturnValue(undefined); // Sync Validator now passes
@@ -2274,9 +2274,9 @@ describe("Form Validity Observer (Class)", () => {
         expect(validators.sync).toHaveNthReturnedWith(3, undefined);
 
         expect(await failingPromiseAsyncValidator).toBe(false);
-        expect(validators.async).toHaveNthReturnedWith(3, undefined);
-        expect(validators["async-mid"]).toHaveNthReturnedWith(3, expect.stringMatching(/\w+/));
-        expect(validators["async-long"]).toHaveNthReturnedWith(3, "");
+        await expect(validators.async).toHaveNthResolvedWith(3, undefined);
+        await expect(validators["async-mid"]).toHaveNthResolvedWith(3, expect.stringMatching(/\w+/));
+        await expect(validators["async-long"]).toHaveNthResolvedWith(3, "");
 
         // Async Success
         validators["async-mid"].mockImplementation(createAsyncValidator(500)); // Async Validator now passes
@@ -2285,9 +2285,9 @@ describe("Form Validity Observer (Class)", () => {
         expect(succeedingPromise).toEqual(expect.any(Promise));
 
         expect(await succeedingPromise).toBe(true);
-        expect(validators.async).toHaveNthReturnedWith(4, undefined);
-        expect(validators["async-mid"]).toHaveNthReturnedWith(4, undefined);
-        expect(validators["async-long"]).toHaveNthReturnedWith(4, "");
+        await expect(validators.async).toHaveNthResolvedWith(4, undefined);
+        await expect(validators["async-mid"]).toHaveNthResolvedWith(4, undefined);
+        await expect(validators["async-long"]).toHaveNthResolvedWith(4, "");
       });
 
       it("Returns `false` if ANY asynchronous validation functions `reject`", async () => {
