@@ -71,6 +71,7 @@ export interface FormStorageObserverOptions {
   useEventCapturing?: boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface FormStorageObserver extends FormObserver {}
 
 declare const FormStorageObserver: FormStorageObserverConstructor;
