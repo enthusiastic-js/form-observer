@@ -33,7 +33,7 @@
     "react": ">=16.8.0"
   },
   "devDependencies": {
-    "@testing-library/react": "^14.3.1",
+    "@testing-library/react": "^16.1.0",
     "@types/react": "^18.3.16"
   },
   "author": "Isaiah Thomason",
