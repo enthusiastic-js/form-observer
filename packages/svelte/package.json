@@ -32,9 +32,9 @@
     "@form-observer/core": "^0.9.1"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^3.1.0",
-    "@testing-library/svelte": "^4.1.0",
-    "svelte": "^4.2.13"
+    "@sveltejs/vite-plugin-svelte": "^3.1.2",
+    "@testing-library/svelte": "^4.2.3",
+    "svelte": "^4.2.19"
   },
   "author": "Isaiah Thomason",
   "license": "MIT",
