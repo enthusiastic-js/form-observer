@@ -1,8 +1,10 @@
 import type { ErrorMessage, ValidationErrors, ValidatableField, FormValidityObserver } from "@form-observer/core";
 import type React from "react";
 
-export interface ReactFormValidityObserver<M = string, R extends boolean = false>
-  extends Omit<FormValidityObserver<M, R>, "configure"> {
+export interface ReactFormValidityObserver<M = string, R extends boolean = false> extends Omit<
+  FormValidityObserver<M, R>,
+  "configure"
+> {
   /**
    * An enhanced version of {@link FormValidityObserver.configure} for `React`. In addition to configuring a field's
    * error messages, it generates the props that should be applied to the field based on the provided arguments.
@@ -55,8 +57,11 @@ export type ReactFieldProps = Pick<
  * An augmetation of {@link ValidationErrors} for `React`. Represents the constraints that should be applied
  * to a form field, and the error messages that should be displayed when those constraints are broken.
  */
-export interface ReactValidationErrors<M, E extends ValidatableField = ValidatableField, R extends boolean = false>
-  extends Pick<ValidationErrors<M, E, R>, "badinput" | "validate"> {
+export interface ReactValidationErrors<
+  M,
+  E extends ValidatableField = ValidatableField,
+  R extends boolean = false,
+> extends Pick<ValidationErrors<M, E, R>, "badinput" | "validate"> {
   // Standard HTML Attributes
   required?:
     | ReactErrorDetails<M, React.ComponentProps<"input">["required"], E, R>

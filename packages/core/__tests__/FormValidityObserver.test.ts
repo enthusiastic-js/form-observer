@@ -2068,7 +2068,6 @@ describe("Form Validity Observer (Class)", () => {
           elementMessage.textContent = "I'm all alone!!!";
 
           formValidityObserver.configure(field.name, {
-            // @ts-expect-error -- `render` should get ignored here because no `message` property is present
             required: { type: "DOMElement", value: elementMessage, render: false },
             validate: () => ({ message: stringMessage, render: false }),
           });

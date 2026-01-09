@@ -17,7 +17,8 @@ export type FormField =
 
 /** An `HTMLElement` that participates in form validation */
 export interface ValidatableField
-  extends HTMLElement,
+  extends
+    HTMLElement,
     Pick<HTMLInputElement, "name" | "form" | "validity" | "validationMessage" | "willValidate">,
     Partial<Pick<HTMLInputElement, "type" | "setCustomValidity">>,
     Partial<Pick<ElementInternals, "reportValidity">> {

@@ -2,8 +2,10 @@ import type { ErrorMessage, ValidationErrors, ValidatableField, FormValidityObse
 import type { ActionReturn } from "svelte/action";
 import type { HTMLInputAttributes } from "svelte/elements";
 
-export interface SvelteFormValidityObserver<M = string, R extends boolean = false>
-  extends Omit<FormValidityObserver<M, R>, "configure"> {
+export interface SvelteFormValidityObserver<M = string, R extends boolean = false> extends Omit<
+  FormValidityObserver<M, R>,
+  "configure"
+> {
   /**
    * An enhanced version of {@link FormValidityObserver.configure} for `Svelte`. In addition to configuring a field's
    * error messages, it generates the props that should be applied to the field based on the provided arguments.
@@ -47,8 +49,11 @@ export type SvelteFieldProps = Pick<
  * An augmetation of {@link ValidationErrors} for `Svelte`. Represents the constraints that should be applied
  * to a form field, and the error messages that should be displayed when those constraints are broken.
  */
-export interface SvelteValidationErrors<M, E extends ValidatableField = ValidatableField, R extends boolean = false>
-  extends Pick<ValidationErrors<M, E, R>, "badinput" | "validate"> {
+export interface SvelteValidationErrors<
+  M,
+  E extends ValidatableField = ValidatableField,
+  R extends boolean = false,
+> extends Pick<ValidationErrors<M, E, R>, "badinput" | "validate"> {
   // Standard HTML Attributes
   required?:
     | SvelteErrorDetails<M, HTMLInputAttributes["required"], E, R>

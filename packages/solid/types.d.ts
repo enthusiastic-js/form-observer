@@ -1,8 +1,10 @@
 import type { ErrorMessage, ValidationErrors, ValidatableField, FormValidityObserver } from "@form-observer/core";
 import type { JSX } from "solid-js";
 
-export interface SolidFormValidityObserver<M = string | JSX.Element, R extends boolean = false>
-  extends Omit<FormValidityObserver<M, R>, "configure"> {
+export interface SolidFormValidityObserver<M = string | JSX.Element, R extends boolean = false> extends Omit<
+  FormValidityObserver<M, R>,
+  "configure"
+> {
   /**
    * An enhanced version of {@link FormValidityObserver.configure} for `Solid`. In addition to configuring a field's
    * error messages, it generates the props that should be applied to the field based on the provided arguments.
@@ -56,8 +58,11 @@ export type SolidFieldProps = Pick<
  * An augmetation of {@link ValidationErrors} for `Solid`. Represents the constraints that should be applied
  * to a form field, and the error messages that should be displayed when those constraints are broken.
  */
-export interface SolidValidationErrors<M, E extends ValidatableField = ValidatableField, R extends boolean = false>
-  extends Pick<ValidationErrors<M, E, R>, "badinput" | "validate"> {
+export interface SolidValidationErrors<
+  M,
+  E extends ValidatableField = ValidatableField,
+  R extends boolean = false,
+> extends Pick<ValidationErrors<M, E, R>, "badinput" | "validate"> {
   // Standard HTML Attributes
   required?:
     | SolidErrorDetails<M, JSX.InputHTMLAttributes<unknown>["required"], E, R>

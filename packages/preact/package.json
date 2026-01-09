@@ -33,7 +33,7 @@
     "preact": ">=9.0.0"
   },
   "devDependencies": {
-    "@preact/preset-vite": "^2.9.3",
+    "@preact/preset-vite": "^2.10.2",
     "@testing-library/preact": "^3.2.4"
   },
   "author": "Isaiah Thomason",

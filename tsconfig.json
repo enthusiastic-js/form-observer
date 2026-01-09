@@ -15,5 +15,5 @@
     "skipLibCheck": true
   },
   // TODO: Split Vitest Config out from final production bundle ... EDIT: Depends on comment above
-  "include": ["packages/**/*", "scripts/**/*", "vitest.config.ts", "vitest.workspace.ts"]
+  "include": ["packages/**/*", "scripts/**/*", "vitest.config.ts"]
 }

@@ -141,8 +141,10 @@ function createFormValidityObserver<
   return observer;
 }
 
-interface SvelteFormValidityObserver<M = string, R extends boolean = false>
-  extends Omit<FormValidityObserver<M, R>, "configure"> {}
+interface SvelteFormValidityObserver<M = string, R extends boolean = false> extends Omit<
+  FormValidityObserver<M, R>,
+  "configure"
+> {}
 ```
 
 Note: Since we will be augmenting the `FormValidityObserver.configure()` method, we are _not_ copying its type definition to the `SvelteFormValidityObserver` interface.
@@ -183,8 +185,10 @@ function createFormValidityObserver<
   return observer;
 }
 
-interface SvelteFormValidityObserver<M = string, R extends boolean = false>
-  extends Omit<FormValidityObserver<M, R>, "configure"> {}
+interface SvelteFormValidityObserver<M = string, R extends boolean = false> extends Omit<
+  FormValidityObserver<M, R>,
+  "configure"
+> {}
 ```
 
 Note: Because we will be enhancing the `configure` method, we _have not_ attached it to the `observer` object that we return.
@@ -229,8 +233,10 @@ function createFormValidityObserver<
   return observer;
 }
 
-interface SvelteFormValidityObserver<M = string, R extends boolean = false>
-  extends Omit<FormValidityObserver<M, R>, "configure"> {
+interface SvelteFormValidityObserver<M = string, R extends boolean = false> extends Omit<
+  FormValidityObserver<M, R>,
+  "configure"
+> {
   autoObserve(form: HTMLFormElement, novalidate?: boolean): ActionReturn;
 }
 ```
@@ -316,8 +322,10 @@ import type { HTMLInputAttributes } from "svelte/elements";
 
 // Definition of `createFormValidityObserver` ...
 
-interface SvelteFormValidityObserver<M = string, R extends boolean = false>
-  extends Omit<FormValidityObserver<M, R>, "configure"> {
+interface SvelteFormValidityObserver<M = string, R extends boolean = false> extends Omit<
+  FormValidityObserver<M, R>,
+  "configure"
+> {
   // Augments `FormValidityObserver.configure()`
   configure<E extends ValidatableField>(name: string, errorMessages: SvelteValidationErrors<M, E, R>): SvelteFieldProps;
   autoObserve(form: HTMLFormElement, novalidate?: boolean): ActionReturn;
@@ -330,8 +338,11 @@ type SvelteFieldProps = Pick<
 >;
 
 // Augments `ValidationErrors` type
-export interface SvelteValidationErrors<M, E extends ValidatableField = ValidatableField, R extends boolean = false>
-  extends Pick<ValidationErrors<M, E, R>, "badinput" | "validate"> {
+export interface SvelteValidationErrors<
+  M,
+  E extends ValidatableField = ValidatableField,
+  R extends boolean = false,
+> extends Pick<ValidationErrors<M, E, R>, "badinput" | "validate"> {
   required?:
     | SvelteErrorDetails<M, HTMLInputAttributes["required"], E, R>
     | ErrorMessage<R extends true ? M : string, E>;
@@ -403,8 +414,10 @@ type SvelteFieldProps = Pick<
 And we make _this_ the return type of `configure`:
 
 ```ts
-interface SvelteFormValidityObserver<M = string, R extends boolean = false>
-  extends Omit<FormValidityObserver<M, R>, "configure"> {
+interface SvelteFormValidityObserver<M = string, R extends boolean = false> extends Omit<
+  FormValidityObserver<M, R>,
+  "configure"
+> {
   configure<E extends ValidatableField>(name: string, errorMessages: SvelteValidationErrors<M, E, R>): SvelteFieldProps;
   autoObserve(form: HTMLFormElement, novalidate?: boolean): ActionReturn;
 }

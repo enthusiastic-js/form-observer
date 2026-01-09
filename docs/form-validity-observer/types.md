@@ -6,7 +6,8 @@ These are the important types used by the `FormValidityObserver`. They serve as 
 
 ```ts
 interface ValidatableField
-  extends HTMLElement,
+  extends
+    HTMLElement,
     Pick<HTMLInputElement, "name" | "validity" | "validationMessage" | "willValidate">,
     Partial<Pick<HTMLInputElement, "type" | "setCustomValidity">>,
     Partial<Pick<ElementInternals, "form" | "reportValidity">> {

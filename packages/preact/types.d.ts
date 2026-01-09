@@ -1,8 +1,10 @@
 import type { ErrorMessage, ValidationErrors, ValidatableField, FormValidityObserver } from "@form-observer/core";
 import type { JSX } from "preact";
 
-export interface PreactFormValidityObserver<M = string, R extends boolean = false>
-  extends Omit<FormValidityObserver<M, R>, "configure"> {
+export interface PreactFormValidityObserver<M = string, R extends boolean = false> extends Omit<
+  FormValidityObserver<M, R>,
+  "configure"
+> {
   /**
    * An enhanced version of {@link FormValidityObserver.configure} for `Preact`. In addition to configuring a field's
    * error messages, it generates the props that should be applied to the field based on the provided arguments.
@@ -55,8 +57,11 @@ export type PreactFieldProps = Pick<
  * An augmetation of {@link ValidationErrors} for `Preact`. Represents the constraints that should be applied
  * to a form field, and the error messages that should be displayed when those constraints are broken.
  */
-export interface PreactValidationErrors<M, E extends ValidatableField = ValidatableField, R extends boolean = false>
-  extends Pick<ValidationErrors<M, E, R>, "badinput" | "validate"> {
+export interface PreactValidationErrors<
+  M,
+  E extends ValidatableField = ValidatableField,
+  R extends boolean = false,
+> extends Pick<ValidationErrors<M, E, R>, "badinput" | "validate"> {
   // Standard HTML Attributes
   required?:
     | PreactErrorDetails<M, JSX.IntrinsicElements["input"]["required"], E, R>

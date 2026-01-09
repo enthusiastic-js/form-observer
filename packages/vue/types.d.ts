@@ -1,8 +1,10 @@
 import type { ErrorMessage, ValidationErrors, ValidatableField, FormValidityObserver } from "@form-observer/core";
 import type { InputHTMLAttributes } from "vue";
 
-export interface VueFormValidityObserver<M = string, R extends boolean = false>
-  extends Omit<FormValidityObserver<M, R>, "configure"> {
+export interface VueFormValidityObserver<M = string, R extends boolean = false> extends Omit<
+  FormValidityObserver<M, R>,
+  "configure"
+> {
   /**
    * An enhanced version of {@link FormValidityObserver.configure} for `Vue`. In addition to configuring a field's
    * error messages, it generates the props that should be applied to the field based on the provided arguments.
@@ -50,8 +52,11 @@ export type VueFieldProps = Pick<
  * An augmetation of {@link ValidationErrors} for `Vue`. Represents the constraints that should be applied
  * to a form field, and the error messages that should be displayed when those constraints are broken.
  */
-export interface VueValidationErrors<M, E extends ValidatableField = ValidatableField, R extends boolean = false>
-  extends Pick<ValidationErrors<M, E, R>, "badinput" | "validate"> {
+export interface VueValidationErrors<
+  M,
+  E extends ValidatableField = ValidatableField,
+  R extends boolean = false,
+> extends Pick<ValidationErrors<M, E, R>, "badinput" | "validate"> {
   // Standard HTML Attributes
   required?: VueErrorDetails<M, InputHTMLAttributes["required"], E, R> | ErrorMessage<R extends true ? M : string, E>;
   minlength?: VueErrorDetails<M, InputHTMLAttributes["minlength"], E, R>;
