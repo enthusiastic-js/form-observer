@@ -1,9 +1,11 @@
 import { defineConfig } from "vitest/config";
 import type { UserWorkspaceConfig } from "vitest/config";
-import { preact } from "@preact/preset-vite";
+import preact from "@preact/preset-vite";
+import react from "@vitejs/plugin-react";
 import solid from "vite-plugin-solid";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { svelteTesting } from "@testing-library/svelte/vite";
+import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
   test: {
@@ -22,10 +24,13 @@ export default defineConfig({
       { test: createProjectConfig("lit") },
       // NOTE: Preact Vite Preset is too aggressive and tries to transform `Core` files. So we're restricting its reach.
       { test: createProjectConfig("preact", ["tsx"]), plugins: [preact({ include: "packages/preact/**/*.test.tsx" })] },
-      { test: createProjectConfig("react", ["ts", "tsx"]) },
-      { test: createProjectConfig("solid", ["ts", "tsx"]), plugins: [solid()] },
-      { test: createProjectConfig("svelte"), plugins: [svelte(), svelteTesting({ autoCleanup: false })] },
-      { test: createProjectConfig("vue") },
+      { test: createProjectConfig("react", ["ts", "tsx"]), plugins: [react({ include: "packages/react/**/*" })] },
+      { test: createProjectConfig("solid", ["ts", "tsx"]), plugins: [solid({ include: "packages/solid/**/*" })] },
+      {
+        test: createProjectConfig("svelte"),
+        plugins: [svelte({ include: "packages/svelte/**/*.svelte" }), svelteTesting({ autoCleanup: false })],
+      },
+      { test: createProjectConfig("vue"), plugins: [vue({ include: "packages/vue/**/*.vue" })] },
     ],
   },
 });

@@ -47,6 +47,28 @@ const { autoObserve } = createFormValidityObserver("focusout");
 
 Remember that `autoObserve` is simply a convenience utility for calling `observe` and `unobserve` automatically. You're free to setup and teardown the `FormValidityObserver` manually if you prefer.
 
+#### Property: `vAutoObserve: Directive<HTMLFormElement, boolean>`
+
+A custom Vue [`directive`](https://vuejs.org/guide/reusability/custom-directives) which does the same thing that the [`autoObserve`](#function-autoobservenovalidate-boolean-formref-htmlformelement--null--void) function `ref` does. You'll probably find the `directive` to be more ergonomic than the function `ref` if you are using Vue's [`<script setup>`](https://vuejs.org/api/sfc-script-setup).
+
+**Example**
+
+```vue
+<template>
+  <!-- Or <form v-auto-observe="true"> -->
+  <form v-auto-observe>
+    <!-- Other Elements-->
+  </form>
+</template>
+
+<script setup>
+import { createFormValidityObserver } from "@form-observer/vue";
+const { vAutoObserve } = createFormValidityObserver("focusout");
+</script>
+```
+
+You may use the `directive` _or_ the function `ref`. But you cannot use both simultaneously for a given `<form>` element.
+
 #### Function: `configure<E>(name: string, errorMessages: VueValidationErrors<M, E, R>): VueFieldProps`
 
 An enhanced version of [`FormValidityObserver.configure`](../README.md#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-r-void) for `Vue`. In addition to configuring a field's error messages, it generates the props that should be applied to the field based on the provided arguments.

@@ -1,12 +1,14 @@
 import { vi, beforeEach, afterEach, describe, it, expect } from "vitest";
 import { defineComponent } from "vue";
-import { render, screen, cleanup } from "@testing-library/vue";
+import { render, screen, within, cleanup } from "@testing-library/vue";
 import { userEvent } from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import FormValidityObserver from "@form-observer/core/FormValidityObserver";
 import createFormValidityObserver from "../createFormValidityObserver.js";
 import type { VueValidationErrors } from "../types.d.ts";
 import type { EventType, FormField, ValidatableField } from "../index.d.ts";
+import SmallTestFormDirectives from "./SmallTestFormDirectives.vue";
+import testFormLabels from "./testFormLabels.js";
 
 describe("Create Form Validity Observer (Function)", () => {
   const type = "input" satisfies EventType;
@@ -98,14 +100,13 @@ describe("Create Form Validity Observer (Function)", () => {
         expect(input).toHaveAttribute("aria-invalid", String(false));
         expect(input.validationMessage).toBe("");
 
-        /* ----- After `unount` ----- */
+        /* ----- After `unmount` ----- */
         unmount();
         expect(FormValidityObserver.prototype.unobserve).toHaveBeenCalledWith(form);
       });
 
       it("Configures the `novalidate` attribute of the observed `form` (defaults to `true`)", () => {
         // Setup
-        const labels = { default: "Default Config", true: "Explicit True Option", false: "Explicit False Option" };
         const novalidate = "novalidate";
 
         render(
@@ -114,19 +115,71 @@ describe("Create Form Validity Observer (Function)", () => {
               const { autoObserve: autoObserveDefault } = createFormValidityObserver(type);
               const { autoObserve: autoObserveTrue } = createFormValidityObserver(type);
               const { autoObserve: autoObserveFalse } = createFormValidityObserver(type);
-              return { autoObserveDefault, autoObserveTrue, autoObserveFalse, labels };
+              return { autoObserveDefault, autoObserveTrue, autoObserveFalse, testFormLabels };
             },
             template: `
-              <form :ref="autoObserveDefault()" :aria-label="labels.default"></form>
-              <form :ref="autoObserveTrue(true)" :aria-label="labels.true"></form>
-              <form :ref="autoObserveFalse(false)" :aria-label="labels.false"></form>
+              <form :ref="autoObserveDefault()" :aria-label="testFormLabels.refDefault"></form>
+              <form :ref="autoObserveTrue(true)" :aria-label="testFormLabels.refTrue"></form>
+              <form :ref="autoObserveFalse(false)" :aria-label="testFormLabels.refFalse"></form>
             `,
           }),
         );
 
-        expect(screen.getByRole("form", { name: labels.default })).toHaveAttribute(novalidate, "");
-        expect(screen.getByRole("form", { name: labels.true })).toHaveAttribute(novalidate, "");
-        expect(screen.getByRole("form", { name: labels.false })).not.toHaveAttribute(novalidate);
+        expect(screen.getByRole("form", { name: testFormLabels.refDefault })).toHaveAttribute(novalidate, "");
+        expect(screen.getByRole("form", { name: testFormLabels.refTrue })).toHaveAttribute(novalidate, "");
+        expect(screen.getByRole("form", { name: testFormLabels.refFalse })).not.toHaveAttribute(novalidate);
+      });
+    });
+
+    describe("vAutoObserve (Directive)", () => {
+      afterEach(cleanup);
+
+      it("Automatically sets up the `FormValidityObserver` (onMount) and cleans it up (onUnmount)", async () => {
+        /* ---------- Setup ---------- */
+        // NOTE: This is not the normal message provided by Browsers. It's a simpler one provided by JSDOM.
+        const novalidate = "novalidate";
+        const defaultErrorMessage = "Constraints not satisfied";
+        vi.spyOn(FormValidityObserver.prototype, "observe");
+        vi.spyOn(FormValidityObserver.prototype, "unobserve");
+
+        const { unmount } = render(SmallTestFormDirectives);
+        expect(screen.getAllByRole("form")).toHaveLength(3);
+        const formDefault = screen.getByRole<HTMLFormElement>("form", { name: testFormLabels.directiveDefault });
+        const formTrue = screen.getByRole<HTMLFormElement>("form", { name: testFormLabels.directiveTrue });
+        const formFalse = screen.getByRole<HTMLFormElement>("form", { name: testFormLabels.directiveFalse });
+
+        /* ---------- Assertions ---------- */
+        const forms = Object.freeze([formDefault, formTrue, formFalse] as const);
+        expect(FormValidityObserver.prototype.observe).toHaveBeenCalledTimes(3);
+
+        /* ----- After `mount` ----- */
+        for (const form of forms) {
+          expect(FormValidityObserver.prototype.observe).toHaveBeenCalledWith(form);
+          if (form === formDefault || form === formTrue) expect(form).toHaveAttribute(novalidate, "");
+          else if (form === formFalse) expect(form).not.toHaveAttribute(novalidate);
+          else throw new TypeError("You setup your forms array incorrectly, bro...");
+
+          // Try some automated validation
+          const input = within(form).getByRole<HTMLInputElement>("textbox");
+
+          await userEvent.type(input, "blah");
+          await userEvent.clear(input);
+          expect(input).toHaveAttribute("aria-invalid", String(true));
+          expect(input.validationMessage).toBe(defaultErrorMessage);
+
+          await userEvent.type(input, "yah");
+          expect(input).toHaveAttribute("aria-invalid", String(false));
+          expect(input.validationMessage).toBe("");
+
+          await userEvent.clear(input);
+          expect(input).toHaveAttribute("aria-invalid", String(true));
+          expect(input.validationMessage).toBe(defaultErrorMessage);
+        }
+
+        /* ----- After `unmount` ----- */
+        unmount();
+        for (const form of forms) expect(FormValidityObserver.prototype.unobserve).toHaveBeenCalledWith(form);
+        expect(FormValidityObserver.prototype.unobserve).toHaveBeenCalledTimes(3);
       });
     });
 

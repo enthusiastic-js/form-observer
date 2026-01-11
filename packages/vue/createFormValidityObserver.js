@@ -34,21 +34,31 @@ export default function createFormValidityObserver(type, options) {
   /* -------------------- Enhancements -------------------- */
   // Add automatic setup/teardown
   observer.autoObserve = function autoObserve(novalidate = true) {
-    /** @type {HTMLFormElement | null} */
+    /** @type {Element | import("vue").ComponentPublicInstance | null} */
     let form;
 
     /** @param {typeof form} vueRef @returns {void} */
     return (vueRef) => {
       if (vueRef) {
         form = vueRef;
-        observer.observe(form);
-        if (novalidate) form.setAttribute("novalidate", "");
+        observer.observe(/** @type {HTMLFormElement} */ (form));
+        if (novalidate) /** @type {HTMLFormElement} */ (form).setAttribute("novalidate", "");
         return;
       }
 
       observer.unobserve(/** @type {HTMLFormElement} */ (form));
       form = null;
     };
+  };
+
+  observer.vAutoObserve = {
+    mounted(form, binding) {
+      observer.observe(form);
+      if (binding.value !== false) form.setAttribute("novalidate", "");
+    },
+    beforeUnmount(form) {
+      observer.unobserve(form);
+    },
   };
 
   // Enhanced `configure` method

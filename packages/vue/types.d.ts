@@ -1,5 +1,5 @@
 import type { ErrorMessage, ValidationErrors, ValidatableField, FormValidityObserver } from "@form-observer/core";
-import type { InputHTMLAttributes } from "vue";
+import type { Directive, ComponentPublicInstance, InputHTMLAttributes } from "vue";
 
 export interface VueFormValidityObserver<M = string, R extends boolean = false> extends Omit<
   FormValidityObserver<M, R>,
@@ -29,18 +29,39 @@ export interface VueFormValidityObserver<M = string, R extends boolean = false> 
   /**
    * Creates a Vue function `ref` used to automatically setup and cleanup a form's observer.
    *
-   * **Note**: If you use this `ref`, you should **not** call `observe`, `unobserve`, or `disconnect` directly.
+   * **Note**: If you use this `ref`, you should **not** call `observe`, `unobserve` or `disconnect` directly,
+   * nor should you use {@link vAutoObserve `v-auto-observe`}
    *
    * @param novalidate Indicates that the
    * {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#novalidate novalidate} attribute should
    * be applied to the `form` element when JavaScript is enabled. Defaults to `true`.
    *
    * @example
-   * <form :ref="autoObserve()">
+   * <form v-auto-observe>
    *   <input name="first-name" type="textbox" required />
    * </form>
+   *
+   * // Or
+   * <form v-auto-observe="true">
+   *   <input name="email" type="email" required />
+   * </form>
    */
-  autoObserve(novalidate?: boolean): (formRef: HTMLFormElement | null) => void;
+  autoObserve(novalidate?: boolean): (formRef: Element | ComponentPublicInstance | null) => void;
+
+  /**
+   * A custom Vue [`directive`](https://vuejs.org/guide/reusability/custom-directives) used to automatically
+   * setup and cleanup a form's observer.
+   *
+   * Accepts a `boolean` value which determines if the
+   * {@link https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#novalidate novalidate} attribute
+   * should be applied to the `form` element when JavaScript is enabled. (Defaults to `true`.)
+   *
+   * **Note**: If you use this `directive`, you should **not** call `observe`, `unobserve` or `disconnect` directly,
+   * nor should you use {@link autoObserve `autoObserve`}.
+   *
+   * @example
+   */
+  vAutoObserve: Directive<HTMLFormElement, boolean>;
 }
 
 export type VueFieldProps = Pick<
