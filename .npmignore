@@ -4,6 +4,7 @@
 # Development Files
 tsconfig.json
 
+__tests__
 *.test.ts
 *.svelte
 *.vue

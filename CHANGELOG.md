@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-01-10
+
+### v1.0.0 (Vue)
+
+#### Features
+
+- Added a more-ergonomic Custom Vue Directive, [`v-auto-observe`](./docs/form-validity-observer/integrations/vue.md#property-vautoobserve-directivehtmlformelement-boolean), to handle automatic observing/unobserving for the `FormValidityObserver`.
+
+#### Bug Fixes
+
+- Fixed a TypeScript issue for the `autoObserve` function `ref`.
+
 ## 2024-05-05
 
 ### v0.9.1 (All Packages)
