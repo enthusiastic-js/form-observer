@@ -9,7 +9,7 @@
   "scripts": {
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "prettier --ignore-path .gitignore --check . && eslint --ignore-path .gitignore . && tsc --noEmit",
+    "lint": "prettier --ignore-path .gitignore --check . && eslint --ignore-path .gitignore . && vue-tsc --noEmit && svelte-check --no-tsconfig",
     "format": "prettier --ignore-path .gitignore --write ."
   },
   "devDependencies": {
@@ -28,9 +28,11 @@
     "jsdom": "^27.4.0",
     "prettier": "^3.7.4",
     "prettier-plugin-svelte": "^3.4.1",
+    "svelte-check": "^4.3.5",
     "typescript": "^5.9.3",
     "vite": "7.3.1",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.16",
+    "vue-tsc": "^3.2.2"
   },
   "overrides": {
     "@form-observer/solid": {
