@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-02-05
+
+### v1.0.1 (All Packages)
+
+#### Bug Fixes
+
+- Fixed a TypeScript issue by preventing the `FormValidityObserver`'s `defaultErrors` option from having the ability to influence the generic `M` or `R` type parameters.
+
 ## 2026-01-10
 
 ### v1.0.0 (Vue)
