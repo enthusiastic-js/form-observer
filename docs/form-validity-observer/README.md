@@ -141,7 +141,7 @@ The `FormValidityObserver()` constructor creates a new observer and configures i
           </blockquote>
         </p>
       </dd>
-      <dt id="form-validity-observer-options-default-errors"><code>defaultErrors: ValidationErrors&lt;M, E, R&gt;</code></dt>
+      <dt id="form-validity-observer-options-default-errors"><code>defaultErrors: ValidationErrors&lt;NoInfer&lt;M&gt;, E, NoInfer&lt;R&gt;&gt;</code></dt>
       <dd>
         <p>
           Configures the default error messages to display for the validation constraints. (See the <a href="#method-formvalidityobserverconfigureename-string-errormessages-validationerrorsm-e-r-void"><code>configure</code></a> method for more details about error message configuration, and refer to the <a href="./types.md#validationerrorsm-e-r"><code>ValidationErrors</code></a> type for more details about validation constraints.)

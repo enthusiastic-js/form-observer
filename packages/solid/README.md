@@ -111,8 +111,12 @@ function MyForm() {
               render: true,
               message: (input) => (
                 <ul>
-                  <li data-use-red-text={!/\d/.test(input.value)}>Password must include at least 1 number</li>
-                  <li data-use-red-text={!/[a-zA-Z]/.test(input.value)}>Password must include at least 1 letter</li>
+                  <li data-use-red-text={/* @once */ !/\d/.test(input.value)}>
+                    Password must include at least 1 number
+                  </li>
+                  <li data-use-red-text={/* @once */ !/[a-zA-Z]/.test(input.value)}>
+                    Password must include at least 1 letter
+                  </li>
                   {/* Other Requirements ... */}
                 </ul>
               ),

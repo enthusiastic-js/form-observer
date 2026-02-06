@@ -205,8 +205,12 @@ function MyForm() {
               render: true,
               message: (input: HTMLInputElement) => (
                 <ul>
-                  <li data-use-red-text={!/\d/.test(input.value)}>Password must include at least 1 number</li>
-                  <li data-use-red-text={!/[a-zA-Z]/.test(input.value)}>Password must include at least 1 letter</li>
+                  <li data-use-red-text={/* @once */ !/\d/.test(input.value)}>
+                    Password must include at least 1 number
+                  </li>
+                  <li data-use-red-text={/* @once */ !/[a-zA-Z]/.test(input.value)}>
+                    Password must include at least 1 letter
+                  </li>
                   {/* Other Requirements ... */}
                 </ul>
               ),
@@ -230,4 +234,6 @@ function MyForm() {
 }
 ```
 
-> Note: We recommend using JSX whenever you need to render error messages to the DOM as HTML because doing so makes it easier to write valid, formattable markup. HTML Template Strings are only supported because the core `FormValidityObserver` supports them.
+> Note: We generally recommend using JSX whenever you need to render error messages to the DOM as HTML because doing so makes it easier to write valid, formattable markup &mdash; resulting in a better DX. However, you are free to use HTML Template Strings if you prefer.
+
+> Note: When using _JavaScript expressions_ in your JSX Error Messages (as shown for the `password` field above), you must tell Solid not to track these expressions by using the [`@once`](https://docs.solidjs.com/reference/jsx-attributes/once) decorator. This stops Solid from trying to track elements which might be thrown away later (e.g., if the user triggers a new/different error), protecting your application from memory leaks in the process.

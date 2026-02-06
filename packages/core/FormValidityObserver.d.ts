@@ -101,7 +101,7 @@ export interface FormValidityObserverOptions<
    * The default errors to display for the field constraints. (The `validate` option configures the default
    * _custom validation function_ used for all form fields.)
    */
-  defaultErrors?: ValidationErrors<M, E, R>;
+  defaultErrors?: ValidationErrors<NoInfer<M>, E, NoInfer<R>>;
 }
 
 export interface ValidateFieldOptions {

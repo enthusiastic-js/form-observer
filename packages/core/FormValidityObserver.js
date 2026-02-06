@@ -86,8 +86,9 @@ const attrs = Object.freeze({
  * @property {R} [renderByDefault] Determines the default value for every validation constraint's `render` option.
  * (Also sets the default value for {@link FormValidityObserver.setFieldError setFieldError}'s `render` option.)
  *
- * @property {ValidationErrors<M, E, R>} [defaultErrors] The default errors to display for the field constraints.
- * (The `validate` option configures the default _custom validation function_ used for all form fields.)
+ * @property {ValidationErrors<NoInfer<M>, E, NoInfer<R>>} [defaultErrors] The default errors to display for
+ * the field constraints. (The `validate` option configures the default _custom validation function_ used for
+ * all form fields.)
  */
 
 /**
